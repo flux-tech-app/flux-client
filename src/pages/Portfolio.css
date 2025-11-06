@@ -1,16 +1,23 @@
 .portfolio-page {
   min-height: 100vh;
-  background: white;
+  background: #f5f5f5;
   padding-bottom: 80px;
 }
 
+.portfolio-container {
+  max-width: 768px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+}
+
 /* App Header */
-.app-header {
+.portfolio-header {
   position: sticky;
   top: 0;
   background: white;
-  border-bottom: 1px solid var(--gray-300);
-  padding: var(--space-4);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -18,92 +25,70 @@
 }
 
 .app-logo {
-  font-size: var(--text-app-logo);
+  font-size: 22px;
   font-weight: 700;
-  color: var(--gray-900);
+  color: #111827;
   letter-spacing: -0.5px;
 }
 
-.header-actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
 .icon-button {
-  padding: var(--space-2);
+  padding: 8px;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--gray-500);
-  border-radius: var(--radius-sm);
+  color: #6b7280;
+  border-radius: 8px;
   transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .icon-button:hover {
-  background: var(--gray-100);
+  background: #f3f4f6;
 }
 
-/* Content */
-.content {
-  padding: 0 var(--space-4);
-}
-
-/* Portfolio Header */
-.portfolio-header {
-  padding: var(--space-6) 0 var(--space-8);
-}
-
-.portfolio-label {
-  font-size: 14px;
-  color: var(--gray-500);
-  margin-bottom: var(--space-1);
+/* Portfolio Value Section */
+.portfolio-value-section {
+  padding: 24px 16px 32px;
 }
 
 .portfolio-value {
   font-size: 36px;
   font-weight: 600;
-  color: var(--gray-900);
-  margin-bottom: var(--space-2);
+  color: #111827;
+  margin-bottom: 8px;
 }
 
 .portfolio-change {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
   font-size: 14px;
 }
 
 .trend-icon {
   width: 16px;
   height: 16px;
-  color: var(--success);
+  color: #10b981;
 }
 
-.change-positive {
-  color: var(--success);
+.change-amount {
+  color: #10b981;
   font-weight: 500;
-}
-
-.change-label {
-  color: var(--gray-500);
 }
 
 /* View Toggle */
 .view-toggle {
   display: flex;
-  gap: var(--space-4);
-  border-bottom: 1px solid var(--gray-300);
-  margin-bottom: var(--space-6);
+  gap: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 16px;
+  margin-bottom: 24px;
 }
 
-.view-tab {
-  padding: var(--space-3) var(--space-1);
+.toggle-button {
+  padding: 12px 4px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--gray-500);
+  color: #6b7280;
   background: none;
   border: none;
   position: relative;
@@ -111,55 +96,63 @@
   transition: color 0.2s;
 }
 
-.view-tab:hover {
-  color: var(--gray-700);
+.toggle-button.active {
+  color: #2563eb;
 }
 
-.view-tab.active {
-  color: var(--primary);
-}
-
-.view-tab.active::after {
+.toggle-button.active::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--primary);
+  background: #2563eb;
 }
 
-/* Section Header */
-.section-header {
-  font-size: var(--text-label);
-  text-transform: uppercase;
-  color: var(--gray-500);
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-4);
+.toggle-button:hover {
+  color: #2563eb;
 }
 
-/* Habit Cards Container */
-.habit-cards {
+/* Habits Section */
+.habits-section {
+  padding: 0 16px;
+}
+
+.habits-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 12px;
   margin-bottom: 100px;
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: var(--space-8) var(--space-4);
-  color: var(--gray-500);
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
 }
 
 .empty-state h3 {
-  font-size: var(--text-card-title);
-  color: var(--gray-700);
-  margin-bottom: var(--space-2);
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
 }
 
 .empty-state p {
   font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
 }

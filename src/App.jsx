@@ -1,107 +1,70 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { HabitProvider, useHabits } from './context/HabitContext'
-import Portfolio from './pages/Portfolio'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HabitProvider, useHabits } from './context/HabitContext';
+import Portfolio from './pages/Portfolio';
+import AddHabit from './pages/AddHabit';
+import LogActivity from './pages/LogActivity';
+import Activity from './pages/Activity';
+import Account from './pages/Account';
+import HabitDetail from './pages/HabitDetail';
 
-// Placeholder components - will be built in phases
-
-function HabitDetail() {
-  return <div style={{ padding: '20px' }}>Habit Detail Page - Coming Soon</div>
-}
-
-function AddHabit() {
-  return <div style={{ padding: '20px' }}>Add Habit Page - Coming Soon</div>
-}
-
-function LogActivity() {
-  return <div style={{ padding: '20px' }}>Log Activity Page - Coming Soon</div>
-}
-
-function Activity() {
-  return <div style={{ padding: '20px' }}>Activity Feed Page - Coming Soon</div>
-}
-
-function Account() {
-  return <div style={{ padding: '20px' }}>Account Page - Coming Soon</div>
-}
-
-function Settings() {
-  return <div style={{ padding: '20px' }}>Settings Page - Coming Soon</div>
-}
-
-function Onboarding() {
-  const { updateUser } = useHabits()
-  const navigate = useNavigate()
-
-  const handleSkip = () => {
-    updateUser({
-      name: 'Ryan',
-      email: 'ryan@example.com',
-      hasCompletedOnboarding: true,
-    })
-    navigate('/')
-  }
-
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>Onboarding Page - Coming Soon</h2>
-      <button
-        onClick={handleSkip}
-        style={{
-          marginTop: '20px',
-          padding: '12px 24px',
-          fontSize: '16px',
-          background: '#2563eb',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-        }}
-      >
-        Skip to Portfolio (Testing)
-      </button>
-    </div>
-  )
-}
-
-// Route guard to handle onboarding
+// Onboarding guard wrapper
 function AppRoutes() {
-  const { user } = useHabits()
+  const { user } = useHabits();
 
-  // If user hasn't completed onboarding, redirect to onboarding
-  if (!user.hasCompletedOnboarding) {
+  // Check if we should skip onboarding (for testing)
+  const urlParams = new URLSearchParams(window.location.search);
+  const skipOnboarding = urlParams.get('skip') === 'true';
+
+  // Skip button for testing - allows bypassing onboarding
+  if (!user?.hasCompletedOnboarding && !skipOnboarding) {
     return (
-      <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-      </Routes>
-    )
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        gap: '20px',
+        padding: '20px'
+      }}>
+        <h1>Flux</h1>
+        <p>Onboarding flow not yet implemented</p>
+        <a 
+          href="/?skip=true"
+          style={{
+            padding: '12px 24px',
+            background: '#2563eb',
+            color: 'white',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontWeight: 600
+          }}
+        >
+          Skip to Portfolio (Testing)
+        </a>
+      </div>
+    );
   }
 
-  // Main app routes (after onboarding)
   return (
     <Routes>
       <Route path="/" element={<Portfolio />} />
-      <Route path="/habit/:id" element={<HabitDetail />} />
       <Route path="/add" element={<AddHabit />} />
       <Route path="/log/:habitId" element={<LogActivity />} />
+      <Route path="/habit/:id" element={<HabitDetail />} />
       <Route path="/activity" element={<Activity />} />
       <Route path="/account" element={<Account />} />
-      <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }
 
-function App() {
+export default function App() {
   return (
     <Router>
       <HabitProvider>
-        <div className="app">
-          <AppRoutes />
-        </div>
+        <AppRoutes />
       </HabitProvider>
     </Router>
-  )
+  );
 }
-
-export default App

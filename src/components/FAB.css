@@ -1,3 +1,4 @@
+/* Floating Action Button */
 .fab {
   position: fixed;
   bottom: 90px;
@@ -5,7 +6,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   display: flex;
   align-items: center;
@@ -16,12 +17,13 @@
   border: none;
 }
 
-.fab:active {
-  transform: scale(0.95);
-}
-
 .fab:hover {
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+  transform: translateY(-2px);
+}
+
+.fab:active {
+  transform: scale(0.95) translateY(0);
 }
 
 .fab svg {

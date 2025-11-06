@@ -1,147 +1,165 @@
+// Flux 2.0 - Calculation Utilities
+
 /**
- * Calculate earnings for a Build habit log
- * Build habits use either duration or flat completion rates
+ * Calculate total portfolio value from all logs
  */
-export function calculateBuildEarnings(habit, duration = null) {
-  if (habit.rateType === 'duration' && duration) {
-    // e.g., $0.05/min × 30 min = $1.50
-    return habit.rate * duration
-  } else if (habit.rateType === 'completion') {
-    // e.g., $0.50 per completion
-    return habit.rate
-  }
-  return 0
+export function calculateTotalValue(logs) {
+  if (!logs || logs.length === 0) return 0;
+  return logs.reduce((total, log) => total + log.totalEarnings, 0);
 }
 
 /**
- * Calculate earnings for a Break habit log
- * Break habits have base rate + optional top-up
+ * Calculate today's earnings from logs
  */
-export function calculateBreakEarnings(habit, topUpAmount = 0) {
-  const baseEarnings = habit.rate // Base rate for resisting
-  return {
-    baseEarnings,
-    topUpAmount,
-    totalEarnings: baseEarnings + topUpAmount,
-  }
+export function calculateTodayEarnings(logs) {
+  if (!logs || logs.length === 0) return 0;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayLogs = logs.filter(log => {
+    const logDate = new Date(log.timestamp);
+    logDate.setHours(0, 0, 0, 0);
+    return logDate.getTime() === today.getTime();
+  });
+  
+  return todayLogs.reduce((total, log) => total + log.totalEarnings, 0);
 }
 
 /**
- * Calculate total earnings from a log object
+ * Calculate total earnings for a specific habit
  */
-export function calculateLogEarnings(habit, logData) {
-  if (habit.type === 'build') {
-    const baseEarnings = calculateBuildEarnings(habit, logData.duration)
-    return {
-      baseEarnings,
-      topUpAmount: 0,
-      totalEarnings: baseEarnings,
-    }
-  } else {
-    // Break habit
-    return calculateBreakEarnings(habit, logData.topUpAmount || 0)
-  }
+export function calculateHabitValue(logs, habitId) {
+  if (!logs || logs.length === 0) return 0;
+  return logs
+    .filter(log => log.habitId === habitId)
+    .reduce((total, log) => total + log.totalEarnings, 0);
 }
 
 /**
- * Group logs by date for activity feed
+ * Calculate current streak for a habit
  */
-export function groupLogsByDate(logs) {
-  const grouped = {}
-
-  logs.forEach((log) => {
-    const date = new Date(log.timestamp).toDateString()
-    if (!grouped[date]) {
-      grouped[date] = []
-    }
-    grouped[date].push(log)
-  })
-
-  // Sort each group by time (newest first)
-  Object.keys(grouped).forEach((date) => {
-    grouped[date].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    )
-  })
-
-  return grouped
-}
-
-/**
- * Get logs for a specific date range
- */
-export function getLogsInRange(logs, startDate, endDate) {
-  const start = new Date(startDate).setHours(0, 0, 0, 0)
-  const end = new Date(endDate).setHours(23, 59, 59, 999)
-
-  return logs.filter((log) => {
-    const logTime = new Date(log.timestamp).getTime()
-    return logTime >= start && logTime <= end
-  })
-}
-
-/**
- * Calculate streak for a habit
- * Returns 0 if not logged today or yesterday
- */
-export function calculateStreak(logs) {
-  if (logs.length === 0) return 0
-
-  const sortedLogs = [...logs].sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  )
-
-  const today = new Date().toDateString()
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString()
-  const lastLogDate = new Date(sortedLogs[0].timestamp).toDateString()
-
-  // Must have logged today or yesterday to have an active streak
-  if (lastLogDate !== today && lastLogDate !== yesterday) {
-    return 0
-  }
-
-  let streak = 1
-  let currentDate = new Date(sortedLogs[0].timestamp)
-
-  for (let i = 1; i < sortedLogs.length; i++) {
-    const logDate = new Date(sortedLogs[i].timestamp)
-    const dayDiff = Math.floor((currentDate - logDate) / (1000 * 60 * 60 * 24))
-
-    if (dayDiff === 1) {
-      streak++
-      currentDate = logDate
-    } else if (dayDiff > 1) {
-      break
+export function calculateStreak(logs, habitId) {
+  if (!logs || logs.length === 0) return 0;
+  
+  const habitLogs = logs
+    .filter(log => log.habitId === habitId)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  if (habitLogs.length === 0) return 0;
+  
+  let streak = 0;
+  let currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  
+  // Check if logged today
+  const lastLogDate = new Date(habitLogs[0].timestamp);
+  lastLogDate.setHours(0, 0, 0, 0);
+  
+  // If not logged today or yesterday, streak is 0
+  const daysSinceLastLog = Math.floor((currentDate - lastLogDate) / (1000 * 60 * 60 * 24));
+  if (daysSinceLastLog > 1) return 0;
+  
+  // Count consecutive days
+  for (let i = 0; i < habitLogs.length; i++) {
+    const logDate = new Date(habitLogs[i].timestamp);
+    logDate.setHours(0, 0, 0, 0);
+    
+    const expectedDate = new Date(currentDate);
+    expectedDate.setDate(expectedDate.getDate() - streak);
+    
+    if (logDate.getTime() === expectedDate.getTime()) {
+      streak++;
+    } else {
+      break;
     }
   }
-
-  return streak
+  
+  return streak;
 }
 
 /**
- * Get chart data for habit detail page (last 7 days)
+ * Get logs for a specific habit
  */
-export function getChartData(logs) {
-  const last7Days = []
-  const today = new Date()
+export function getHabitLogs(logs, habitId) {
+  if (!logs || logs.length === 0) return [];
+  return logs
+    .filter(log => log.habitId === habitId)
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
 
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    date.setHours(0, 0, 0, 0)
-    last7Days.push(date)
+/**
+ * Get logs for a specific date
+ */
+export function getLogsByDate(logs, date) {
+  if (!logs || logs.length === 0) return [];
+  
+  const targetDate = new Date(date);
+  targetDate.setHours(0, 0, 0, 0);
+  
+  return logs.filter(log => {
+    const logDate = new Date(log.timestamp);
+    logDate.setHours(0, 0, 0, 0);
+    return logDate.getTime() === targetDate.getTime();
+  });
+}
+
+/**
+ * Calculate weekly earnings
+ */
+export function calculateWeeklyEarnings(logs) {
+  if (!logs || logs.length === 0) return 0;
+  
+  const today = new Date();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  
+  return logs
+    .filter(log => new Date(log.timestamp) >= weekAgo)
+    .reduce((total, log) => total + log.totalEarnings, 0);
+}
+
+/**
+ * Calculate monthly earnings
+ */
+export function calculateMonthlyEarnings(logs) {
+  if (!logs || logs.length === 0) return 0;
+  
+  const today = new Date();
+  const monthAgo = new Date(today);
+  monthAgo.setDate(monthAgo.getDate() - 30);
+  
+  return logs
+    .filter(log => new Date(log.timestamp) >= monthAgo)
+    .reduce((total, log) => total + log.totalEarnings, 0);
+}
+
+/**
+ * Get chart data for a habit (last 30 days)
+ */
+export function getChartData(logs, habitId, days = 30) {
+  const data = [];
+  const today = new Date();
+  
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+    
+    const dayLogs = logs.filter(log => {
+      if (log.habitId !== habitId) return false;
+      const logDate = new Date(log.timestamp);
+      logDate.setHours(0, 0, 0, 0);
+      return logDate.getTime() === date.getTime();
+    });
+    
+    const earnings = dayLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
+    
+    data.push({
+      date: date.toISOString().split('T')[0],
+      earnings: earnings
+    });
   }
-
-  return last7Days.map((date) => {
-    const dateStr = date.toDateString()
-    const dayLogs = logs.filter(
-      (log) => new Date(log.timestamp).toDateString() === dateStr
-    )
-
-    return {
-      date: dateStr,
-      earnings: dayLogs.reduce((sum, log) => sum + log.totalEarnings, 0),
-      count: dayLogs.length,
-    }
-  })
+  
+  return data;
 }
