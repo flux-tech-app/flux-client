@@ -1,0 +1,165 @@
+.portfolio-page {
+  min-height: 100vh;
+  background: white;
+  padding-bottom: 80px;
+}
+
+/* App Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  border-bottom: 1px solid var(--gray-300);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.app-logo {
+  font-size: var(--text-app-logo);
+  font-weight: 700;
+  color: var(--gray-900);
+  letter-spacing: -0.5px;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.icon-button {
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--gray-500);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button:hover {
+  background: var(--gray-100);
+}
+
+/* Content */
+.content {
+  padding: 0 var(--space-4);
+}
+
+/* Portfolio Header */
+.portfolio-header {
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.portfolio-label {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: var(--space-1);
+}
+
+.portfolio-value {
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.portfolio-change {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+}
+
+.trend-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--success);
+}
+
+.change-positive {
+  color: var(--success);
+  font-weight: 500;
+}
+
+.change-label {
+  color: var(--gray-500);
+}
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--gray-300);
+  margin-bottom: var(--space-6);
+}
+
+.view-tab {
+  padding: var(--space-3) var(--space-1);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-500);
+  background: none;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.view-tab:hover {
+  color: var(--gray-700);
+}
+
+.view-tab.active {
+  color: var(--primary);
+}
+
+.view-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+}
+
+/* Section Header */
+.section-header {
+  font-size: var(--text-label);
+  text-transform: uppercase;
+  color: var(--gray-500);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-4);
+}
+
+/* Habit Cards Container */
+.habit-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: 100px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--gray-500);
+}
+
+.empty-state h3 {
+  font-size: var(--text-card-title);
+  color: var(--gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.empty-state p {
+  font-size: 14px;
+}
