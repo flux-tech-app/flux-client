@@ -36,10 +36,11 @@ export default function LogActivity() {
       if (habit.rateType === 'duration') {
         baseEarnings = formData.duration * habit.rate;
       } else {
+        // Completion - flat rate
         baseEarnings = habit.rate;
       }
     } else {
-      // Break habit - flat rate
+      // Break habit - always flat rate
       baseEarnings = habit.rate;
     }
 
@@ -89,6 +90,7 @@ export default function LogActivity() {
 
   const earnings = calculateEarnings();
   const isBuildHabit = habit.type === 'build';
+  const isDurationBased = habit.rateType === 'duration';
 
   return (
     <div className="log-activity-page">
@@ -124,7 +126,7 @@ export default function LogActivity() {
           </div>
 
           {/* Build Habit - Duration Input */}
-          {isBuildHabit && habit.rateType === 'duration' && (
+          {isBuildHabit && isDurationBased && (
             <div className="form-section">
               <label className="input-label">Duration</label>
               <div className="input-row">
@@ -148,7 +150,7 @@ export default function LogActivity() {
           )}
 
           {/* Build Habit - Completion (no input needed, just confirmation) */}
-          {isBuildHabit && habit.rateType === 'completion' && (
+          {isBuildHabit && !isDurationBased && (
             <div className="completion-badge">
               <div className="completion-icon">
                 <svg width="32" height="32" fill="currentColor" viewBox="0 0 20 20">

@@ -23,20 +23,30 @@ export default function AddHabit() {
       return;
     }
 
-    if (formData.rate <= 0) {
+    if (parseFloat(formData.rate) <= 0) {
       alert('Please enter a valid rate amount');
       return;
     }
 
-    // Create the habit
-    addHabit({
+    // Create the habit - different structure for build vs break
+    const habitData = {
       name: formData.name.trim(),
       type: formData.type,
-      rateType: formData.rateType,
       rate: parseFloat(formData.rate),
-      allowTopUp: formData.type === 'break' ? formData.allowTopUp : false,
       createdAt: new Date().toISOString()
-    });
+    };
+
+    // Only add rateType for build habits
+    if (formData.type === 'build') {
+      habitData.rateType = formData.rateType;
+    }
+
+    // Only add allowTopUp for break habits
+    if (formData.type === 'break') {
+      habitData.allowTopUp = formData.allowTopUp;
+    }
+
+    addHabit(habitData);
 
     // Navigate back to portfolio
     navigate('/');
@@ -55,9 +65,11 @@ export default function AddHabit() {
         if (value === 'build') {
           updated.rateType = 'duration';
           updated.rate = 0.05;
+          updated.allowTopUp = false;
         } else {
-          updated.rateType = 'completion';
+          // Break habits don't have rateType, just flat rate
           updated.rate = 1.00;
+          updated.allowTopUp = false;
         }
       }
       
@@ -65,18 +77,23 @@ export default function AddHabit() {
     });
   };
 
-  // Calculate weekly earnings estimate
+  // Calculate weekly earnings estimate - ensure rate is a number
   const weeklyEstimate = () => {
+    const rate = parseFloat(formData.rate) || 0;
     if (formData.type === 'build' && formData.rateType === 'duration') {
-      return formData.rate * 30 * 7; // 30 min/day * 7 days
+      return rate * 30 * 7; // 30 min/day * 7 days
     } else if (formData.type === 'build' && formData.rateType === 'completion') {
-      return formData.rate * 7; // 1x/day * 7 days
+      return rate * 7; // 1x/day * 7 days
     } else {
-      return formData.rate * 7; // resist 1x/day * 7 days
+      // Break habits - flat rate per day
+      return rate * 7; // resist 1x/day * 7 days
     }
   };
 
-  const isValid = formData.name.trim().length > 0 && formData.rate > 0;
+  const isValid = formData.name.trim().length > 0 && parseFloat(formData.rate) > 0;
+  
+  // Ensure rate is always a number for display
+  const displayRate = parseFloat(formData.rate) || 0;
 
   return (
     <div className="add-habit-page">
@@ -234,9 +251,9 @@ export default function AddHabit() {
               <div className="preview-details">
                 {formData.type === 'build' 
                   ? formData.rateType === 'duration'
-                    ? `$${formData.rate.toFixed(2)}/min`
-                    : `$${formData.rate.toFixed(2)} per completion`
-                  : `$${formData.rate.toFixed(2)} per resistance${formData.allowTopUp ? ' + optional top-up' : ''}`
+                    ? `$${displayRate.toFixed(2)}/min`
+                    : `$${displayRate.toFixed(2)} per completion`
+                  : `$${displayRate.toFixed(2)} per resistance${formData.allowTopUp ? ' + optional top-up' : ''}`
                 }
               </div>
               <div className="preview-estimate">
