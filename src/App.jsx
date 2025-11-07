@@ -9,14 +9,19 @@ import HabitDetail from './pages/HabitDetail';
 
 // Onboarding guard wrapper
 function AppRoutes() {
-  const { user } = useHabits();
+  const { user, updateUser } = useHabits();
 
   // Check if we should skip onboarding (for testing)
   const urlParams = new URLSearchParams(window.location.search);
   const skipOnboarding = urlParams.get('skip') === 'true';
 
+  // If skip parameter is present and user hasn't completed onboarding, mark as complete
+  if (skipOnboarding && !user?.hasCompletedOnboarding) {
+    updateUser({ hasCompletedOnboarding: true });
+  }
+
   // Skip button for testing - allows bypassing onboarding
-  if (!user?.hasCompletedOnboarding && !skipOnboarding) {
+  if (!user?.hasCompletedOnboarding) {
     return (
       <div style={{
         display: 'flex',

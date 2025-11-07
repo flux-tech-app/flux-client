@@ -78,6 +78,37 @@
   font-weight: 500;
 }
 
+/* Pending Transfer Line */
+.pending-transfer-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 12px;
+}
+
+.pending-icon {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.pending-amount {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.pending-separator {
+  color: #d1d5db;
+  font-weight: 500;
+}
+
+.pending-schedule {
+  color: #9ca3af;
+}
+
 /* View Toggle */
 .view-toggle {
   display: flex;

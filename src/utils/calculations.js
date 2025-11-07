@@ -163,3 +163,28 @@ export function getChartData(logs, habitId, days = 30) {
   
   return data;
 }
+
+/**
+ * Get next Friday transfer date
+ * Returns formatted string like "Friday, Nov 8"
+ */
+export function getNextTransferDate() {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 5 = Friday
+  
+  let daysUntilFriday;
+  if (dayOfWeek <= 5) {
+    // If today is Sunday through Friday, get this Friday
+    daysUntilFriday = 5 - dayOfWeek;
+  } else {
+    // If today is Saturday, get next Friday (6 days away)
+    daysUntilFriday = 6;
+  }
+  
+  const nextFriday = new Date(today);
+  nextFriday.setDate(today.getDate() + daysUntilFriday);
+  
+  // Format as "Friday, Nov 8"
+  const options = { weekday: 'long', month: 'short', day: 'numeric' };
+  return nextFriday.toLocaleDateString('en-US', options);
+}

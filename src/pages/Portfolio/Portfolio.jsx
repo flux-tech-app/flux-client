@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
-import { calculateTotalValue, calculateTodayEarnings } from '../../utils/calculations';
+import { calculateTodayEarnings, getNextTransferDate } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
 import HabitCard from '../../components/HabitCard';
 import FAB from '../../components/FAB';
@@ -10,12 +10,14 @@ import Navigation from '../../components/Navigation';
 import './Portfolio.css';
 
 export default function Portfolio() {
-  const { habits, logs } = useHabits();
+  const { habits, logs, getTransferredBalance, getPendingBalance } = useHabits();
   const navigate = useNavigate();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const totalValue = calculateTotalValue(logs);
+  const transferredBalance = getTransferredBalance();
+  const pendingBalance = getPendingBalance();
   const todayEarnings = calculateTodayEarnings(logs);
+  const nextTransfer = getNextTransferDate();
 
   const handleHabitClick = (habitId) => {
     navigate(`/habit/${habitId}`);
@@ -36,7 +38,7 @@ export default function Portfolio() {
 
         {/* Portfolio Value */}
         <section className="portfolio-value-section">
-          <div className="portfolio-value">{formatCurrency(totalValue)}</div>
+          <div className="portfolio-value">{formatCurrency(transferredBalance)}</div>
           <div className="portfolio-change">
             {todayEarnings > 0 && (
               <>
@@ -47,6 +49,18 @@ export default function Portfolio() {
               </>
             )}
           </div>
+
+          {/* Pending Transfer Line */}
+          {pendingBalance > 0 && (
+            <div className="pending-transfer-line">
+              <svg className="pending-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span className="pending-amount">{formatCurrency(pendingBalance)} pending</span>
+              <span className="pending-separator">•</span>
+              <span className="pending-schedule">transfers {nextTransfer}</span>
+            </div>
+          )}
         </section>
 
         {/* View Toggle */}

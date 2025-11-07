@@ -3,7 +3,7 @@ import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
-  const { user, habits, logs, getTotalEarnings, getHabitStats } = useHabits();
+  const { user, habits, logs, getTotalEarnings, getHabitStats, processTransfer, getPendingBalance } = useHabits();
 
   // Calculate stats
   const totalEarnings = getTotalEarnings();
@@ -24,26 +24,46 @@ export default function Account() {
   };
 
   const handleManualTransfer = () => {
-    // Set last transfer date to now for testing
-    const now = new Date().toISOString();
-    localStorage.setItem('flux-last-transfer', now);
+    const pending = getPendingBalance();
     
-    // Create a transfer record
-    const transfers = JSON.parse(localStorage.getItem('flux-transfers') || '[]');
-    const pending = getTotalEarnings(); // For now, transfer all earnings
-    
-    if (pending > 0) {
-      const newTransfer = {
-        id: Date.now().toString(),
-        amount: pending,
-        date: now,
-        status: 'completed'
-      };
-      transfers.push(newTransfer);
-      localStorage.setItem('flux-transfers', JSON.stringify(transfers));
+    if (pending <= 0) {
+      alert('No pending balance to transfer.');
+      return;
     }
+
+    const result = processTransfer();
     
-    alert(`Manual transfer completed!\n\nAmount: $${pending.toFixed(2)}\nThis will move all current earnings to your portfolio balance.\n\nReload the page to see changes.`);
+    if (result.success) {
+      alert(`Manual transfer completed!\n\nAmount: $${result.amount.toFixed(2)}\nThis has been moved to your portfolio balance.\n\nReload the page to see changes.`);
+    } else {
+      alert(result.message);
+    }
+  };
+
+  const handleClearAllData = () => {
+    const confirmClear = window.confirm(
+      'Are you sure you want to clear ALL data?\n\n' +
+      'This will delete:\n' +
+      '• All habits\n' +
+      '• All activity logs\n' +
+      '• All transfers\n' +
+      '• User profile\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (confirmClear) {
+      // Clear all localStorage keys
+      localStorage.removeItem('flux_habits');
+      localStorage.removeItem('flux_logs');
+      localStorage.removeItem('flux_user');
+      localStorage.removeItem('flux_transfers');
+      localStorage.removeItem('flux_last_transfer');
+      
+      alert('All data cleared successfully!\n\nThe page will now reload.');
+      
+      // Reload to reset state
+      window.location.href = '/';
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -102,6 +122,21 @@ export default function Account() {
               <div className="menu-content">
                 <div className="menu-title">Manual Transfer</div>
                 <div className="menu-subtitle">Test transfer functionality</div>
+              </div>
+              <svg className="chevron" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+
+            <div className="menu-item" onClick={handleClearAllData}>
+              <div className="menu-icon red">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="menu-content">
+                <div className="menu-title">Clear All Data</div>
+                <div className="menu-subtitle">Delete all habits and activity</div>
               </div>
               <svg className="chevron" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />

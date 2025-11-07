@@ -31,6 +31,17 @@ export function HabitProvider({ children }) {
     }
   })
 
+  // Transfer state
+  const [transfers, setTransfers] = useState(() => {
+    const savedTransfers = localStorage.getItem('flux_transfers')
+    return savedTransfers ? JSON.parse(savedTransfers) : []
+  })
+
+  const [lastTransferDate, setLastTransferDate] = useState(() => {
+    const saved = localStorage.getItem('flux_last_transfer')
+    return saved || null
+  })
+
   // Save to localStorage whenever state changes
   useEffect(() => {
     localStorage.setItem('flux_habits', JSON.stringify(habits))
@@ -43,6 +54,16 @@ export function HabitProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('flux_user', JSON.stringify(user))
   }, [user])
+
+  useEffect(() => {
+    localStorage.setItem('flux_transfers', JSON.stringify(transfers))
+  }, [transfers])
+
+  useEffect(() => {
+    if (lastTransferDate) {
+      localStorage.setItem('flux_last_transfer', lastTransferDate)
+    }
+  }, [lastTransferDate])
 
   // Habit CRUD operations
   const addHabit = (habit) => {
@@ -88,7 +109,53 @@ export function HabitProvider({ children }) {
     setLogs((prev) => prev.filter((log) => log.id !== id))
   }
 
-  // Calculations
+  // Transfer calculations
+  const getTransferredBalance = () => {
+    // Sum all completed transfers
+    return transfers.reduce((sum, transfer) => {
+      if (transfer.status === 'completed') {
+        return sum + transfer.amount
+      }
+      return sum
+    }, 0)
+  }
+
+  const getPendingBalance = () => {
+    // Get total earnings
+    const totalEarnings = logs.reduce((sum, log) => sum + log.totalEarnings, 0)
+    
+    // Subtract already transferred amount
+    const transferred = getTransferredBalance()
+    
+    return totalEarnings - transferred
+  }
+
+  const processTransfer = () => {
+    const pending = getPendingBalance()
+    
+    if (pending <= 0) {
+      return { success: false, message: 'No pending balance to transfer' }
+    }
+
+    const now = new Date().toISOString()
+    const newTransfer = {
+      id: Date.now().toString(),
+      amount: pending,
+      date: now,
+      status: 'completed'
+    }
+
+    setTransfers(prev => [...prev, newTransfer])
+    setLastTransferDate(now)
+
+    return { 
+      success: true, 
+      message: `Transfer completed: $${pending.toFixed(2)}`,
+      amount: pending 
+    }
+  }
+
+  // Existing calculations
   const getTotalEarnings = () => {
     return logs.reduce((sum, log) => sum + log.totalEarnings, 0)
   }
@@ -166,6 +233,8 @@ export function HabitProvider({ children }) {
     habits,
     logs,
     user,
+    transfers,
+    lastTransferDate,
     // Habit operations
     addHabit,
     updateHabit,
@@ -174,6 +243,10 @@ export function HabitProvider({ children }) {
     addLog,
     updateLog,
     deleteLog,
+    // Transfer operations
+    getTransferredBalance,
+    getPendingBalance,
+    processTransfer,
     // Calculations
     getTotalEarnings,
     getTodayEarnings,

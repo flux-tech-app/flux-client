@@ -171,6 +171,11 @@
   color: #f97316;
 }
 
+.menu-icon.red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 .menu-icon.gray {
   background: #f3f4f6;
   color: #6b7280;
