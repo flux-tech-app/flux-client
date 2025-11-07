@@ -1,9 +1,15 @@
 /* Design Tokens */
 :root {
-  /* Primary Blues */
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --primary-light: #eff6ff;
+  /* Primary Gradient Colors (Blue to Light Blue) */
+  --gradient-blue: #3b82f6;
+  --gradient-blue-light: #93c5fd;
+  --gradient-blue-dark: #2563eb;
+  --gradient-blue-darker: #1d4ed8;
+  
+  /* Legacy Primary Blues */
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #dbeafe;
 
   /* Success/Earnings Greens */
   --success: #10b981;
@@ -51,6 +57,11 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Gradient Definitions */
+  --gradient-primary: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+  --gradient-primary-diagonal: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
 }
 
 /* Reset and Base Styles */
@@ -104,7 +115,7 @@ button:disabled {
 }
 
 .btn-primary {
-  background-color: var(--primary);
+  background: var(--gradient-primary-diagonal);
   color: white;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
@@ -112,7 +123,7 @@ button:disabled {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-dark);
+  background: var(--gradient-primary-hover);
 }
 
 .btn-secondary {
@@ -140,7 +151,7 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--gradient-blue);
 }
 
 /* Cards */
@@ -190,7 +201,7 @@ input:focus, textarea:focus, select:focus {
 
 .spinner {
   border: 3px solid var(--gray-300);
-  border-top: 3px solid var(--primary);
+  border-top: 3px solid var(--gradient-blue);
   border-radius: 50%;
   width: 40px;
   height: 40px;

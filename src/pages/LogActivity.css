@@ -28,7 +28,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #2563eb;
+  color: #3b82f6;
   font-size: 16px;
   font-weight: 500;
 }
@@ -66,11 +66,11 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: #eff6ff;
+  background: #dbeafe;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
+  color: #3b82f6;
 }
 
 .habit-icon-large.resist {
@@ -123,8 +123,8 @@
 
 .number-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: #3b82f6;
+  background: #dbeafe;
 }
 
 .unit-label {
@@ -153,9 +153,9 @@
 }
 
 .quick-btn:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: #3b82f6;
+  background: #dbeafe;
+  color: #3b82f6;
 }
 
 .quick-btn:active {
@@ -275,11 +275,11 @@
 }
 
 .toggle-switch.on {
-  background: #2563eb;
+  background: #3b82f6;
 }
 
 .toggle-switch.on:hover {
-  background: #1d4ed8;
+  background: #2563eb;
 }
 
 .toggle-knob {
@@ -328,8 +328,8 @@
 
 .topup-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: #3b82f6;
+  background: #dbeafe;
 }
 
 .topup-input::placeholder {
@@ -360,8 +360,8 @@
 
 .datetime-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: #3b82f6;
+  background: #dbeafe;
 }
 
 /* Earnings Preview */
@@ -396,7 +396,7 @@
 .log-button {
   width: 100%;
   padding: 16px;
-  background: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -407,7 +407,7 @@
 }
 
 .log-button:hover {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
 }
 
 .log-button:active {

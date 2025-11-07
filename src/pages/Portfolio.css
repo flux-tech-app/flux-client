@@ -27,8 +27,11 @@
 .app-logo {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
   letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .icon-button {
@@ -97,7 +100,7 @@
 }
 
 .toggle-button.active {
-  color: #2563eb;
+  color: #3b82f6;
 }
 
 .toggle-button.active::after {
@@ -107,11 +110,11 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: #2563eb;
+  background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
 }
 
 .toggle-button:hover {
-  color: #2563eb;
+  color: #3b82f6;
 }
 
 /* Habits Section */

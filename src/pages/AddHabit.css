@@ -34,7 +34,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #2563eb;
+  color: rgba(59, 130, 246, 0.8);
   font-size: 16px;
   font-weight: 500;
 }
@@ -51,18 +51,18 @@
 
 .save-button {
   padding: 8px 16px;
-  background: #2563eb;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .save-button:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
 }
 
 .save-button:disabled {
@@ -112,8 +112,8 @@
 }
 
 .type-option.selected {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(219, 234, 254, 0.5);
 }
 
 .type-icon {
@@ -173,8 +173,8 @@
 
 .text-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(219, 234, 254, 0.3);
 }
 
 .text-input::placeholder {
@@ -209,8 +209,8 @@
 }
 
 .rate-option.selected {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(219, 234, 254, 0.5);
 }
 
 .rate-option-title {
@@ -256,8 +256,8 @@
 
 .amount-input:focus {
   outline: none;
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(219, 234, 254, 0.3);
 }
 
 .per-label {
@@ -345,11 +345,11 @@
 }
 
 .toggle-switch.on {
-  background: #2563eb;
+  background: rgba(59, 130, 246, 0.6);
 }
 
 .toggle-switch.on:hover {
-  background: #1d4ed8;
+  background: rgba(37, 99, 235, 0.7);
 }
 
 .toggle-knob {
@@ -376,8 +376,8 @@
 
 /* Info Card */
 .info-card {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: rgba(219, 234, 254, 0.3);
+  border: 1px solid rgba(147, 197, 253, 0.5);
   border-radius: 12px;
   padding: 16px;
   margin-top: 24px;
@@ -386,7 +386,7 @@
 .info-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e40af;
+  color: rgba(37, 99, 235, 0.8);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -400,6 +400,6 @@
 
 .info-text {
   font-size: 13px;
-  color: #1e40af;
+  color: rgba(37, 99, 235, 0.8);
   line-height: 1.5;
 }
