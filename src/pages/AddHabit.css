@@ -126,6 +126,11 @@
   height: 24px;
 }
 
+/* Amber color for break/resist type icon */
+.type-option:nth-child(2) .type-icon {
+  color: #f59e0b;
+}
+
 .type-title {
   font-size: 15px;
   font-weight: 600;

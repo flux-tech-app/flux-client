@@ -122,8 +122,8 @@
 }
 
 .habit-icon.resist {
-  background: var(--color-warning-light);
-  color: var(--color-warning-dark);
+  background: #fef3c7;
+  color: #f59e0b;
 }
 
 .habit-info {
