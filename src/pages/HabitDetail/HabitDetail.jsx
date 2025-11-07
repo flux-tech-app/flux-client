@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../../context/HabitContext';
 
 export default function HabitDetail() {
   const { id } = useParams();

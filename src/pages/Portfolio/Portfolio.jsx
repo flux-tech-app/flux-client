@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useHabits } from '../context/HabitContext';
-import { calculateTotalValue, calculateTodayEarnings } from '../utils/calculations';
-import { formatCurrency } from '../utils/formatters';
-import HabitCard from '../components/HabitCard';
-import FAB from '../components/FAB';
-import BottomSheet from '../components/BottomSheet';
-import Navigation from '../components/Navigation';
+import { useHabits } from '../../context/HabitContext';
+import { calculateTotalValue, calculateTodayEarnings } from '../../utils/calculations';
+import { formatCurrency } from '../../utils/formatters';
+import HabitCard from '../../components/HabitCard';
+import FAB from '../../components/FAB';
+import BottomSheet from '../../components/BottomSheet';
+import Navigation from '../../components/Navigation';
 import './Portfolio.css';
 
 export default function Portfolio() {

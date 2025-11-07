@@ -1,4 +1,4 @@
-import { calculateStreak } from '../utils/calculations';
+import { calculateStreak } from '../../utils/calculations';
 import './HabitCard.css';
 
 export default function HabitCard({ habit, logs, onClick }) {
