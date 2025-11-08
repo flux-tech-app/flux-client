@@ -1,0 +1,96 @@
+.day-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  color: #374151;
+}
+
+.day-cell:hover:not(.empty):not(.future) {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+/* Empty cells (before month starts) */
+.day-cell.empty {
+  background: transparent;
+  cursor: default;
+}
+
+.day-cell.empty:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Future days */
+.day-cell.future {
+  background: #f3f4f6;
+  color: #d1d5db;
+  cursor: default;
+}
+
+.day-cell.future:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Missed days */
+.day-cell.missed {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+/* Completed days (binary habits) */
+.day-cell.completed {
+  background: #a7f3d0;
+  color: #065f46;
+}
+
+/* Intensity levels for quantitative habits */
+.day-cell.completed.intensity-1 {
+  background: #a7f3d0;
+  color: #065f46;
+}
+
+.day-cell.completed.intensity-2 {
+  background: #6ee7b7;
+  color: #065f46;
+}
+
+.day-cell.completed.intensity-3 {
+  background: #34d399;
+  color: #065f46;
+}
+
+.day-cell.completed.intensity-4 {
+  background: #10b981;
+  color: white;
+}
+
+/* Today indicator */
+.day-cell.today {
+  box-shadow: 0 0 0 1.5px #2563eb;
+}
+
+.day-cell.today:hover {
+  box-shadow: 0 0 0 2px #2563eb, 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 390px) {
+  .day-cell {
+    font-size: 8px;
+    border-radius: 2px;
+  }
+
+  .day-cell.today {
+    box-shadow: 0 0 0 1px #2563eb;
+  }
+}

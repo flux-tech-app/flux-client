@@ -4,20 +4,19 @@ import { useHabits } from '../../context/HabitContext';
 import { 
   calculateStreak, 
   calculateHabitStats,
-  getActivityChartData,
   formatActivityTime 
 } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
+import HabitChart from '../../components/HabitChart';
+import CalendarHeatmap from '../../components/CalendarHeatmap';
 import './HabitDetail.css';
 
 export default function HabitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { habits, logs, updateHabit } = useHabits();
-  const [chartPeriod, setChartPeriod] = useState('30D');
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedBarData, setSelectedBarData] = useState(null);
   
   // Editing state
   const [editForm, setEditForm] = useState({});
@@ -42,7 +41,6 @@ export default function HabitDetail() {
   const lifetimeEarnings = habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
   const currentStreak = calculateStreak(logs, habit.id);
   const stats = calculateHabitStats(habitLogs);
-  const chartData = getActivityChartData(habitLogs, chartPeriod);
   
   // Check if logged today
   const today = new Date();
@@ -85,92 +83,6 @@ export default function HabitDetail() {
       'calorie': 'calorie'
     };
     return units[type] || '';
-  };
-
-  // Handle bar click
-  const handleBarClick = (barIndex) => {
-    if (chartData.length === 0) return;
-
-    const bar = chartData[barIndex];
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    
-    let startDate = new Date(now);
-    let daysPerBar = 1;
-    
-    // Calculate date range based on period
-    switch (chartPeriod) {
-      case '30D':
-        startDate.setDate(now.getDate() - 30);
-        daysPerBar = 1;
-        break;
-      case '90D':
-        startDate.setDate(now.getDate() - 90);
-        daysPerBar = 3;
-        break;
-      case '1Y':
-        startDate.setFullYear(now.getFullYear() - 1);
-        daysPerBar = 7;
-        break;
-      case 'All':
-        const sortedLogs = [...habitLogs].sort((a, b) => 
-          new Date(a.timestamp) - new Date(b.timestamp)
-        );
-        startDate = new Date(sortedLogs[0].timestamp);
-        startDate.setHours(0, 0, 0, 0);
-        const totalDays = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
-        daysPerBar = Math.max(1, Math.ceil(totalDays / chartData.length));
-        break;
-    }
-
-    // Calculate date range for this bar
-    const barStartDate = new Date(startDate);
-    barStartDate.setDate(barStartDate.getDate() + (barIndex * daysPerBar));
-    
-    const barEndDate = new Date(barStartDate);
-    barEndDate.setDate(barStartDate.getDate() + daysPerBar - 1);
-
-    // Get logs for this date range
-    const barLogs = habitLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      logDate.setHours(0, 0, 0, 0);
-      return logDate >= barStartDate && logDate <= barEndDate;
-    });
-
-    // Calculate total earned for this period
-    const totalEarned = barLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-
-    // Format date range
-    let dateRangeText;
-    if (daysPerBar === 1) {
-      if (barStartDate.toDateString() === now.toDateString()) {
-        dateRangeText = 'Today';
-      } else if (barStartDate.toDateString() === new Date(now.getTime() - 24*60*60*1000).toDateString()) {
-        dateRangeText = 'Yesterday';
-      } else {
-        dateRangeText = barStartDate.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'short', 
-          day: 'numeric' 
-        });
-      }
-    } else {
-      const startStr = barStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const endStr = barEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      dateRangeText = `${startStr} - ${endStr}`;
-    }
-
-    setSelectedBarData({
-      dateRange: dateRangeText,
-      logs: barLogs,
-      totalEarned,
-      count: bar.count
-    });
-  };
-
-  // Close bar detail modal
-  const closeBarDetail = () => {
-    setSelectedBarData(null);
   };
 
   // Start editing
@@ -216,13 +128,13 @@ export default function HabitDetail() {
         {/* Header */}
         <header className="detail-header">
           <button className="back-button" onClick={() => navigate('/')}>
-            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="header-title">Position Details</div>
-          <button className="menu-button" onClick={(e) => e.stopPropagation()}>
-            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+          <h1 className="header-title">Position Details</h1>
+          <button className="menu-button">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
           </button>
@@ -230,66 +142,26 @@ export default function HabitDetail() {
 
         {/* Hero Section */}
         <section className="hero-section">
-          <h1 className="habit-name-large">{habit.name}</h1>
+          <h2 className="habit-name-large">{habit.name}</h2>
           <div className="total-earned">
-            <span className="earned-amount">{formatCurrency(lifetimeEarnings)}</span>
+            <div className="earned-amount">{formatCurrency(lifetimeEarnings)}</div>
             <span className="earned-label">lifetime earnings</span>
           </div>
           {isLoggedToday && (
             <div className="today-status">
-              <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>{isBuildHabit ? 'Completed today' : 'Resisted today'}</span>
+              <span>Completed today</span>
             </div>
           )}
         </section>
 
-        {/* Activity Chart Section */}
-        <section className="chart-section">
-          <h2 className="section-title">Activity</h2>
-          <div className="chart-controls">
-            <button 
-              className={`chart-toggle ${chartPeriod === '30D' ? 'active' : ''}`}
-              onClick={() => setChartPeriod('30D')}
-            >
-              30D
-            </button>
-            <button 
-              className={`chart-toggle ${chartPeriod === '90D' ? 'active' : ''}`}
-              onClick={() => setChartPeriod('90D')}
-            >
-              90D
-            </button>
-            <button 
-              className={`chart-toggle ${chartPeriod === '1Y' ? 'active' : ''}`}
-              onClick={() => setChartPeriod('1Y')}
-            >
-              1Y
-            </button>
-            <button 
-              className={`chart-toggle ${chartPeriod === 'All' ? 'active' : ''}`}
-              onClick={() => setChartPeriod('All')}
-            >
-              All
-            </button>
-          </div>
-          <div className="chart-container">
-            {chartData.length > 0 ? (
-              chartData.map((dataPoint, index) => (
-                <div
-                  key={index}
-                  className={`chart-bar ${dataPoint.isToday ? 'active' : ''}`}
-                  style={{ height: `${dataPoint.percentage}%` }}
-                  title={`${dataPoint.count} log${dataPoint.count !== 1 ? 's' : ''}`}
-                  onClick={() => handleBarClick(index)}
-                />
-              ))
-            ) : (
-              <div className="chart-empty">No activity data for this period</div>
-            )}
-          </div>
-        </section>
+        {/* Toggle Chart */}
+        <HabitChart habit={habit} logs={habitLogs} />
+
+        {/* Calendar Heatmap */}
+        <CalendarHeatmap habit={habit} logs={habitLogs} />
 
         {/* Streaks Section */}
         <section className="streaks-section">
@@ -300,11 +172,11 @@ export default function HabitDetail() {
               <div className="stat-label">Current</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{stats.longestStreak}</div>
+              <div className="stat-value">{stats.longestStreak || 0}</div>
               <div className="stat-label">Longest</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{stats.thisWeekCount}/{stats.thisWeekTotal}</div>
+              <div className="stat-value">{stats.weekCount || 0}/7</div>
               <div className="stat-label">This week</div>
             </div>
           </div>
@@ -469,55 +341,6 @@ export default function HabitDetail() {
           )}
         </section>
       </div>
-
-      {/* Bar Detail Bottom Sheet */}
-      {selectedBarData && (
-        <>
-          <div className="modal-overlay" onClick={closeBarDetail} />
-          <div className="bar-detail-sheet">
-            <div className="sheet-header">
-              <h3 className="sheet-title">{selectedBarData.dateRange}</h3>
-              <button className="sheet-close" onClick={closeBarDetail}>
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="sheet-summary">
-              <div className="summary-item">
-                <div className="summary-label">Total Logs</div>
-                <div className="summary-value">{selectedBarData.count}</div>
-              </div>
-              <div className="summary-item">
-                <div className="summary-label">Total Earned</div>
-                <div className="summary-value earned">{formatCurrency(selectedBarData.totalEarned)}</div>
-              </div>
-            </div>
-
-            {selectedBarData.logs.length > 0 && (
-              <div className="sheet-logs">
-                <h4 className="sheet-subtitle">Activity</h4>
-                <div className="sheet-logs-list">
-                  {selectedBarData.logs.map(log => (
-                    <div key={log.id} className="sheet-log-item">
-                      <div className="sheet-log-info">
-                        <div className="sheet-log-title">
-                          {log.amount ? `${log.amount} ${log.unit || 'minutes'}` : 'Completed'}
-                        </div>
-                        <div className="sheet-log-time">{formatActivityTime(log.timestamp)}</div>
-                      </div>
-                      <div className="sheet-log-amount">
-                        +{formatCurrency(log.totalEarnings || 0)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
     </div>
   );
 }
