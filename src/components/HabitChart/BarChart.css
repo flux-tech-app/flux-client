@@ -17,24 +17,7 @@
   font-size: 14px;
 }
 
-/* Y-axis labels */
-.y-axis {
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-right: 8px;
-  flex-shrink: 0;
-}
-
-.y-label {
-  font-size: 10px;
-  color: #9ca3af;
-  text-align: right;
-  line-height: 1;
-}
-
-/* Chart area */
+/* Chart area - now takes full width without Y-axis */
 .chart-area {
   flex: 1;
   display: flex;
@@ -48,69 +31,116 @@
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  padding: 0 12px 0 0;
+  padding: 0 8px;
 }
 
 .bar-wrapper {
   flex: 1;
   height: 100%;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   cursor: pointer;
   position: relative;
+  min-width: 3px;
 }
 
+/* Hover tooltip */
+.bar-tooltip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Show tooltip on hover (desktop) or active (mobile touch) */
+.bar-wrapper:hover .bar-tooltip,
+.bar-wrapper:active .bar-tooltip {
+  opacity: 1;
+}
+
+.bar-tooltip::after {
+  display: none;
+}
+
+/* Bar styling */
 .bar {
   width: 100%;
-  background: #e5e7eb;
-  border-radius: 3px 3px 0 0;
+  border-radius: 4px 4px 0 0;
   transition: all 0.2s ease;
-  min-height: 2px;
+  min-height: 4px;
 }
 
 .bar.has-data {
   background: #93c5fd;
 }
 
-.bar-wrapper:hover .bar.has-data {
-  background: #60a5fa;
+.bar.no-data {
+  background: #e5e7eb;
+  opacity: 0.5;
+}
+
+/* Hover states */
+.bar-wrapper:hover .bar.has-data,
+.bar.has-data.hovered {
+  background: #3b82f6;
   transform: scaleY(1.05);
   transform-origin: bottom;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.bar-wrapper:hover .bar.no-data,
+.bar.no-data.hovered {
+  background: #d1d5db;
+  opacity: 0.7;
 }
 
 /* X-axis labels */
 .x-axis {
   position: absolute;
   bottom: -24px;
-  left: 0;
-  right: 12px;
+  left: 8px;
+  right: 8px;
   display: flex;
   justify-content: space-between;
   padding-top: 8px;
 }
 
 .x-label {
-  font-size: 9px;
+  font-size: 10px;
   color: #9ca3af;
   text-align: center;
 }
 
 /* Responsive adjustments */
 @media (max-width: 390px) {
-  .y-axis {
-    width: 36px;
-    padding-right: 6px;
+  .bars-container {
+    gap: 2px;
+    padding: 0 6px;
   }
 
-  .y-label {
-    font-size: 9px;
+  .bar-wrapper {
+    min-width: 2px;
   }
 
   .x-label {
-    font-size: 8px;
+    font-size: 9px;
   }
 
-  .bars-container {
-    gap: 2px;
+  .bar-tooltip {
+    font-size: 11px;
+    padding: 5px 8px;
   }
 }

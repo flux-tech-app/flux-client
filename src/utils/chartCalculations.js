@@ -95,8 +95,11 @@ export function getProgressChartData(habit, logs, period) {
     };
   });
 
+  // Aggregate data for long periods to reduce bar count
+  const aggregatedData = aggregateChartData(chartData, period, valueType);
+
   // Calculate max value for scaling
-  const actualMax = Math.max(...chartData.map(d => d.value || 0), 1);
+  const actualMax = Math.max(...aggregatedData.map(d => d.value || 0), 1);
   
   // Financial app scaling logic - context-dependent padding
   let displayMax;
@@ -119,7 +122,7 @@ export function getProgressChartData(habit, logs, period) {
   }
 
   return {
-    data: chartData,
+    data: aggregatedData,
     valueType,
     maxValue: displayMax, // Use padded value for display
     period,
@@ -334,11 +337,18 @@ function calculateProgressSummary(habit, logs, period) {
   }
 
   const valueType = getHabitValueType(habit);
+  
+  // Get the date range for the period to calculate true average
+  const oldestLog = logs.length > 0 
+    ? logs.reduce((oldest, log) => log.date < oldest ? log.date : oldest, logs[0].date)
+    : null;
+  const { dates } = getPeriodRange(period, oldestLog);
+  const periodDays = dates.length;
 
   switch (valueType) {
     case 'duration': {
       const totalAmount = logs.reduce((sum, log) => sum + (log.duration || log.amount || 0), 0);
-      const avgAmount = Math.round(totalAmount / logs.length);
+      const avgAmount = Math.round(totalAmount / periodDays); // Divide by period days
       return {
         label: `Average Duration (${period})`,
         value: `${avgAmount} min`,
@@ -349,7 +359,7 @@ function calculateProgressSummary(habit, logs, period) {
 
     case 'count': {
       const totalCount = logs.reduce((sum, log) => sum + (log.count || log.amount || 0), 0);
-      const avgCount = Math.round(totalCount / logs.length);
+      const avgCount = Math.round(totalCount / periodDays); // Divide by period days
       const unit = habit.unit || 'units';
       return {
         label: `Average ${capitalize(unit)} (${period})`,
@@ -361,12 +371,11 @@ function calculateProgressSummary(habit, logs, period) {
 
     case 'completion': {
       const completedCount = logs.filter(log => log.duration || log.amount || log.count).length;
-      const totalCount = logs.length;
-      const percentage = Math.round((completedCount / totalCount) * 100);
+      const percentage = Math.round((completedCount / periodDays) * 100);
       return {
         label: `Completion Rate (${period})`,
         value: `${percentage}%`,
-        subtext: `${completedCount}/${totalCount} days`,
+        subtext: `${completedCount}/${periodDays} days`,
         period,
         rawValue: percentage
       };
@@ -495,6 +504,60 @@ function groupLogsByDate(logs) {
 }
 
 /**
+ * Aggregate chart data for longer periods
+ * 90D: Weekly aggregates (~13 bars)
+ * 1Y: Monthly aggregates (12 bars)
+ * @private
+ */
+function aggregateChartData(chartData, period, valueType) {
+  // Only aggregate for 90D and 1Y
+  if (period !== '90D' && period !== '1Y') {
+    return chartData;
+  }
+
+  const aggregationSize = period === '90D' ? 7 : 30; // Weekly or monthly
+  const aggregated = [];
+
+  for (let i = 0; i < chartData.length; i += aggregationSize) {
+    const chunk = chartData.slice(i, i + aggregationSize);
+    
+    // Get first and last date for label
+    const firstDate = chunk[0].date;
+    const lastDate = chunk[chunk.length - 1].date;
+    
+    // Check if any data in this chunk
+    const hasData = chunk.some(d => d.hasData);
+    
+    // Calculate aggregated value based on type
+    let aggregatedValue = null;
+    
+    if (hasData) {
+      const dataPoints = chunk.filter(d => d.hasData);
+      
+      if (valueType === 'duration' || valueType === 'count') {
+        // Sum all values in the period
+        aggregatedValue = dataPoints.reduce((sum, d) => sum + (d.value || 0), 0);
+      } else if (valueType === 'completion') {
+        // Average completion rate
+        const completedDays = dataPoints.filter(d => d.value > 0).length;
+        aggregatedValue = Math.round((completedDays / chunk.length) * 100);
+      }
+    }
+    
+    aggregated.push({
+      date: firstDate,
+      dateRange: { start: firstDate, end: lastDate },
+      value: aggregatedValue,
+      hasData,
+      isAggregated: true,
+      dayCount: chunk.length
+    });
+  }
+
+  return aggregated;
+}
+
+/**
  * Determine habit value type from rateType
  * @private
  */
@@ -523,6 +586,7 @@ function capitalize(str) {
 /**
  * Get X-axis labels for chart based on period
  * Returns evenly spaced date labels (typically 3-5 labels)
+ * For "All" period, ensures no duplicate months
  * 
  * @param {Array} dates - Array of date strings
  * @param {string} period - Time period
@@ -530,6 +594,11 @@ function capitalize(str) {
  */
 export function getXAxisLabels(dates, period) {
   if (!dates || dates.length === 0) return [];
+
+  // Special handling for "All" period to avoid duplicate months
+  if (period === 'All') {
+    return getSmartLabelsForAllPeriod(dates);
+  }
 
   let labelCount;
   switch (period) {
@@ -543,7 +612,6 @@ export function getXAxisLabels(dates, period) {
       labelCount = 4;
       break;
     case '1Y':
-    case 'All':
       labelCount = 5;
       break;
     default:
@@ -566,6 +634,74 @@ export function getXAxisLabels(dates, period) {
     }
   }
 
+  return labels;
+}
+
+/**
+ * Get smart labels for "All" period that avoid duplicate months
+ * @private
+ */
+function getSmartLabelsForAllPeriod(dates) {
+  const firstDate = new Date(dates[0] + 'T00:00:00');
+  const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+  
+  // Calculate span in days
+  const daySpan = Math.floor((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+  
+  // If less than 60 days, show dates with day numbers
+  if (daySpan <= 60) {
+    const step = Math.floor(dates.length / 4);
+    const labels = [];
+    
+    for (let i = 0; i < 5; i++) {
+      const index = i === 4 ? dates.length - 1 : i * step;
+      if (index < dates.length) {
+        labels.push({
+          date: dates[index],
+          label: formatDateLabel(dates[index], '30D') // Use month + day format
+        });
+      }
+    }
+    return labels;
+  }
+  
+  // For longer periods, select one date per unique month
+  const seenMonths = new Set();
+  const monthDates = [];
+  
+  // Find first occurrence of each month
+  for (const dateStr of dates) {
+    const date = new Date(dateStr + 'T00:00:00');
+    const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+    
+    if (!seenMonths.has(monthKey)) {
+      seenMonths.add(monthKey);
+      monthDates.push(dateStr);
+    }
+  }
+  
+  // If we have 5 or fewer months, use all of them
+  if (monthDates.length <= 5) {
+    return monthDates.map(dateStr => ({
+      date: dateStr,
+      label: formatDateLabel(dateStr, 'All')
+    }));
+  }
+  
+  // If more than 5 months, select ~5 evenly spaced months
+  const monthStep = Math.floor(monthDates.length / 4);
+  const labels = [];
+  
+  for (let i = 0; i < 5; i++) {
+    const index = i === 4 ? monthDates.length - 1 : i * monthStep;
+    if (index < monthDates.length) {
+      labels.push({
+        date: monthDates[index],
+        label: formatDateLabel(monthDates[index], 'All')
+      });
+    }
+  }
+  
   return labels;
 }
 

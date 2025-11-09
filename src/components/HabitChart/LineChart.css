@@ -17,50 +17,47 @@
   font-size: 14px;
 }
 
-/* Y-axis labels */
-.y-axis {
-  width: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-right: 8px;
-  flex-shrink: 0;
-}
-
-.y-label {
-  font-size: 10px;
-  color: #9ca3af;
-  text-align: right;
-  line-height: 1;
-}
-
 /* Chart area */
 .chart-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 /* SVG chart */
 .line-chart-svg {
   width: 100%;
   height: 100%;
-  padding-right: 12px;
+  padding: 0 8px;
 }
 
-/* Data points */
-.data-point {
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Hover line - vertical dashed line that follows pointer */
+.hover-line {
+  stroke: #2563eb;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
-.data-point:hover {
-  r: 5;
+/* Hover dot - shows exact point on line */
+.hover-dot {
+  fill: white;
+  stroke: #2563eb;
+  stroke-width: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.4));
+}
+
+/* Current position dot - shows most recent value */
+.current-dot {
   fill: #2563eb;
-}
-
-.active-dot {
+  stroke: white;
+  stroke-width: 2;
+  pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
 }
 
@@ -68,31 +65,22 @@
 .x-axis {
   position: absolute;
   bottom: -24px;
-  left: 0;
-  right: 12px;
+  left: 8px;
+  right: 8px;
   display: flex;
   justify-content: space-between;
   padding-top: 8px;
 }
 
 .x-label {
-  font-size: 9px;
+  font-size: 10px;
   color: #9ca3af;
   text-align: center;
 }
 
 /* Responsive adjustments */
 @media (max-width: 390px) {
-  .y-axis {
-    width: 36px;
-    padding-right: 6px;
-  }
-
-  .y-label {
-    font-size: 9px;
-  }
-
   .x-label {
-    font-size: 8px;
+    font-size: 9px;
   }
 }

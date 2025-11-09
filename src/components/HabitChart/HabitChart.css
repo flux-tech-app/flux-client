@@ -78,31 +78,44 @@
 
 /* Metric summary card */
 .metric-display {
-  padding: 12px;
+  padding: 16px;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 16px;
   text-align: center;
 }
 
+.metric-display.earnings-display,
+.metric-display.progress-display {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
 .metric-label {
-  font-size: 11px;
+  font-size: 9px;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .metric-value-large {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 700;
   color: #111827;
   line-height: 1.2;
+  transition: all 0.2s ease;
 }
 
 .metric-value-large.earnings {
+  font-size: 24px;
   color: #2563eb;
+}
+
+.metric-display.progress-display .metric-value-large {
+  font-size: 24px;
+  color: #111827;
 }
 
 .metric-subtext {
@@ -112,10 +125,26 @@
 }
 
 .metric-change {
-  font-size: 13px;
-  color: #2563eb;
-  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.metric-change.positive {
+  color: #10b981;
+}
+
+.metric-change.negative {
+  color: #ef4444;
+}
+
+.metric-date {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 /* Chart container */
@@ -123,8 +152,8 @@
   position: relative;
   background: #f9fafb;
   border-radius: 12px;
-  padding: 16px 12px 32px 12px;
-  min-height: 200px;
+  padding: 20px 12px 32px 12px;
+  min-height: 220px;
   margin-bottom: 16px;
 }
 
@@ -175,5 +204,18 @@
 
   .metric-value-large {
     font-size: 28px;
+  }
+  
+  .metric-value-large.earnings,
+  .metric-display.progress-display .metric-value-large {
+    font-size: 22px;
+  }
+  
+  .metric-change {
+    font-size: 10px;
+  }
+  
+  .metric-date {
+    font-size: 9px;
   }
 }

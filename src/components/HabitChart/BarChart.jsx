@@ -1,13 +1,15 @@
-import React from 'react';
-import { getXAxisLabels, getYAxisLabels } from '../../utils/chartCalculations';
+import React, { useRef } from 'react';
+import { getXAxisLabels } from '../../utils/chartCalculations';
 import './BarChart.css';
 
 /**
- * BarChart Component
- * Displays progress data as vertical bars
- * Adapts to habit type (duration, count, or completion)
+ * BarChart Component - Clean Style
+ * Displays progress data as vertical bars without Y-axis
+ * Interactive hover to see exact values
  */
-function BarChart({ data, habit }) {
+function BarChart({ data, habit, onHoverChange }) {
+  const hoverTimeoutRef = useRef(null);
+
   if (!data || !data.data || data.data.length === 0) {
     return (
       <div className="bar-chart-empty">
@@ -18,20 +20,73 @@ function BarChart({ data, habit }) {
 
   const { data: chartPoints, valueType, maxValue, period } = data;
 
-  // Get axis labels
+  // Get X-axis labels
   const xLabels = getXAxisLabels(chartPoints.map(d => d.date), period);
-  const yLabels = getYAxisLabels(maxValue, valueType, habit?.unit);
+
+  // Format value for display
+  const formatValue = (value, type, point) => {
+    if (value === null) return 'No data';
+    
+    // For aggregated data (90D/1Y), show total or average
+    const isAggregated = point?.isAggregated;
+    const dayCount = point?.dayCount || 1;
+    
+    switch (type) {
+      case 'duration':
+        if (isAggregated) {
+          return `${value} min total`;
+        }
+        return `${value} min`;
+      case 'count':
+        if (isAggregated) {
+          return `${value} total`;
+        }
+        return `${value} ${habit?.unit || 'units'}`;
+      case 'completion':
+        return `${value}%`;
+      default:
+        return value.toString();
+    }
+  };
+
+  // Handle bar hover - debounced
+  const handleBarHover = (point) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    if (onHoverChange) {
+      onHoverChange({
+        value: point.value,
+        date: point.date,
+        isHovering: true,
+        valueType
+      });
+    }
+  };
+
+  // Handle bar leave - debounced
+  const handleBarLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (onHoverChange) {
+        // Find most recent value
+        const recentPoint = [...chartPoints].reverse().find(p => p.value !== null);
+        onHoverChange({
+          value: recentPoint?.value || null,
+          date: null,
+          isHovering: false,
+          valueType
+        });
+      }
+    }, 100);
+  };
 
   return (
     <div className="bar-chart">
-      {/* Y-axis labels */}
-      <div className="y-axis">
-        {yLabels.map((label, idx) => (
-          <div key={idx} className="y-label">{label}</div>
-        ))}
-      </div>
-
-      {/* Chart area with bars */}
       <div className="chart-area">
         <div className="bars-container">
           {chartPoints.map((point, idx) => {
@@ -39,15 +94,26 @@ function BarChart({ data, habit }) {
               ? (point.value / maxValue) * 100 
               : 0;
 
+            const formattedValue = formatValue(point.value, valueType, point);
+
             return (
               <div 
                 key={point.date}
                 className="bar-wrapper"
-                title={point.hasData ? `${point.date}: ${point.value}` : point.date}
+                onMouseEnter={() => handleBarHover(point)}
+                onMouseLeave={handleBarLeave}
+                onTouchStart={() => handleBarHover(point)}
+                onTouchEnd={handleBarLeave}
               >
+                {/* Hover tooltip - pure CSS, no React state */}
+                <div className="bar-tooltip" data-value={formattedValue}>
+                  {formattedValue}
+                </div>
+                
+                {/* Bar */}
                 <div 
-                  className={`bar ${point.hasData ? 'has-data' : ''}`}
-                  style={{ height: `${heightPercent}%` }}
+                  className={`bar ${point.hasData ? 'has-data' : 'no-data'}`}
+                  style={{ height: point.hasData ? `${heightPercent}%` : '4px' }}
                 />
               </div>
             );
