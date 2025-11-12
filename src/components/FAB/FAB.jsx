@@ -1,8 +1,18 @@
+import { motion } from 'framer-motion';
+import { animations } from '../../utils/AnimationConfig';
 import './FAB.css';
 
-export default function FAB({ onClick }) {
+export default function FAB({ onClick, isOpen = false }) {
   return (
-    <button className="fab" onClick={onClick} aria-label="Open actions">
+    <motion.button 
+      className="fab" 
+      onClick={onClick} 
+      aria-label="Open actions"
+      whileTap={animations.fab.tap}
+      whileHover={animations.fab.hover}
+      transition={animations.fab.transition}
+      animate={{ rotate: isOpen ? 45 : 0 }}
+    >
       <svg fill="currentColor" viewBox="0 0 20 20">
         <path 
           fillRule="evenodd" 
@@ -10,6 +20,6 @@ export default function FAB({ onClick }) {
           clipRule="evenodd" 
         />
       </svg>
-    </button>
+    </motion.button>
   );
 }

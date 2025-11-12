@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import { calculateStreak } from '../../utils/calculations';
+import { animations } from '../../utils/AnimationConfig';
 import './HabitCard.css';
 
 export default function HabitCard({ habit, logs, onClick }) {
@@ -19,7 +21,12 @@ export default function HabitCard({ habit, logs, onClick }) {
   const isBuildHabit = habit.type === 'build';
 
   return (
-    <div className="habit-card" onClick={onClick}>
+    <motion.div 
+      className="habit-card" 
+      onClick={onClick}
+      whileTap={animations.cardPress.tap}
+      transition={animations.cardPress.transition}
+    >
       {/* Header */}
       <div className="habit-header">
         <div className="habit-info">
@@ -83,6 +90,6 @@ export default function HabitCard({ habit, logs, onClick }) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

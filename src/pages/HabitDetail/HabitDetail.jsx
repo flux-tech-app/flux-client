@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { 
   calculateStreak, 
@@ -9,11 +9,11 @@ import {
 import { formatCurrency } from '../../utils/formatters';
 import HabitChart from '../../components/HabitChart';
 import CalendarHeatmap from '../../components/CalendarHeatmap';
+import BackButton from '../../components/BackButton';
 import './HabitDetail.css';
 
 export default function HabitDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { habits, logs, updateHabit } = useHabits();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,7 +28,7 @@ export default function HabitDetail() {
       <div className="habit-detail-page">
         <div className="error-container">
           <p>Habit not found</p>
-          <button onClick={() => navigate('/')}>Back to Portfolio</button>
+          <BackButton to="/" />
         </div>
       </div>
     );
@@ -127,11 +127,7 @@ export default function HabitDetail() {
       <div className="habit-detail-container">
         {/* Header */}
         <header className="detail-header">
-          <button className="back-button" onClick={() => navigate('/')}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          <BackButton to="/" />
           <h1 className="header-title">Position Details</h1>
           <button className="menu-button">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">

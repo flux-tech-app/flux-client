@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useHabits } from '../../context/HabitContext';
 import { calculateTodayEarnings, getNextTransferDate } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
@@ -7,6 +8,7 @@ import HabitCard from '../../components/HabitCard';
 import FAB from '../../components/FAB';
 import BottomSheet from '../../components/BottomSheet';
 import Navigation from '../../components/Navigation';
+import { animations } from '../../utils/AnimationConfig';
 import './Portfolio.css';
 
 export default function Portfolio() {
@@ -69,7 +71,7 @@ export default function Portfolio() {
           <button className="toggle-button">Analytics</button>
         </section>
 
-        {/* Habit Cards */}
+        {/* Habit Cards with Stagger Animation */}
         <section className="habits-section">
           {habits.length === 0 ? (
             <div className="empty-state">
@@ -82,22 +84,35 @@ export default function Portfolio() {
               <p>Tap the + button to create your first position</p>
             </div>
           ) : (
-            <div className="habits-list">
-              {habits.map(habit => (
-                <HabitCard
+            <motion.div 
+              className="habits-list"
+              variants={animations.stagger.container}
+              initial="initial"
+              animate="animate"
+            >
+              {habits.map((habit, index) => (
+                <motion.div
                   key={habit.id}
-                  habit={habit}
-                  logs={logs}
-                  onClick={() => handleHabitClick(habit.id)}
-                />
+                  variants={animations.stagger.item}
+                  custom={index}
+                >
+                  <HabitCard
+                    habit={habit}
+                    logs={logs}
+                    onClick={() => handleHabitClick(habit.id)}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </section>
       </div>
 
       {/* Floating Action Button */}
-      <FAB onClick={() => setIsSheetOpen(true)} />
+      <FAB 
+        onClick={() => setIsSheetOpen(true)}
+        isOpen={isSheetOpen}
+      />
 
       {/* Bottom Sheet */}
       <BottomSheet 

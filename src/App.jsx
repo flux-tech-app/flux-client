@@ -1,15 +1,22 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { HabitProvider, useHabits } from './context/HabitContext';
+import { useNavigationDirection } from './hooks/useNavigationDirection';
+import PageTransition from './components/PageTransition';
 import Portfolio from './pages/Portfolio';
 import AddHabit from './pages/AddHabit';
 import LogActivity from './pages/LogActivity';
 import Activity from './pages/Activity';
 import Account from './pages/Account';
 import HabitDetail from './pages/HabitDetail';
+import Indices from './pages/Indices';
+import IndexDetail from './pages/IndexDetail';
 
-// Onboarding guard wrapper
+// Onboarding guard wrapper with route transitions
 function AppRoutes() {
   const { user, updateUser } = useHabits();
+  const location = useLocation();
+  const direction = useNavigationDirection();
 
   // Check if we should skip onboarding (for testing)
   const urlParams = new URLSearchParams(window.location.search);
@@ -52,15 +59,52 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Portfolio />} />
-      <Route path="/add" element={<AddHabit />} />
-      <Route path="/log/:habitId" element={<LogActivity />} />
-      <Route path="/habit/:id" element={<HabitDetail />} />
-      <Route path="/activity" element={<Activity />} />
-      <Route path="/account" element={<Account />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    // AnimatePresence enables exit animations when routes change
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <PageTransition direction={direction}>
+            <Portfolio />
+          </PageTransition>
+        } />
+        <Route path="/add" element={
+          <PageTransition direction={direction}>
+            <AddHabit />
+          </PageTransition>
+        } />
+        <Route path="/log/:habitId" element={
+          <PageTransition direction={direction}>
+            <LogActivity />
+          </PageTransition>
+        } />
+        <Route path="/habit/:id" element={
+          <PageTransition direction={direction}>
+            <HabitDetail />
+          </PageTransition>
+        } />
+        <Route path="/activity" element={
+          <PageTransition direction={direction}>
+            <Activity />
+          </PageTransition>
+        } />
+        <Route path="/indices" element={
+          <PageTransition direction={direction}>
+            <Indices />
+          </PageTransition>
+        } />
+        <Route path="/indices/:indexId" element={
+          <PageTransition direction={direction}>
+            <IndexDetail />
+          </PageTransition>
+        } />
+        <Route path="/account" element={
+          <PageTransition direction={direction}>
+            <Account />
+          </PageTransition>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
