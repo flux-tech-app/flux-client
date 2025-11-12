@@ -20,11 +20,13 @@ export default function BottomSheet({ isOpen, onClose, habits, logs }) {
   };
 
   const handleHabitClick = (habitId) => {
-    navigate(`/log/${habitId}`);
+    // Explicit forward direction
+    navigate(`/log/${habitId}`, { state: { direction: 'forward' } });
   };
 
   const handleAddClick = () => {
-    navigate('/add');
+    // Explicit forward direction
+    navigate('/add', { state: { direction: 'forward' } });
   };
 
   return (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { 
   calculateStreak, 
@@ -14,6 +14,7 @@ import './HabitDetail.css';
 
 export default function HabitDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { habits, logs, updateHabit } = useHabits();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,7 +29,7 @@ export default function HabitDetail() {
       <div className="habit-detail-page">
         <div className="error-container">
           <p>Habit not found</p>
-          <BackButton to="/" />
+          <button onClick={() => navigate('/', { state: { direction: 'back' } })}>Back to Portfolio</button>
         </div>
       </div>
     );

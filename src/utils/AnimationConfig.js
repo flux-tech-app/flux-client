@@ -2,7 +2,7 @@
 // Following iOS and professional app standards
 
 export const animations = {
-  // Page transitions - iOS-style directional slides
+  // Page transitions - iOS-style directional slides with refined spring physics
   page: {
     // Forward navigation - slide in from right
     slideInRight: {
@@ -12,34 +12,34 @@ export const animations = {
         opacity: 1,
         transition: {
           type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
+          stiffness: 350,
+          damping: 35,
+          mass: 1
         }
       },
       exit: { 
-        x: '-30%', 
+        x: '-25%', 
         opacity: 0,
         transition: {
           type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
+          stiffness: 350,
+          damping: 35,
+          mass: 1
         }
       }
     },
 
     // Back navigation - slide out to right
     slideOutRight: {
-      initial: { x: '-30%', opacity: 0 },
+      initial: { x: '-25%', opacity: 0 },
       animate: { 
         x: 0, 
         opacity: 1,
         transition: {
           type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
+          stiffness: 350,
+          damping: 35,
+          mass: 1
         }
       },
       exit: { 
@@ -47,9 +47,9 @@ export const animations = {
         opacity: 0,
         transition: {
           type: 'spring',
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8
+          stiffness: 350,
+          damping: 35,
+          mass: 1
         }
       }
     },

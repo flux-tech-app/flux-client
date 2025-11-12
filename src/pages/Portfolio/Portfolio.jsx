@@ -22,7 +22,8 @@ export default function Portfolio() {
   const nextTransfer = getNextTransferDate();
 
   const handleHabitClick = (habitId) => {
-    navigate(`/habit/${habitId}`);
+    // Explicit forward direction
+    navigate(`/habit/${habitId}`, { state: { direction: 'forward' } });
   };
 
   return (

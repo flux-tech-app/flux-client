@@ -1,66 +1,61 @@
 import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
 /**
- * Custom hook to determine navigation direction based on route hierarchy
- * Returns: 'forward', 'back', or 'fade'
+ * Simple, reliable navigation direction hook
+ * Uses explicit direction from location.state when available
+ * Falls back to history tracking for browser back button
  */
 export function useNavigationDirection() {
   const location = useLocation();
-  const prevLocation = useRef(null);
+  const navigationType = useNavigationType();
+  const prevPathRef = useRef(location.pathname);
+  const historyStackRef = useRef([location.pathname]);
 
-  // Define route depth hierarchy
-  const routeDepth = {
-    '/': 0,
-    '/activity': 0,
-    '/indices': 0,
-    '/account': 0,
-    '/add': 1,
-    '/habit/:id': 1,
-    '/log/:habitId': 1,
-    '/indices/:indexId': 1
-  };
-
-  // Get depth for a path
-  const getDepth = (pathname) => {
-    // Handle exact matches
-    if (routeDepth[pathname] !== undefined) {
-      return routeDepth[pathname];
+  // Bottom nav paths that should fade
+  const bottomNavPaths = ['/', '/activity', '/indices', '/account'];
+  
+  // Get explicit direction from location state (most reliable)
+  const explicitDirection = location.state?.direction;
+  
+  if (explicitDirection) {
+    // Update history stack
+    if (explicitDirection === 'forward') {
+      historyStackRef.current.push(location.pathname);
+    } else if (explicitDirection === 'back') {
+      historyStackRef.current.pop();
     }
-    
-    // Handle dynamic routes
-    if (pathname.startsWith('/habit/')) return routeDepth['/habit/:id'];
-    if (pathname.startsWith('/log/')) return routeDepth['/log/:habitId'];
-    if (pathname.startsWith('/indices/') && pathname !== '/indices') {
-      return routeDepth['/indices/:indexId'];
-    }
-    
-    return 0;
-  };
-
-  // Determine direction
-  let direction = 'fade'; // Default for same-level navigation
-
-  if (prevLocation.current) {
-    const prevDepth = getDepth(prevLocation.current);
-    const currentDepth = getDepth(location.pathname);
-    
-    // Check if navigating between bottom nav tabs (same depth = 0)
-    const isBottomNavTransition = prevDepth === 0 && currentDepth === 0;
-    
-    if (isBottomNavTransition) {
-      direction = 'fade';
-    } else if (currentDepth > prevDepth) {
-      direction = 'forward';
-    } else if (currentDepth < prevDepth) {
-      direction = 'back';
-    }
+    prevPathRef.current = location.pathname;
+    return explicitDirection;
   }
 
-  // Update previous location
-  useEffect(() => {
-    prevLocation.current = location.pathname;
-  }, [location.pathname]);
+  // Fallback: Determine direction from navigation context
+  const currentPath = location.pathname;
+  const prevPath = prevPathRef.current;
 
-  return direction;
+  // Update ref for next render
+  prevPathRef.current = currentPath;
+
+  // Bottom nav transitions should fade
+  if (bottomNavPaths.includes(prevPath) && bottomNavPaths.includes(currentPath)) {
+    return 'fade';
+  }
+
+  // Browser back button detection
+  if (navigationType === 'POP') {
+    historyStackRef.current.pop();
+    return 'back';
+  }
+
+  // Check if returning to a page we've seen before
+  const lastIndex = historyStackRef.current.lastIndexOf(currentPath);
+  if (lastIndex !== -1 && lastIndex < historyStackRef.current.length - 1) {
+    // Going back to an earlier page
+    historyStackRef.current = historyStackRef.current.slice(0, lastIndex + 1);
+    return 'back';
+  }
+
+  // Default: Going forward to a new page
+  historyStackRef.current.push(currentPath);
+  return 'forward';
 }

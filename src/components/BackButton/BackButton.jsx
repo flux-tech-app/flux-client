@@ -3,7 +3,7 @@ import './BackButton.css';
 
 /**
  * BackButton - Reusable back button component
- * Automatically navigates back (direction inferred by routing depth)
+ * Always navigates with explicit 'back' direction
  * 
  * Usage:
  * <BackButton />
@@ -17,8 +17,10 @@ export default function BackButton({ to = null, onClick = null, label = null }) 
     if (onClick) {
       onClick();
     } else if (to) {
-      navigate(to);
+      // Explicit back direction
+      navigate(to, { state: { direction: 'back' } });
     } else {
+      // Use history back with explicit direction
       navigate(-1);
     }
   };

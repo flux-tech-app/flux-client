@@ -59,7 +59,6 @@ function AppRoutes() {
   }
 
   return (
-    // AnimatePresence enables exit animations when routes change
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={
