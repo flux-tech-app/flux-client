@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
-import PageTransition from '../../components/PageTransition';
 import './AddHabit.css';
 
 export default function AddHabit() {

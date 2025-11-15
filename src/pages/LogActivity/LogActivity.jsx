@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
-import PageTransition from '../../components/PageTransition';
 import './LogActivity.css';
 
 export default function LogActivity() {

@@ -1,7 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { HabitProvider, useHabits } from './context/HabitContext';
-import PageTransition from './components/PageTransition';
 import Onboarding from './pages/Onboarding';
 import Portfolio from './pages/Portfolio';
 import AddHabit from './pages/AddHabit';
@@ -29,58 +27,29 @@ function AppRoutes() {
   // Show onboarding flow for first-time users
   if (!user?.hasCompletedOnboarding) {
     return (
-      <Onboarding 
+      <Onboarding
         onComplete={() => updateUser({ hasCompletedOnboarding: true })}
       />
     );
   }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <PageTransition>
-            <Portfolio />
-          </PageTransition>
-        } />
-        <Route path="/add" element={
-          <PageTransition>
-            <AddHabit />
-          </PageTransition>
-        } />
-        <Route path="/log/:habitId" element={
-          <PageTransition>
-            <LogActivity />
-          </PageTransition>
-        } />
-        <Route path="/habit/:id" element={
-          <PageTransition>
-            <HabitDetail />
-          </PageTransition>
-        } />
-        <Route path="/activity" element={
-          <PageTransition>
-            <Activity />
-          </PageTransition>
-        } />
-        <Route path="/indices" element={
-          <PageTransition>
-            <Indices />
-          </PageTransition>
-        } />
-        <Route path="/indices/:indexId" element={
-          <PageTransition>
-            <IndexDetail />
-          </PageTransition>
-        } />
-        <Route path="/account" element={
-          <PageTransition>
-            <Account />
-          </PageTransition>
-        } />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+    <Routes location={location}>
+      {/* Bottom Nav Routes - NO transitions, instant navigation */}
+      <Route path="/" element={<Portfolio />} />
+      <Route path="/activity" element={<Activity />} />
+      <Route path="/indices" element={<Indices />} />
+      <Route path="/account" element={<Account />} />
+
+      {/* Stacked Navigation Routes - NO PageTransition (native iOS-style) */}
+      <Route path="/add" element={<AddHabit />} />
+      <Route path="/log/:habitId" element={<LogActivity />} />
+      <Route path="/habit/:id" element={<HabitDetail />} />
+      <Route path="/indices/:indexId" element={<IndexDetail />} />
+
+      {/* Catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
