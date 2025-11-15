@@ -5,8 +5,9 @@ import { useHabits } from '../../context/HabitContext';
 import { calculateTodayEarnings, getNextTransferDate } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
 import HabitCard from '../../components/HabitCard';
-import FAB from '../../components/FAB';
-import BottomSheet from '../../components/BottomSheet';
+// CHAT DEMO: Old form-based flow disabled - FluxChat replaces FAB + BottomSheet
+// import FAB from '../../components/FAB';
+// import BottomSheet from '../../components/BottomSheet';
 import Navigation from '../../components/Navigation';
 import EmptyState from './EmptyState';
 import { animations } from '../../utils/AnimationConfig';
@@ -15,7 +16,8 @@ import './Portfolio.css';
 export default function Portfolio() {
   const { habits, logs, getTransferredBalance, getPendingBalance } = useHabits();
   const navigate = useNavigate();
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  // CHAT DEMO: BottomSheet state no longer needed
+  // const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const transferredBalance = getTransferredBalance();
   const pendingBalance = getPendingBalance();
@@ -114,19 +116,20 @@ export default function Portfolio() {
         )}
       </div>
 
+      {/* CHAT DEMO: Old form-based interaction disabled - FluxChat (in App.jsx) replaces this */}
       {/* Floating Action Button */}
-      <FAB 
+      {/* <FAB 
         onClick={() => setIsSheetOpen(true)}
         isOpen={isSheetOpen}
-      />
+      /> */}
 
       {/* Bottom Sheet */}
-      <BottomSheet 
+      {/* <BottomSheet 
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         habits={habits}
         logs={logs}
-      />
+      /> */}
 
       {/* Navigation */}
       <Navigation />

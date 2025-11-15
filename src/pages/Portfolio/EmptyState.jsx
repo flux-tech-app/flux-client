@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFluxChat } from '../../context/FluxChatContext';
 import './EmptyState.css';
 
 function EmptyState() {
   const navigate = useNavigate();
+  const { openChat } = useFluxChat();
 
   const handleTalkToFlux = () => {
-    // TODO: Open AI chat interface when implemented
-    console.log('Open Flux AI chat');
+    openChat();
   };
 
   const handleLearnMore = () => {
