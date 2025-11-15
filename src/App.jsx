@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { HabitProvider, useHabits } from './context/HabitContext';
-import { useNavigationDirection } from './hooks/useNavigationDirection';
 import PageTransition from './components/PageTransition';
+import Onboarding from './pages/Onboarding';
 import Portfolio from './pages/Portfolio';
 import AddHabit from './pages/AddHabit';
 import LogActivity from './pages/LogActivity';
@@ -16,7 +16,6 @@ import IndexDetail from './pages/IndexDetail';
 function AppRoutes() {
   const { user, updateUser } = useHabits();
   const location = useLocation();
-  const direction = useNavigationDirection();
 
   // Check if we should skip onboarding (for testing)
   const urlParams = new URLSearchParams(window.location.search);
@@ -27,34 +26,12 @@ function AppRoutes() {
     updateUser({ hasCompletedOnboarding: true });
   }
 
-  // Skip button for testing - allows bypassing onboarding
+  // Show onboarding flow for first-time users
   if (!user?.hasCompletedOnboarding) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: '20px',
-        padding: '20px'
-      }}>
-        <h1>Flux</h1>
-        <p>Onboarding flow not yet implemented</p>
-        <a 
-          href="/?skip=true"
-          style={{
-            padding: '12px 24px',
-            background: '#2563eb',
-            color: 'white',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontWeight: 600
-          }}
-        >
-          Skip to Portfolio (Testing)
-        </a>
-      </div>
+      <Onboarding 
+        onComplete={() => updateUser({ hasCompletedOnboarding: true })}
+      />
     );
   }
 
@@ -62,42 +39,42 @@ function AppRoutes() {
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <Portfolio />
           </PageTransition>
         } />
         <Route path="/add" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <AddHabit />
           </PageTransition>
         } />
         <Route path="/log/:habitId" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <LogActivity />
           </PageTransition>
         } />
         <Route path="/habit/:id" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <HabitDetail />
           </PageTransition>
         } />
         <Route path="/activity" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <Activity />
           </PageTransition>
         } />
         <Route path="/indices" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <Indices />
           </PageTransition>
         } />
         <Route path="/indices/:indexId" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <IndexDetail />
           </PageTransition>
         } />
         <Route path="/account" element={
-          <PageTransition direction={direction}>
+          <PageTransition>
             <Account />
           </PageTransition>
         } />
