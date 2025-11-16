@@ -3,17 +3,7 @@ import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
-  const { user, habits, logs, getTotalEarnings, getHabitStats, processTransfer, getPendingBalance } = useHabits();
-
-  // Calculate stats
-  const totalEarnings = getTotalEarnings();
-  const activePositions = habits.length;
-  
-  // Get best streak across all habits
-  const bestStreak = habits.reduce((max, habit) => {
-    const stats = getHabitStats(habit.id);
-    return Math.max(max, stats.currentStreak);
-  }, 0);
+  const { user, processTransfer, getPendingBalance } = useHabits();
 
   // Get user initials for avatar
   const getInitials = (name) => {
@@ -66,15 +56,6 @@ export default function Account() {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
   return (
     <div className="account-page">
       <div className="account-container">
@@ -91,22 +72,6 @@ export default function Account() {
             </svg>
             <span>Edit Profile</span>
           </button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-value">{activePositions}</div>
-            <div className="stat-label">Active Positions</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">{formatCurrency(totalEarnings)}</div>
-            <div className="stat-label">Total Earned</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">{bestStreak}</div>
-            <div className="stat-label">Day Streak</div>
-          </div>
         </div>
 
         {/* Developer Tools Section */}

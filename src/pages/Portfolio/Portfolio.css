@@ -61,6 +61,12 @@
   margin-bottom: 8px;
 }
 
+.portfolio-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
 .portfolio-change {
   display: flex;
   align-items: center;

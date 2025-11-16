@@ -35,6 +35,7 @@ export default function FluxChat() {
     habits,
     addHabit,
     addLog,
+    addChatLog,
     getWeekEarnings,
     getHabitStats,
   } = useHabits()
@@ -133,7 +134,7 @@ export default function FluxChat() {
 
     // Close if dragged down more than 150px or fast swipe down
     if (dragOffset > 150 || velocity > 0.5) {
-      setIsOpen(false)
+      handleCloseChat()
     }
 
     // Reset drag state
@@ -159,6 +160,48 @@ export default function FluxChat() {
   const resetConversation = () => {
     setCurrentState(STATES.IDLE)
     setFlowData({})
+  }
+
+  // Save chat log when closing (if there are messages)
+  const saveChatLog = () => {
+    if (messages.length === 0) return
+
+    // Generate a title based on the conversation
+    let title = 'Chat session'
+    const userMessages = messages.filter(m => m.sender === 'user')
+
+    if (userMessages.length > 0) {
+      const firstUserMsg = userMessages[0].content.toLowerCase()
+      if (firstUserMsg.includes('create') || firstUserMsg.includes('new habit')) {
+        title = 'Created new habit'
+      } else if (firstUserMsg.includes('log') || firstUserMsg.includes('completed')) {
+        title = 'Logged activity'
+      } else if (firstUserMsg.includes('progress') || firstUserMsg.includes('status')) {
+        title = 'Checked progress'
+      }
+    }
+
+    // Generate conversation preview
+    const conversationText = messages
+      .map(m => `${m.sender === 'user' ? 'You' : 'Flux'}: ${m.content}`)
+      .join('\n\n')
+
+    // Save to activity feed with relatedLogId if this chat resulted in logging an activity
+    addChatLog({
+      title,
+      conversation: conversationText,
+      preview: messages[0]?.content || 'Chat conversation',
+      relatedLogId: flowData.completedLogId || null, // Link to the log if one was created
+    })
+  }
+
+  // Close chat and save log
+  const handleCloseChat = () => {
+    saveChatLog()
+    setIsOpen(false)
+    // Reset conversation state
+    setMessages([])
+    resetConversation()
   }
 
   // Handle quick action chips
@@ -340,7 +383,7 @@ export default function FluxChat() {
   const handleLogCompletion = (habit, value) => {
     const earnings = habit.rateAmount * value
 
-    addLog({
+    const newLog = addLog({
       habitId: habit.id,
       value: value,
       totalEarnings: earnings,
@@ -350,6 +393,10 @@ export default function FluxChat() {
     addMessage(
       `✓ Logged! $${earnings.toFixed(2)} earned. You're on a ${stats.currentStreak}-day streak!`
     )
+
+    // Store the log ID in flow data so we can link the chat to this log
+    setFlowData({ ...flowData, completedLogId: newLog.id })
+
     resetConversation()
   }
 
@@ -396,7 +443,7 @@ export default function FluxChat() {
 
       {/* Chat Modal */}
       {isOpen && (
-        <div className="flux-chat-overlay" onClick={() => setIsOpen(false)}>
+        <div className="flux-chat-overlay" onClick={handleCloseChat}>
           <div
             ref={containerRef}
             className="flux-chat-container"
@@ -429,7 +476,7 @@ export default function FluxChat() {
                 <h1>Flux</h1>
                 <p>AI behavior coach</p>
               </div>
-              <button className="flux-close-button" onClick={() => setIsOpen(false)}>
+              <button className="flux-close-button" onClick={handleCloseChat}>
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>

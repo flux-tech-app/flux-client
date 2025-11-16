@@ -42,6 +42,12 @@ export function HabitProvider({ children }) {
     return saved || null
   })
 
+  // Chat logs state
+  const [chatLogs, setChatLogs] = useState(() => {
+    const savedChatLogs = localStorage.getItem('flux_chat_logs')
+    return savedChatLogs ? JSON.parse(savedChatLogs) : []
+  })
+
   // Save to localStorage whenever state changes
   useEffect(() => {
     localStorage.setItem('flux_habits', JSON.stringify(habits))
@@ -64,6 +70,10 @@ export function HabitProvider({ children }) {
       localStorage.setItem('flux_last_transfer', lastTransferDate)
     }
   }, [lastTransferDate])
+
+  useEffect(() => {
+    localStorage.setItem('flux_chat_logs', JSON.stringify(chatLogs))
+  }, [chatLogs])
 
   // Habit CRUD operations
   const addHabit = (habit) => {
@@ -107,6 +117,27 @@ export function HabitProvider({ children }) {
 
   const deleteLog = (id) => {
     setLogs((prev) => prev.filter((log) => log.id !== id))
+  }
+
+  // Chat log operations
+  const addChatLog = (chatLog) => {
+    const newChatLog = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      ...chatLog,
+    }
+    setChatLogs((prev) => [...prev, newChatLog])
+    return newChatLog
+  }
+
+  const updateChatLog = (id, updates) => {
+    setChatLogs((prev) =>
+      prev.map((chat) => (chat.id === id ? { ...chat, ...updates } : chat))
+    )
+  }
+
+  const deleteChatLog = (id) => {
+    setChatLogs((prev) => prev.filter((chat) => chat.id !== id))
   }
 
   // Transfer calculations
@@ -235,6 +266,7 @@ export function HabitProvider({ children }) {
     user,
     transfers,
     lastTransferDate,
+    chatLogs,
     // Habit operations
     addHabit,
     updateHabit,
@@ -243,6 +275,10 @@ export function HabitProvider({ children }) {
     addLog,
     updateLog,
     deleteLog,
+    // Chat log operations
+    addChatLog,
+    updateChatLog,
+    deleteChatLog,
     // Transfer operations
     getTransferredBalance,
     getPendingBalance,
