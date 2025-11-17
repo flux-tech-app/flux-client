@@ -1,7 +1,7 @@
 .activity-page {
   min-height: 100vh;
   background: white;
-  padding-bottom: 80px;
+  padding-bottom: 24px; /* Reduced from 80px since no bottom nav */
 }
 
 .activity-container {
@@ -22,6 +22,43 @@
   border-bottom: 1px solid var(--border-color, #e5e7eb);
   padding: 16px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-button {
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+.activity-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+  text-align: center;
+}
+
+.header-spacer {
+  width: 36px; /* Same width as back button to center title */
 }
 
 .header-content {

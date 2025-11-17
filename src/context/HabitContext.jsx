@@ -78,7 +78,7 @@ export function HabitProvider({ children }) {
   // Habit CRUD operations
   const addHabit = (habit) => {
     const newHabit = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
       ...habit,
     }
@@ -101,7 +101,7 @@ export function HabitProvider({ children }) {
   // Log CRUD operations
   const addLog = (log) => {
     const newLog = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       ...log,
     }
@@ -122,7 +122,7 @@ export function HabitProvider({ children }) {
   // Chat log operations
   const addChatLog = (chatLog) => {
     const newChatLog = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
       ...chatLog,
     }
@@ -170,7 +170,7 @@ export function HabitProvider({ children }) {
 
     const now = new Date().toISOString()
     const newTransfer = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       amount: pending,
       date: now,
       status: 'completed'
@@ -184,6 +184,18 @@ export function HabitProvider({ children }) {
       message: `Transfer completed: $${pending.toFixed(2)}`,
       amount: pending 
     }
+  }
+
+  // Manual transfer creation (for example data)
+  const addTransfer = (transfer) => {
+    const newTransfer = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      date: new Date().toISOString(),
+      status: 'completed',
+      ...transfer,
+    }
+    setTransfers(prev => [...prev, newTransfer])
+    return newTransfer
   }
 
   // Existing calculations
@@ -283,6 +295,7 @@ export function HabitProvider({ children }) {
     getTransferredBalance,
     getPendingBalance,
     processTransfer,
+    addTransfer,
     // Calculations
     getTotalEarnings,
     getTodayEarnings,

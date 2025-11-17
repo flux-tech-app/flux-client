@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useHabits } from '../../context/HabitContext'
 import Navigation from '../../components/Navigation'
+import EmptyState from '../Portfolio/EmptyState'
 import './Home.css'
 
 // Category icons mapping
@@ -52,6 +54,8 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [expandedCategories, setExpandedCategories] = useState({})
   const dateScrollRef = useRef(null)
+
+  const hasHabits = habits.length > 0
 
   // Generate date range (7 days back, today, 3 days forward)
   const generateDateRange = () => {
@@ -257,105 +261,112 @@ export default function Home() {
           <div className="portfolio-balance">Portfolio: ${portfolioBalance.toFixed(2)}</div>
         </div>
 
-        {/* Date Picker */}
-        <div className="date-picker-section">
-          <div className="date-picker-scroll" ref={dateScrollRef}>
-            {dateRange.map((date, index) => (
-              <div
-                key={index}
-                className={`date-square ${isSelected(date) ? 'active' : ''} ${hasCompletions(date) ? 'completed' : ''}`}
-                onClick={() => setSelectedDate(date)}
-              >
-                <div className="date-day">{formatDay(date)}</div>
-                <div className="date-number">{formatDate(date)}</div>
-                {hasCompletions(date) && <div className="completion-dot"></div>}
+        {/* Conditional Rendering: Empty State vs Daily Dashboard */}
+        {!hasHabits ? (
+          <EmptyState />
+        ) : (
+          <>
+            {/* Date Picker */}
+            <div className="date-picker-section">
+              <div className="date-picker-scroll" ref={dateScrollRef}>
+                {dateRange.map((date, index) => (
+                  <div
+                    key={index}
+                    className={`date-square ${isSelected(date) ? 'active' : ''} ${hasCompletions(date) ? 'completed' : ''}`}
+                    onClick={() => setSelectedDate(date)}
+                  >
+                    <div className="date-day">{formatDay(date)}</div>
+                    <div className="date-number">{formatDate(date)}</div>
+                    {hasCompletions(date) && <div className="completion-dot"></div>}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Insight */}
-        <div className="insight-section">
-          <div className="ai-insight-card">
-            <div className="flux-badge">
-              <svg className="flux-icon" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
-              FLUX INSIGHT
             </div>
-            <div className="insight-text">
-              You're building consistency! {scheduledHabits.length} habits scheduled for today.
-            </div>
-          </div>
-        </div>
 
-        {/* Categories List */}
-        <div className="categories-section">
-          <div className="section-divider"></div>
-          <div className="categories-list">
-            {Object.entries(groupedHabits).map(([category, categoryHabits]) => {
-              const stats = getCategoryStats(categoryHabits)
-              const isExpanded = expandedCategories[category]
-              const isFullyCompleted = stats.completed === stats.total && stats.total > 0
-              
-              return (
-                <div key={category} className={`category-card ${isExpanded ? 'expanded' : ''} ${isFullyCompleted ? 'category-completed' : ''}`}>
-                  <div className="category-header" onClick={() => toggleCategory(category)}>
-                    <div className="category-info">
-                      <div className="category-name-row">
-                        <div className="category-icon">{categoryIcons[category]}</div>
-                        <div className="category-name">{category}</div>
-                      </div>
-                      <div className="category-stats">{stats.completed} of {stats.total} completed</div>
-                    </div>
-                    <div className="category-earnings-section">
-                      <div className="category-earnings">${(stats.earnings || 0).toFixed(2)}</div>
-                      <svg className="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </div>
-                  </div>
-                  
-                  {/* Category Breakdown */}
-                  <div className={`category-breakdown ${isExpanded ? 'visible' : ''}`}>
-                    {categoryHabits.map(habit => {
-                      const breakdown = getHabitBreakdown(habit)
-                      
-                      return (
-                        <div key={habit.id} className="breakdown-row">
-                          <svg className={`breakdown-check ${breakdown.isCompleted ? '' : 'empty'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                          </svg>
-                          <span className="breakdown-name">{habit.name}</span>
-                          <span className="breakdown-log">{breakdown.logDisplay}</span>
-                          <span className="breakdown-rate">{breakdown.rateDisplay}</span>
-                          <span className="breakdown-amount">{breakdown.amount}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
+            {/* AI Insight */}
+            <div className="insight-section">
+              <div className="ai-insight-card">
+                <div className="flux-badge">
+                  <svg className="flux-icon" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                  FLUX INSIGHT
                 </div>
-              )
-            })}
-
-            {/* Empty State */}
-            {scheduledHabits.length === 0 && (
-              <div className="empty-state">
-                <p className="empty-state-text">No habits scheduled for this day.</p>
+                <div className="insight-text">
+                  You're building consistency! {scheduledHabits.length} habits scheduled for today.
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* View Activity Link */}
-        <div className="view-activity-section">
-          <a href="#" className="view-activity-link">
-            View All Activity
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </a>
-        </div>
+            {/* Categories List */}
+            <div className="categories-section">
+              <div className="section-divider"></div>
+              <div className="categories-list">
+                {Object.entries(groupedHabits).map(([category, categoryHabits]) => {
+                  const stats = getCategoryStats(categoryHabits)
+                  const isExpanded = expandedCategories[category]
+                  const isFullyCompleted = stats.completed === stats.total && stats.total > 0
+                  
+                  return (
+                    <div key={category} className={`category-card ${isExpanded ? 'expanded' : ''} ${isFullyCompleted ? 'category-completed' : ''}`}>
+                      <div className="category-header" onClick={() => toggleCategory(category)}>
+                        <div className="category-info">
+                          <div className="category-name-row">
+                            <div className="category-icon">{categoryIcons[category]}</div>
+                            <div className="category-name">{category}</div>
+                          </div>
+                          <div className="category-stats">{stats.completed} of {stats.total} completed</div>
+                        </div>
+                        <div className="category-earnings-section">
+                          <div className="category-earnings">${(stats.earnings || 0).toFixed(2)}</div>
+                          <svg className="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* Category Breakdown */}
+                      <div className={`category-breakdown ${isExpanded ? 'visible' : ''}`}>
+                        {categoryHabits.map(habit => {
+                          const breakdown = getHabitBreakdown(habit)
+                          
+                          return (
+                            <div key={habit.id} className="breakdown-row">
+                              <svg className={`breakdown-check ${breakdown.isCompleted ? '' : 'empty'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                              </svg>
+                              <span className="breakdown-name">{habit.name}</span>
+                              <span className="breakdown-log">{breakdown.logDisplay}</span>
+                              <span className="breakdown-rate">{breakdown.rateDisplay}</span>
+                              <span className="breakdown-amount">{breakdown.amount}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {/* Empty State for Scheduled Habits */}
+                {scheduledHabits.length === 0 && (
+                  <div className="empty-state">
+                    <p className="empty-state-text">No habits scheduled for this day.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* View Activity Link */}
+            <div className="view-activity-section">
+              <Link to="/activity" className="view-activity-link">
+                View All Activity
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </Link>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Navigation */}

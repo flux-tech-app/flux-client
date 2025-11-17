@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
-import Navigation from '../../components/Navigation';
-import { formatCurrency, formatTime, formatDuration } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 import './Activity.css';
 
 export default function Activity() {
+  const navigate = useNavigate();
   const { logs, habits, transfers, chatLogs, getHabitStats, updateLog, deleteLog } = useHabits();
   const [viewMode, setViewMode] = useState('habits'); // 'habits' | 'transfers'
   const [selectedFilter, setSelectedFilter] = useState('today');
@@ -12,6 +13,29 @@ export default function Activity() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [editingLog, setEditingLog] = useState(null);
   const [deletingLog, setDeletingLog] = useState(null);
+
+  // Helper functions
+  const getDateHeader = (date) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    if (dateKey.getTime() === today.getTime()) {
+      return 'Today';
+    } else if (dateKey.getTime() === yesterday.getTime()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+  };
+
+  const getTimeFromDate = (date) => {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
 
   // Toggle transfer breakdown
   const toggleTransferBreakdown = (transferId) => {
@@ -26,19 +50,17 @@ export default function Activity() {
     });
   };
 
-  // Open chat modal
+  // Chat modal handlers
   const openChatModal = (chatLog) => {
     setSelectedChat(chatLog);
   };
 
-  // Close chat modal
   const closeChatModal = () => {
     setSelectedChat(null);
   };
 
   // Edit log handlers
   const openEditModal = (activity) => {
-    // Convert activity back to log format for editing
     const log = logs.find(l => l.id === activity.id);
     if (log) {
       setEditingLog({
@@ -57,7 +79,6 @@ export default function Activity() {
   const handleSaveEdit = (updatedData) => {
     if (!editingLog) return;
 
-    // Recalculate earnings if value changed
     const earnings = editingLog.habitRateAmount * updatedData.value;
 
     updateLog(editingLog.id, {
@@ -120,11 +141,10 @@ export default function Activity() {
     }
   };
 
-  // Process habit logs with associated chat logs
+  // Process habit logs
   const enrichedActivities = useMemo(() => {
     const { start, end } = getDateRange(selectedFilter);
 
-    // Process habit logs and find associated chat logs
     const habitActivities = logs
       .filter(log => {
         const logDate = new Date(log.timestamp);
@@ -133,14 +153,7 @@ export default function Activity() {
       .map(log => {
         const habit = habits.find(h => h.id === log.habitId);
         const stats = habit ? getHabitStats(habit.id) : null;
-
-        // Find associated chat log (if chatLog has relatedLogId matching this log)
         const associatedChat = chatLogs.find(chat => chat.relatedLogId === log.id);
-
-        // Debug: Log when we find an associated chat
-        if (associatedChat) {
-          console.log('Found associated chat for log:', log.id, associatedChat);
-        }
 
         return {
           ...log,
@@ -153,11 +166,6 @@ export default function Activity() {
         };
       });
 
-    // Debug: Log all chat logs and their relatedLogIds
-    console.log('All chat logs:', chatLogs.map(c => ({ id: c.id, relatedLogId: c.relatedLogId })));
-    console.log('All log IDs:', logs.map(l => l.id));
-
-    // Sort by timestamp (most recent first)
     return habitActivities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [logs, chatLogs, habits, selectedFilter, getHabitStats]);
 
@@ -183,13 +191,10 @@ export default function Activity() {
     return Object.values(groups);
   }, [enrichedActivities]);
 
-  // Get transfer breakdown by habit
+  // Get transfer breakdown
   const getTransferBreakdown = (transfer) => {
-    // Get the week range for this transfer
     const transferDate = new Date(transfer.date);
     const weekStart = new Date(transferDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    // Group logs by habit for this week
     const habitBreakdown = {};
 
     logs.forEach(log => {
@@ -218,83 +223,43 @@ export default function Activity() {
   const getTransferDateRange = (transferDate) => {
     const date = new Date(transferDate);
     const weekStart = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
-
     return `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   };
 
-  // Format date header
-  function getDateHeader(date) {
-    const today = new Date();
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-
-    if (date.toDateString() === today.toDateString()) {
-      return `Today • ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    }
-
-    if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday • ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-    }
-
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  // Get activity description
-  function getActivityDescription(activity) {
-    const parts = [];
-
-    // Add duration/completion info
-    if (activity.habitRateType === 'duration' && activity.duration) {
-      parts.push(`Completed ${formatDuration(activity.duration)} session`);
-    } else {
-      parts.push('Completed');
-    }
-
-    // Add streak if > 0
-    if (activity.currentStreak > 0) {
-      parts.push(`Streak: ${activity.currentStreak} day${activity.currentStreak !== 1 ? 's' : ''}`);
-    }
-
-    return parts.join(' • ');
-  }
-
-  // Sorted transfers (most recent first)
-  const sortedTransfers = useMemo(() => {
-    return [...transfers]
-      .filter(t => t.status === 'completed')
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [transfers]);
-
   return (
     <div className="activity-page">
+      {/* Header with Back Button */}
+      <header className="activity-header">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 className="activity-title">Activity</h1>
+        <div className="header-spacer"></div>
+      </header>
+
       <div className="activity-container">
-        {/* Header */}
-        <div className="activity-header">
-          <div className="header-content">
-            <h1 className="page-title">Activity</h1>
-          </div>
+        {/* View Mode Toggle */}
+        <div className="segmented-control">
+          <button
+            className={`segment ${viewMode === 'habits' ? 'active' : ''}`}
+            onClick={() => setViewMode('habits')}
+          >
+            Habits
+          </button>
+          <button
+            className={`segment ${viewMode === 'transfers' ? 'active' : ''}`}
+            onClick={() => setViewMode('transfers')}
+          >
+            Transfers
+          </button>
+        </div>
 
-          {/* Segmented Toggle */}
-          <div className="segmented-control">
-            <button
-              className={`segment ${viewMode === 'habits' ? 'active' : ''}`}
-              onClick={() => setViewMode('habits')}
-            >
-              Habits
-            </button>
-            <button
-              className={`segment ${viewMode === 'transfers' ? 'active' : ''}`}
-              onClick={() => setViewMode('transfers')}
-            >
-              Transfers
-            </button>
-          </div>
-
-          {/* Date Filter Tabs (only show for habits view) */}
-          {viewMode === 'habits' && (
+        {/* HABIT ACTIVITY VIEW */}
+        {viewMode === 'habits' && (
+          <div className="habits-view">
+            {/* Time Filter Chips */}
             <div className="date-tabs">
               <button
                 className={`date-tab ${selectedFilter === 'today' ? 'active' : ''}`}
@@ -327,67 +292,67 @@ export default function Activity() {
                 This Month
               </button>
             </div>
-          )}
-        </div>
 
-        {/* HABITS VIEW */}
-        {viewMode === 'habits' && (
-          <div className="activity-feed">
-            {groupedActivities.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">
+            {/* Activity Feed */}
+            <div className="activity-feed">
+              {groupedActivities.length === 0 ? (
+                <div className="empty-state">
                   <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
+                  <h3>No activity yet</h3>
+                  <p>Your logged habits will appear here</p>
                 </div>
-                <h3 className="empty-title">No activity yet</h3>
-                <p className="empty-description">
-                  {selectedFilter === 'today'
-                    ? 'Start logging your habits to see your activity here'
-                    : 'No activity found for this time period'}
-                </p>
-              </div>
-            ) : (
-              groupedActivities.map(group => (
-                <div key={group.date} className="date-section">
-                  <div className="date-header">{group.displayDate}</div>
-                  <div className="activity-list">
-                    {group.activities.map(activity => (
-                      // HABIT LOG CARD
-                      <div key={activity.id} className={`activity-card ${activity.associatedChat ? 'has-chat' : ''}`}>
+              ) : (
+                groupedActivities.map(group => (
+                  <div key={group.date} className="date-section">
+                    <div className="date-header">{group.displayDate}</div>
+                    <div className="activity-list">
+                      {group.activities.map((activity, index) => (
+                        <div 
+                          key={`${activity.id}-${index}`} 
+                          className={`activity-card ${activity.associatedChat ? 'has-chat' : ''}`}
+                        >
                           <div className="activity-header-row">
                             <div className="activity-info">
                               <div className="activity-title">
-                                {activity.habitName}
                                 {activity.associatedChat && (
                                   <span className="flux-mini-badge">
                                     <span className="flux-mini-icon">F</span>
-                                    via Flux
+                                    FLUX
                                   </span>
                                 )}
+                                {activity.habitName}
                               </div>
                               <div className="activity-meta">
-                                <div className="activity-time">
+                                <span className="activity-time">
                                   <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                   </svg>
-                                  {formatTime(activity.timestamp)}
-                                </div>
+                                  {getTimeFromDate(activity.timestamp)}
+                                </span>
+                                {activity.currentStreak > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{activity.currentStreak} day streak</span>
+                                  </>
+                                )}
                                 <span className={`activity-badge ${activity.habitType}`}>
-                                  {activity.habitType === 'build' ? 'Build' : 'Resist'}
+                                  {activity.habitType}
                                 </span>
                               </div>
+                              {activity.notes && (
+                                <div className="activity-notes">{activity.notes}</div>
+                              )}
                             </div>
                             <div className="activity-amount-section">
-                              <div className={`activity-amount ${activity.totalEarnings < 0 ? 'negative' : ''}`}>
-                                {activity.totalEarnings >= 0 ? '+' : ''}{formatCurrency(activity.totalEarnings)}
-                              </div>
+                              <div className="activity-amount">{formatCurrency(activity.totalEarnings)}</div>
                               <div className="activity-actions">
                                 {activity.associatedChat && (
                                   <button
                                     className="activity-action-btn chat-btn"
                                     onClick={() => openChatModal(activity.associatedChat)}
-                                    title="View chat conversation"
+                                    title="View chat"
                                   >
                                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -415,46 +380,35 @@ export default function Activity() {
                               </div>
                             </div>
                           </div>
-                          <div className="activity-description">
-                            {getActivityDescription(activity)}
-                          </div>
-                          {activity.notes && (
-                            <div className="activity-notes">
-                              {activity.notes}
-                            </div>
-                          )}
                         </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
         )}
 
-        {/* TRANSFERS VIEW */}
+        {/* TRANSFER ACTIVITY VIEW */}
         {viewMode === 'transfers' && (
-          <div className="activity-feed">
-            {sortedTransfers.length === 0 ? (
+          <div className="transfers-view">
+            {transfers.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">
-                  <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                  </svg>
-                </div>
-                <h3 className="empty-title">No transfers yet</h3>
-                <p className="empty-description">
-                  Complete your weekly transfer to see your transfer history here
-                </p>
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                <h3>No transfers yet</h3>
+                <p>Weekly transfers will appear here</p>
               </div>
             ) : (
               <div className="transfers-list">
-                {sortedTransfers.map(transfer => {
+                {transfers.map(transfer => {
                   const breakdown = getTransferBreakdown(transfer);
                   const isExpanded = expandedTransfers.has(transfer.id);
 
                   return (
-                    <div key={transfer.id} className="transfer-card">
+                    <div key={transfer.id} className={`transfer-card ${isExpanded ? 'expanded' : ''}`}>
                       <div className="transfer-card-header">
                         <div className="transfer-date-section">
                           <div className="transfer-date-icon">
@@ -516,7 +470,7 @@ export default function Activity() {
         )}
       </div>
 
-      {/* CHAT MODAL */}
+      {/* MODALS */}
       {selectedChat && (
         <div className="modal-overlay" onClick={closeChatModal}>
           <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
@@ -553,7 +507,6 @@ export default function Activity() {
         </div>
       )}
 
-      {/* DELETE CONFIRMATION MODAL */}
       {deletingLog && (
         <div className="modal-overlay" onClick={closeDeleteConfirm}>
           <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
@@ -578,10 +531,7 @@ export default function Activity() {
         </div>
       )}
 
-      {/* EDIT LOG MODAL */}
       {editingLog && <EditLogModal log={editingLog} onSave={handleSaveEdit} onClose={closeEditModal} />}
-
-      <Navigation />
     </div>
   );
 }

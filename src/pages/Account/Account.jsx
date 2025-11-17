@@ -3,7 +3,7 @@ import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
-  const { user, processTransfer, getPendingBalance, addHabit, addLog } = useHabits();
+  const { user, processTransfer, getPendingBalance, addHabit, addLog, addTransfer } = useHabits();
 
   // Get user initials for avatar
   const getInitials = (name) => {
@@ -158,9 +158,10 @@ export default function Account() {
       // Add all habits
       const addedHabits = exampleHabits.map(habit => addHabit(habit));
 
-      // Generate logs for the past 7 days
+      // Generate logs for the past 7 days and track them
       const today = new Date();
       const daysToGenerate = 7;
+      const createdLogs = [];
 
       addedHabits.forEach(habit => {
         for (let i = 0; i < daysToGenerate; i++) {
@@ -211,13 +212,45 @@ export default function Account() {
             timestamp: logDate.toISOString(),
             date: logDate.toISOString().split('T')[0]
           });
+          
+          // Track the log for transfer calculation
+          createdLogs.push({
+            totalEarnings: totalEarnings,
+            timestamp: logDate.toISOString(),
+            dayIndex: i
+          });
         }
       });
 
+      // Create example transfer from last week to show transfer history
+      const lastWeekDate = new Date();
+      lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+      lastWeekDate.setHours(23, 59, 0, 0); // Friday 11:59 PM
+      
+      // Calculate earnings from days 5-6 (simulate previous week's transfer)
+      const lastWeekLogs = createdLogs.filter(log => log.dayIndex >= 5 && log.dayIndex <= 6);
+      const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
+      
+      if (lastWeekEarnings > 0) {
+        addTransfer({
+          amount: lastWeekEarnings,
+          date: lastWeekDate.toISOString(),
+          status: 'completed'
+        });
+      }
+
+      // Calculate current week pending (days 0-4)
+      const currentWeekLogs = createdLogs.filter(log => log.dayIndex >= 0 && log.dayIndex <= 4);
+      const currentWeekEarnings = currentWeekLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
+
       alert(
         'Example data added successfully!\n\n' +
-        `Added ${addedHabits.length} habits with activity logs from the past week.\n\n` +
-        'Navigate to the Home page to see the results.'
+        `✅ ${addedHabits.length} habits created\n` +
+        `✅ ${createdLogs.length} activity logs generated\n` +
+        `✅ ${lastWeekEarnings > 0 ? 1 : 0} transfer created\n\n` +
+        `Portfolio Balance: $${lastWeekEarnings.toFixed(2)}\n` +
+        `Pending Balance: $${currentWeekEarnings.toFixed(2)}\n\n` +
+        'Navigate to Home or Activity page to see results!'
       );
 
     } catch (error) {

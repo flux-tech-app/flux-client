@@ -11,17 +11,17 @@
   min-height: 100vh;
 }
 
-/* App Header */
+/* Header */
 .portfolio-header {
   position: sticky;
   top: 0;
   background: white;
   border-bottom: 1px solid #e5e7eb;
   padding: 16px;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 10;
 }
 
 .app-logo {
@@ -32,6 +32,11 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .icon-button {
@@ -48,45 +53,63 @@
   background: #f3f4f6;
 }
 
-/* Portfolio Value Section */
-.portfolio-value-section {
-  background: white;
-  padding: 24px 16px 32px;
+.icon-button:active {
+  transform: scale(0.95);
 }
 
-.portfolio-value {
-  font-size: 36px;
-  font-weight: 600;
-  color: #111827;
+/* Portfolio Value Section */
+.portfolio-value-section {
+  background: linear-gradient(180deg, #f9fafb 0%, white 100%);
+  padding: 32px 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.value-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 8px;
 }
 
-.portfolio-subtitle {
-  font-size: 14px;
-  color: #6b7280;
+.portfolio-value {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 12px;
+  line-height: 1;
 }
 
-.portfolio-change {
+.value-change {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 14px;
 }
 
-.trend-icon {
-  width: 16px;
-  height: 16px;
-  color: #10b981;
+.change-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
-.change-amount {
-  color: #10b981;
-  font-weight: 500;
+.change-badge svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* Pending Transfer Line */
-.pending-transfer-line {
+.change-period {
+  color: #6b7280;
+}
+
+/* Pending Transfer */
+.pending-transfer {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -116,63 +139,280 @@
   color: #9ca3af;
 }
 
-/* View Toggle */
-.view-toggle {
-  display: flex;
-  gap: 16px;
-  background: white !important;
+/* Chart Section */
+.chart-section {
+  padding: 24px 16px;
   border-bottom: 1px solid #e5e7eb;
-  padding: 0 16px;
-  margin-bottom: 24px;
 }
 
-.toggle-button {
-  padding: 12px 4px;
-  font-size: 14px;
-  font-weight: 500;
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.time-toggles {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.time-toggle {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
   color: #6b7280;
   background: none;
   border: none;
-  position: relative;
+  border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
 
-.toggle-button.active {
+.time-toggle.active {
+  background: white;
   color: #3b82f6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.toggle-button.active::after {
-  content: '';
+.time-toggle:active {
+  transform: scale(0.95);
+}
+
+.chart-placeholder {
+  height: 200px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* Chart grid */
+.chart-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px;
+  pointer-events: none;
+}
+
+.grid-line {
+  width: 100%;
+  height: 1px;
+  background: #f3f4f6;
+}
+
+/* Simulated line chart */
+.chart-line-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart-line {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.line-gradient {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+  height: 85%;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%);
+  clip-path: polygon(
+    0% 55%,
+    10% 40%, 
+    20% 45%, 
+    30% 30%, 
+    40% 35%, 
+    50% 20%, 
+    60% 25%, 
+    70% 10%, 
+    80% 15%, 
+    90% 5%,
+    100% 0%,
+    100% 100%,
+    0% 100%
+  );
 }
 
-.toggle-button:hover {
+.line-stroke {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 85%;
+  border-top: 3px solid #3b82f6;
+  border-image: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%) 1;
+  clip-path: polygon(
+    0% 55%,
+    10% 40%, 
+    20% 45%, 
+    30% 30%, 
+    40% 35%, 
+    50% 20%, 
+    60% 25%, 
+    70% 10%, 
+    80% 15%, 
+    90% 5%,
+    100% 0%,
+    100% 0%,
+    0% 55%
+  );
+}
+
+/* Indices Section */
+.indices-section {
+  padding: 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.view-all-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
   color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-/* Habits Section */
-.habits-section {
-  background: white;
-  padding: 0 16px;
+.view-all-link:hover {
+  opacity: 0.8;
 }
 
-.habits-list {
+.view-all-link:active {
+  transform: scale(0.95);
+}
+
+.view-all-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.indices-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 100px;
+}
+
+.index-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.index-card:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.index-card:active {
+  transform: scale(0.98);
+}
+
+.index-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.index-icon svg {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+.index-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.index-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.index-habits-count {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.index-value {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.index-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.index-percentage {
+  font-size: 13px;
+  color: #6b7280;
 }
 
 /* Empty State */
-.empty-state {
-  text-align: center;
+.empty-state-section {
   padding: 60px 20px;
+  text-align: center;
 }
 
 .empty-icon {
@@ -187,15 +427,91 @@
   color: #9ca3af;
 }
 
-.empty-state h3 {
+.empty-state-section h3 {
   font-size: 18px;
   font-weight: 600;
   color: #111827;
   margin-bottom: 8px;
 }
 
-.empty-state p {
+.empty-state-section p {
   font-size: 14px;
   color: #6b7280;
   line-height: 1.5;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* Savings Goals Section */
+.savings-goals-section {
+  padding: 24px 16px;
+}
+
+.coming-soon-badge {
+  padding: 4px 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 6px;
+}
+
+.goal-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  opacity: 0.6;
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.goal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.goal-target {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.goal-amount {
+  text-align: right;
+}
+
+.goal-current {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.goal-remaining {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.goal-progress {
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.goal-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }

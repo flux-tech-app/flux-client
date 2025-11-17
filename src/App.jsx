@@ -36,12 +36,12 @@ function AppRoutes() {
     );
   }
 
-  // Show FluxChat on Home, Portfolio (always), Activity, and Indices (when there are habits)
+  // Show FluxChat on Home, Portfolio (always), and Indices (when there are habits)
   const isHome = location.pathname === '/';
   const isPortfolio = location.pathname === '/portfolio';
-  const isActivityOrIndices = ['/activity', '/indices'].includes(location.pathname);
+  const isIndices = location.pathname === '/indices';
   const hasHabits = habits.length > 0;
-  const showFluxChat = isHome || isPortfolio || (isActivityOrIndices && hasHabits);
+  const showFluxChat = isHome || isPortfolio || (isIndices && hasHabits);
 
   return (
     <>
@@ -49,9 +49,11 @@ function AppRoutes() {
         {/* Bottom Nav Routes - NO transitions, instant navigation */}
         <Route path="/" element={<Home />} />
         <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/activity" element={<Activity />} />
         <Route path="/indices" element={<Indices />} />
         <Route path="/account" element={<Account />} />
+
+        {/* Secondary Pages - Accessed via links from primary pages */}
+        <Route path="/activity" element={<Activity />} />
 
         {/* Stacked Navigation Routes - NO PageTransition (native iOS-style) */}
         <Route path="/add" element={<AddHabit />} />
