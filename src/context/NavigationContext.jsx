@@ -22,7 +22,7 @@ export function NavigationProvider({ children }) {
     const previousPath = historyStack.current[historyStack.current.length - 1];
 
     // Determine if this is bottom nav navigation (both at root level)
-    const rootPaths = ['/', '/activity', '/indices', '/account'];
+    const rootPaths = ['/', '/portfolio', '/activity', '/indices', '/account'];
     const isFromRoot = rootPaths.includes(previousPath);
     const isToRoot = rootPaths.includes(currentPath);
     

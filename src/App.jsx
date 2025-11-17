@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { HabitProvider, useHabits } from './context/HabitContext';
 import { FluxChatProvider } from './context/FluxChatContext';
 import Onboarding from './pages/Onboarding';
+import Home from './pages/Home';
 import Portfolio from './pages/Portfolio';
 import AddHabit from './pages/AddHabit';
 import LogActivity from './pages/LogActivity';
@@ -10,7 +11,7 @@ import Account from './pages/Account';
 import HabitDetail from './pages/HabitDetail';
 import Indices from './pages/Indices';
 import IndexDetail from './pages/IndexDetail';
-import FluxChat from './components/FluxChat'; // CHAT DEMO: Added
+import FluxChat from './components/FluxChat';
 
 // Onboarding guard wrapper with route transitions
 function AppRoutes() {
@@ -35,17 +36,19 @@ function AppRoutes() {
     );
   }
 
-  // Show FluxChat on Portfolio (always), Activity, and Indices (when there are habits)
-  const isPortfolio = location.pathname === '/';
+  // Show FluxChat on Home, Portfolio (always), Activity, and Indices (when there are habits)
+  const isHome = location.pathname === '/';
+  const isPortfolio = location.pathname === '/portfolio';
   const isActivityOrIndices = ['/activity', '/indices'].includes(location.pathname);
   const hasHabits = habits.length > 0;
-  const showFluxChat = isPortfolio || (isActivityOrIndices && hasHabits);
+  const showFluxChat = isHome || isPortfolio || (isActivityOrIndices && hasHabits);
 
   return (
     <>
       <Routes location={location}>
         {/* Bottom Nav Routes - NO transitions, instant navigation */}
-        <Route path="/" element={<Portfolio />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/indices" element={<Indices />} />
         <Route path="/account" element={<Account />} />

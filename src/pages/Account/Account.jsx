@@ -3,7 +3,7 @@ import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
-  const { user, processTransfer, getPendingBalance } = useHabits();
+  const { user, processTransfer, getPendingBalance, addHabit, addLog } = useHabits();
 
   // Get user initials for avatar
   const getInitials = (name) => {
@@ -11,6 +11,219 @@ export default function Account() {
     const parts = name.trim().split(' ');
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const handleAddExampleData = () => {
+    const confirmAdd = window.confirm(
+      'Add example data to showcase the app?\n\n' +
+      'This will add:\n' +
+      '• 10+ example habits across all categories\n' +
+      '• Activity logs from the past week\n' +
+      '• Mix of BUILD and RESIST habits\n' +
+      '• Various rate structures\n\n' +
+      'You can clear this later with "Clear All Data".'
+    );
+
+    if (!confirmAdd) return;
+
+    try {
+      // Example habits with various configurations
+      const exampleHabits = [
+        // Fitness
+        {
+          name: 'Morning Cardio',
+          category: 'Fitness',
+          type: 'duration',
+          behaviorType: 'build',
+          rate: 0.10,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          unit: 'min'
+        },
+        {
+          name: 'Strength Training',
+          category: 'Fitness',
+          type: 'duration',
+          behaviorType: 'build',
+          rate: 0.15,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Wednesday', 'Friday'],
+          unit: 'min'
+        },
+        {
+          name: 'Push-ups',
+          category: 'Fitness',
+          type: 'count',
+          behaviorType: 'build',
+          rate: 0.05,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          unit: 'reps'
+        },
+        {
+          name: 'Evening Walk',
+          category: 'Fitness',
+          type: 'duration',
+          behaviorType: 'build',
+          rate: 0.05,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          unit: 'min'
+        },
+        
+        // Wellness
+        {
+          name: 'Read 30 Minutes',
+          category: 'Wellness',
+          type: 'duration',
+          behaviorType: 'build',
+          rate: 0.10,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          unit: 'min'
+        },
+        {
+          name: 'Meditation',
+          category: 'Wellness',
+          type: 'duration',
+          behaviorType: 'build',
+          rate: 0.20,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          unit: 'min'
+        },
+        
+        // Social
+        {
+          name: 'No Social Media',
+          category: 'Social',
+          type: 'binary',
+          behaviorType: 'resist',
+          rate: 5.00,
+          rateType: 'daily',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        },
+        
+        // Financial
+        {
+          name: 'No DoorDash',
+          category: 'Financial',
+          type: 'binary',
+          behaviorType: 'resist',
+          rate: 7.00,
+          rateType: 'daily',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        },
+        {
+          name: 'No Impulse Purchases',
+          category: 'Financial',
+          type: 'binary',
+          behaviorType: 'resist',
+          rate: 7.00,
+          rateType: 'daily',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        },
+        
+        // Nutrition
+        {
+          name: 'Meal Prep',
+          category: 'Nutrition',
+          type: 'binary',
+          behaviorType: 'build',
+          rate: 8.00,
+          rateType: 'fixed',
+          schedule: ['Sunday']
+        },
+        {
+          name: 'Drink 8 Glasses Water',
+          category: 'Nutrition',
+          type: 'count',
+          behaviorType: 'build',
+          rate: 0.50,
+          rateType: 'perUnit',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          unit: 'glasses'
+        },
+        {
+          name: 'No Alcohol',
+          category: 'Nutrition',
+          type: 'binary',
+          behaviorType: 'resist',
+          rate: 5.00,
+          rateType: 'daily',
+          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        },
+      ];
+
+      // Add all habits
+      const addedHabits = exampleHabits.map(habit => addHabit(habit));
+
+      // Generate logs for the past 7 days
+      const today = new Date();
+      const daysToGenerate = 7;
+
+      addedHabits.forEach(habit => {
+        for (let i = 0; i < daysToGenerate; i++) {
+          const logDate = new Date(today);
+          logDate.setDate(today.getDate() - i);
+          
+          // Check if habit is scheduled for this day
+          const dayName = logDate.toLocaleDateString('en-US', { weekday: 'long' });
+          if (habit.schedule && !habit.schedule.includes(dayName)) continue;
+
+          // Randomly decide if completed (80% chance for demo purposes)
+          const isCompleted = Math.random() > 0.2;
+          if (!isCompleted) continue;
+
+          let logValue = 0;
+          let totalEarnings = 0;
+
+          // Calculate value and earnings based on habit type
+          if (habit.type === 'duration') {
+            // Random duration between 15-60 minutes
+            logValue = Math.floor(Math.random() * 45) + 15;
+            totalEarnings = logValue * habit.rate;
+          } else if (habit.type === 'count') {
+            // Random count based on habit
+            if (habit.name === 'Push-ups') {
+              logValue = Math.floor(Math.random() * 50) + 50; // 50-100 push-ups
+            } else if (habit.name === 'Drink 8 Glasses Water') {
+              logValue = Math.floor(Math.random() * 3) + 6; // 6-8 glasses
+            } else {
+              logValue = Math.floor(Math.random() * 20) + 10;
+            }
+            totalEarnings = logValue * habit.rate;
+          } else if (habit.type === 'binary') {
+            // Binary completion
+            logValue = 1;
+            if (habit.rateType === 'daily') {
+              totalEarnings = habit.rate;
+            } else if (habit.rateType === 'fixed') {
+              totalEarnings = habit.rate;
+            }
+          }
+
+          // Add log
+          addLog({
+            habitId: habit.id,
+            value: logValue,
+            totalEarnings: totalEarnings,
+            timestamp: logDate.toISOString(),
+            date: logDate.toISOString().split('T')[0]
+          });
+        }
+      });
+
+      alert(
+        'Example data added successfully!\n\n' +
+        `Added ${addedHabits.length} habits with activity logs from the past week.\n\n` +
+        'Navigate to the Home page to see the results.'
+      );
+
+    } catch (error) {
+      console.error('Error adding example data:', error);
+      alert('Error adding example data. Check console for details.');
+    }
   };
 
   const handleManualTransfer = () => {
@@ -78,6 +291,21 @@ export default function Account() {
         <div className="menu-section">
           <div className="section-title">Developer Tools</div>
           <div className="menu-items">
+            <div className="menu-item" onClick={handleAddExampleData}>
+              <div className="menu-icon green">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="menu-content">
+                <div className="menu-title">Add Example Data</div>
+                <div className="menu-subtitle">Populate with demo habits & logs</div>
+              </div>
+              <svg className="chevron" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+
             <div className="menu-item" onClick={handleManualTransfer}>
               <div className="menu-icon orange">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">

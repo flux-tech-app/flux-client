@@ -1,0 +1,406 @@
+.home-page {
+  min-height: 100vh;
+  background: white;
+  padding-bottom: 80px;
+}
+
+.home-container {
+  max-width: 768px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+}
+
+/* App Header */
+.home-header {
+  position: sticky;
+  top: 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px;
+  z-index: 10;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.greeting {
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.day-date {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.portfolio-balance {
+  font-size: 13px;
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.notification-button {
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.notification-button:hover {
+  background: #f3f4f6;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.notification-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Date Picker Section */
+.date-picker-section {
+  background: white;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.date-picker-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 16px 4px;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+.date-picker-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.date-square {
+  min-width: 44px;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.date-square:hover {
+  background: #f3f4f6;
+}
+
+.date-square.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.date-day {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.date-square.active .date-day {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.date-number {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.date-square.active .date-number {
+  color: white;
+}
+
+.completion-dot {
+  position: absolute;
+  bottom: 5px;
+  width: 3px;
+  height: 3px;
+  background: #10b981;
+  border-radius: 50%;
+}
+
+.date-square.active .completion-dot {
+  background: white;
+}
+
+/* AI Insight Section */
+.insight-section {
+  padding: 20px 16px;
+}
+
+.ai-insight-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.flux-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.flux-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.insight-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1e40af;
+}
+
+/* Category Cards Section */
+.categories-section {
+  padding: 0 16px 24px;
+}
+
+.section-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Category Card */
+.category-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.category-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.category-header:hover {
+  background: #f9fafb;
+}
+
+.category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.category-icon {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.category-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.category-stats {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.category-earnings-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-earnings {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.category-completed .category-earnings {
+  color: #10b981;
+}
+
+.expand-icon {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.category-card.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Category Breakdown */
+.category-breakdown {
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+  padding: 12px 16px;
+  display: none;
+}
+
+.category-breakdown.visible {
+  display: block;
+}
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.breakdown-row:last-child {
+  border-bottom: none;
+}
+
+.breakdown-check {
+  width: 14px;
+  height: 14px;
+  color: #10b981;
+}
+
+.breakdown-check.empty {
+  visibility: hidden;
+}
+
+.breakdown-name {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 400;
+}
+
+.breakdown-log {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.breakdown-rate {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.breakdown-amount {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  text-align: right;
+  min-width: 60px;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* View Activity Link */
+.view-activity-section {
+  padding: 0 16px 24px;
+  text-align: center;
+}
+
+.view-activity-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.view-activity-link:hover {
+  color: #2563eb;
+  gap: 8px;
+}
+
+.view-activity-link svg {
+  width: 16px;
+  height: 16px;
+}
