@@ -1,0 +1,375 @@
+/* Log Habit Sheet */
+.log-habit-sheet {
+  padding: 8px 20px 24px;
+}
+
+.log-sheet-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.log-sheet-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+/* Habits List */
+.habits-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.habit-log-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.habit-log-item:hover:not(:disabled) {
+  border-color: #3b82f6;
+  background: #f9fafb;
+}
+
+.habit-log-item:active:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.habit-log-item.logged {
+  background: #f0fdf4;
+  border-color: #86efac;
+  cursor: default;
+}
+
+.habit-log-item:disabled {
+  opacity: 1; /* Keep visible but non-interactive */
+}
+
+.habit-log-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.habit-log-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.habit-log-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.habit-log-ticker {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.habit-log-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.habit-log-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.habit-log-rate {
+  font-size: 14px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+.habit-log-item .chevron {
+  width: 20px;
+  height: 20px;
+  color: #d1d5db;
+}
+
+.habit-logged-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #dcfce7;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #15803d;
+}
+
+.habit-logged-badge svg {
+  color: #22c55e;
+}
+
+/* Empty State */
+.empty-habits {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-habits p {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+/* ========== Log Modal (when habit selected) ========== */
+.log-modal {
+  padding: 0;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 0;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: #2563eb;
+}
+
+.log-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.log-habit-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.log-habit-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-habit-ticker {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.log-habit-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Log Input Section (for unit-based habits) */
+.log-input-section {
+  margin-bottom: 24px;
+}
+
+.log-input-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.log-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.stepper-button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 50%;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stepper-button:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.stepper-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.stepper-button:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.stepper-input {
+  width: 100px;
+  height: 56px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.stepper-input:focus {
+  border-color: #3b82f6;
+}
+
+/* Hide number input spinners */
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Log Confirmation Section (for per-day habits) */
+.log-confirmation-section {
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.log-confirmation-text {
+  font-size: 16px;
+  color: #374151;
+  margin: 0;
+}
+
+.log-confirmation-text strong {
+  color: #111827;
+}
+
+/* Earnings Preview */
+.earnings-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.earnings-preview-label {
+  font-size: 14px;
+  color: #166534;
+}
+
+.earnings-preview-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+/* Log Confirm Button */
+.log-confirm-button {
+  width: 100%;
+  padding: 16px;
+  background: #22c55e;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+}
+
+.log-confirm-button:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.log-confirm-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.log-confirm-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.logging-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 390px) {
+  .log-habit-sheet {
+    padding: 8px 16px 20px;
+  }
+  
+  .log-sheet-title {
+    font-size: 20px;
+  }
+  
+  .log-habit-icon {
+    font-size: 40px;
+  }
+  
+  .log-habit-name {
+    font-size: 20px;
+  }
+  
+  .stepper-input {
+    width: 80px;
+    height: 48px;
+    font-size: 24px;
+  }
+}

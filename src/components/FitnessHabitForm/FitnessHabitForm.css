@@ -1,0 +1,339 @@
+/* FitnessHabitForm.css - Mobile Zoom Fixed */
+
+.fitness-habit-form {
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Header */
+.form-header {
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+}
+
+.form-header p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Form Sections */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Subcategory Buttons */
+.subcategory-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.subcategory-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px; /* Prevents iOS zoom */
+  font-weight: 500;
+  color: #374151;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.subcategory-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.subcategory-btn.active {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.subcategory-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.subcategory-btn.active .subcategory-icon {
+  color: #3b82f6;
+}
+
+/* Form Inputs */
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px; /* CRITICAL: Prevents iOS zoom */
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  color: #111827;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Select dropdown arrow */
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg fill='none' stroke='%236b7280' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Rate Options */
+.rate-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rate-btn {
+  padding: 12px 16px;
+  font-size: 16px; /* Prevents iOS zoom */
+  font-weight: 500;
+  color: #374151;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px; /* Touch target */
+}
+
+.rate-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.rate-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border-color: #3b82f6;
+  color: white;
+}
+
+.custom-rate-btn {
+  border-style: dashed;
+}
+
+/* Custom Rate Inputs */
+.custom-rate-inputs {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.custom-rate-amount {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.currency-prefix {
+  position: absolute;
+  left: 16px;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.amount-input {
+  padding-left: 32px;
+}
+
+.rate-type-select {
+  flex: 1;
+}
+
+/* Schedule Buttons */
+.schedule-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.schedule-btn {
+  flex: 1;
+  padding: 12px 12px;
+  font-size: 16px; /* Prevents iOS zoom */
+  font-weight: 500;
+  color: #374151;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px; /* Touch target */
+}
+
+.schedule-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.schedule-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Day Picker */
+.day-picker {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: space-between;
+}
+
+.day-btn {
+  width: 44px; /* Touch target */
+  height: 44px; /* Touch target */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.day-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.day-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border-color: #3b82f6;
+  color: white;
+}
+
+/* Action Buttons */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.cancel-btn,
+.submit-btn {
+  flex: 1;
+  padding: 16px 20px;
+  font-size: 16px; /* Prevents iOS zoom */
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 52px; /* Touch target */
+}
+
+.cancel-btn {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border: none;
+  color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 360px) {
+  .subcategory-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-buttons {
+    flex-wrap: wrap;
+  }
+
+  .schedule-btn {
+    flex: none;
+    width: calc(50% - 4px);
+  }
+
+  .schedule-btn:last-child {
+    width: 100%;
+  }
+
+  .day-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 13px;
+  }
+}

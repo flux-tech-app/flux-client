@@ -1,8 +1,27 @@
-/* Floating Action Button */
-.fab {
+/* FAB Container */
+.fab-container {
   position: fixed;
   bottom: 90px;
   right: 20px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Overlay when FAB is open */
+.fab-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 99;
+}
+
+/* Main FAB Button */
+.fab {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -13,8 +32,9 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  z-index: 100;
   border: none;
+  position: relative;
+  z-index: 101;
 }
 
 .fab:hover {
@@ -27,8 +47,94 @@
   transform: scale(0.95) translateY(0);
 }
 
+.fab.fab-open {
+  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.fab.fab-open:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%);
+  transform: none;
+}
+
+.fab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .fab svg {
   width: 24px;
   height: 24px;
   color: white;
+}
+
+/* Bubble Wrapper - positions label and button */
+.fab-bubble-wrapper {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+}
+
+/* Action Bubbles */
+.fab-bubble {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s;
+}
+
+.fab-bubble:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.fab-bubble svg {
+  color: white;
+}
+
+/* Bubble Labels */
+.fab-bubble-label {
+  position: absolute;
+  right: 60px;
+  background: white;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Mobile adjustments */
+@media (max-width: 390px) {
+  .fab-container {
+    bottom: 80px;
+    right: 16px;
+  }
+  
+  .fab {
+    width: 52px;
+    height: 52px;
+  }
+  
+  .fab-bubble {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .fab-bubble-label {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
 }

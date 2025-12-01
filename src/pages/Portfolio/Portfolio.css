@@ -515,3 +515,118 @@
   border-radius: 4px;
   transition: width 0.3s ease;
 }
+
+/* ============================================
+   HOLDINGS SECTION (Added for star ratings)
+   ============================================ */
+
+.holdings-section {
+  padding: 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.holdings-count {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.holdings-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.holding-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.holding-row:last-child {
+  border-bottom: none;
+}
+
+.holding-row:hover {
+  background: #f9fafb;
+  margin: 0 -16px;
+  padding: 14px 16px;
+}
+
+.holding-row:active {
+  transform: none;
+}
+
+.holding-ticker {
+  font-size: 15px;
+  font-weight: 700;
+  color: #3b82f6;
+  min-width: 75px;
+}
+
+.holding-metrics {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.holding-hhs {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 28px;
+}
+
+.holding-earned {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+  min-width: 70px;
+}
+
+/* Star Rating */
+.star-rating {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.star-icon {
+  width: 12px;
+  height: 12px;
+  transition: all 0.2s;
+}
+
+.star-icon.filled {
+  color: #fbbf24;
+  stroke: #fbbf24;
+}
+
+.star-icon.empty {
+  color: transparent;
+  stroke: #d1d5db;
+  stroke-width: 1.5;
+}
+
+/* Trend Arrows */
+.trend-arrow {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.trend-arrow.up {
+  color: #10b981;
+}
+
+.trend-arrow.down {
+  color: #ef4444;
+}
+
+.trend-arrow.neutral {
+  color: #9ca3af;
+}

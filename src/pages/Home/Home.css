@@ -23,9 +23,8 @@
 
 .header-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 6px;
 }
 
 .header-content {
@@ -46,15 +45,8 @@
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
-  margin-bottom: 10px;
   line-height: 1.4;
-}
-
-.portfolio-balance {
-  font-size: 13px;
-  color: #111827;
-  font-weight: 600;
-  line-height: 1.4;
+  margin-top: 4px;
 }
 
 .notification-button {
@@ -204,170 +196,449 @@
   color: #1e40af;
 }
 
-/* Category Cards Section */
-.categories-section {
+/* ===== Habits Section with Ticker Cards ===== */
+
+.habits-section {
   padding: 0 16px 24px;
 }
 
-.section-divider {
-  height: 1px;
-  background: #e5e7eb;
+/* Lightweight Category Header */
+.category-group {
   margin-bottom: 20px;
 }
 
-.categories-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.category-group:last-child {
+  margin-bottom: 0;
 }
 
-/* Category Card */
-.category-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.2s;
-}
-
-.category-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.category-header:hover {
-  background: #f9fafb;
-}
-
-.category-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.category-name-row {
+.category-header-light {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
-.category-icon {
+.category-icon-small {
   width: 18px;
   height: 18px;
   color: #6b7280;
 }
 
-.category-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
+.category-icon-small svg {
+  width: 100%;
+  height: 100%;
 }
 
-.category-stats {
+.category-label {
   font-size: 13px;
+  font-weight: 600;
   color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.category-earnings-section {
+/* Habit Cards */
+.habit-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.habit-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.habit-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.habit-card:active {
+  transform: scale(0.99);
+  background: #fafafa;
+}
+
+.habit-card.logged {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.habit-card.logged:hover {
+  border-color: #86efac;
+}
+
+.habit-card.future {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.habit-card.future:active {
+  transform: none;
+}
+
+/* Main row: ticker, name, status */
+.habit-card-main {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
-.category-earnings {
+.habit-card-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.habit-ticker {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.habit-ticker-divider {
+  color: #d1d5db;
+  font-weight: 400;
+}
+
+.habit-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.habit-card-right {
+  flex-shrink: 0;
+}
+
+/* Pending status (not logged) */
+.habit-status-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.habit-rate {
+  font-size: 14px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+/* Logged status */
+.habit-status-logged {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.check-icon {
+  width: 18px;
+  height: 18px;
+  color: #22c55e;
+}
+
+.earned-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+/* Scheduled (future) */
+.habit-scheduled {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Secondary row */
+.habit-card-secondary {
+  margin-top: 4px;
+  padding-left: 0;
+}
+
+.logged-time {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.future-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.tap-to-log {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* No habits message */
+.no-habits-message {
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.no-habits-message p {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* ===== Log Habit Modal ===== */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.log-modal-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 20px 32px;
+  z-index: 101;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.log-modal-handle {
+  width: 36px;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.log-habit-modal {
+  padding: 8px 0;
+}
+
+.log-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 20px;
+}
+
+.log-habit-icon {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 12px;
+}
+
+.log-habit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.log-habit-ticker {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.log-habit-name {
   font-size: 18px;
   font-weight: 600;
   color: #111827;
 }
 
-.category-completed .category-earnings {
-  color: #10b981;
+/* Log input section */
+.log-input-section {
+  margin-bottom: 24px;
 }
 
-.expand-icon {
+.log-input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.log-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.stepper-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #374151;
+}
+
+.stepper-button:hover:not(:disabled) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.stepper-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stepper-input {
+  width: 80px;
+  height: 56px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  color: #111827;
+  -moz-appearance: textfield;
+}
+
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stepper-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Log confirmation */
+.log-confirmation-section {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.log-confirmation-text {
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.log-confirmation-text strong {
+  color: #111827;
+}
+
+/* Earnings preview */
+.earnings-preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.earnings-preview-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #166534;
+}
+
+.earnings-preview-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+/* Confirm button */
+.log-confirm-button {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.log-confirm-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.log-confirm-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.log-confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.logging-spinner {
   width: 20px;
   height: 20px;
-  color: #9ca3af;
-  transition: transform 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.category-card.expanded .expand-icon {
-  transform: rotate(180deg);
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Category Breakdown */
-.category-breakdown {
-  border-top: 1px solid #f3f4f6;
-  background: #fafafa;
-  padding: 12px 16px;
-  display: none;
-}
-
-.category-breakdown.visible {
-  display: block;
-}
-
-.breakdown-row {
-  display: grid;
-  grid-template-columns: 20px 1fr auto auto auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.breakdown-row:last-child {
-  border-bottom: none;
-}
-
-.breakdown-check {
-  width: 14px;
-  height: 14px;
-  color: #10b981;
-}
-
-.breakdown-check.empty {
-  visibility: hidden;
-}
-
-.breakdown-name {
-  font-size: 14px;
-  color: #111827;
-  font-weight: 400;
-}
-
-.breakdown-log {
-  font-size: 13px;
-  color: #6b7280;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.breakdown-rate {
-  font-size: 13px;
-  color: #6b7280;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.breakdown-amount {
-  font-size: 14px;
-  color: #111827;
-  font-weight: 500;
-  text-align: right;
-  min-width: 60px;
-}
-
-/* Empty State */
+/* ===== Empty State ===== */
 .empty-state {
   padding: 40px 24px;
   text-align: center;
@@ -376,31 +647,4 @@
 .empty-state-text {
   font-size: 14px;
   color: #9ca3af;
-}
-
-/* View Activity Link */
-.view-activity-section {
-  padding: 0 16px 24px;
-  text-align: center;
-}
-
-.view-activity-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #3b82f6;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.view-activity-link:hover {
-  color: #2563eb;
-  gap: 8px;
-}
-
-.view-activity-link svg {
-  width: 16px;
-  height: 16px;
 }

@@ -7,15 +7,9 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 200;
-  animation: fadeIn 0.3s;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Bottom Sheet */
+/* Bottom Sheet Base */
 .bottom-sheet {
   position: fixed;
   left: 0;
@@ -24,21 +18,34 @@
   background: white;
   border-radius: 20px 20px 0 0;
   z-index: 300;
-  animation: slideUp 0.3s ease-out;
-  max-height: 70vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+/* Height Variants */
+.bottom-sheet.sheet-auto {
+  max-height: 90vh;
+}
+
+.bottom-sheet.sheet-half {
+  height: 50vh;
+  max-height: 50vh;
+}
+
+.bottom-sheet.sheet-tall {
+  height: 80vh;
+  max-height: 80vh;
+}
+
+.bottom-sheet.sheet-full {
+  height: 95vh;
+  max-height: 95vh;
 }
 
 /* Sheet Header */
 .sheet-header {
-  padding: 16px 20px;
+  padding: 12px 20px 16px;
   border-bottom: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
@@ -55,15 +62,32 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 28px;
 }
 
 .sheet-title {
   font-size: 18px;
   font-weight: 600;
   color: #111827;
+  margin: 0;
 }
 
-.add-button {
+.sheet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Sheet Content */
+.sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Common button styles for sheet headers */
+.sheet-header-button {
   padding: 6px 12px;
   background: none;
   border: none;
@@ -75,108 +99,81 @@
   transition: background 0.2s;
 }
 
-.add-button:hover {
+.sheet-header-button:hover {
   background: #dbeafe;
 }
 
-.add-button:active {
+.sheet-header-button:active {
   background: #eff6ff;
 }
 
-/* Sheet Content */
-.sheet-content {
-  padding: 8px 0;
-  overflow-y: auto;
-  flex: 1;
+.sheet-header-button:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
-/* Habit List Item */
-.habit-list-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid #f3f4f6;
+.sheet-header-button:disabled:hover {
+  background: none;
 }
 
-.habit-list-item:hover {
-  background: #f9fafb;
-}
-
-.habit-list-item:active {
-  background: #f3f4f6;
-}
-
-.habit-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #dbeafe;
+/* Close button variant */
+.sheet-close-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3b82f6;
-  flex-shrink: 0;
-}
-
-.habit-icon.resist {
-  background: #fef3c7;
-  color: #f59e0b;
-}
-
-.habit-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.habit-list-name {
-  font-size: 16px;
-  font-weight: 500;
-  color: #111827;
-  margin-bottom: 2px;
-}
-
-.habit-list-rate {
-  font-size: 13px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 50%;
   color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.habit-status {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 12px;
-  white-space: nowrap;
-  flex-shrink: 0;
+.sheet-close-button:hover {
+  background: #e5e7eb;
+  color: #374151;
 }
 
-.status-done {
-  background: #f0fdf4;
-  color: #15803d;
-}
-
-.status-pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.chevron {
+.sheet-close-button svg {
   width: 20px;
   height: 20px;
-  color: #d1d5db;
-  flex-shrink: 0;
 }
 
-/* Empty State */
-.empty-state {
-  padding: 40px 20px;
-  text-align: center;
+/* Scrollbar styling */
+.sheet-content::-webkit-scrollbar {
+  width: 4px;
 }
 
-.empty-state p {
-  color: #6b7280;
-  font-size: 15px;
-  line-height: 1.5;
+.sheet-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sheet-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+.sheet-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Safe area for bottom nav */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .bottom-sheet {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 390px) {
+  .sheet-header {
+    padding: 10px 16px 14px;
+  }
+  
+  .sheet-title {
+    font-size: 17px;
+  }
 }

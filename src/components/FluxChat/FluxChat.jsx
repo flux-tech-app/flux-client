@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useHabits } from '../../context/HabitContext'
 import { useFluxChat } from '../../context/FluxChatContext'
+import FitnessHabitForm from '../FitnessHabitForm'
 import './FluxChat.css'
 
 // Conversation states
 const STATES = {
   IDLE: 'idle',
+  CREATING_HABIT_FORM: 'creating_habit_form', // NEW: Form-based habit creation
   CREATING_HABIT_NAME: 'creating_habit_name',
   CREATING_HABIT_FREQUENCY: 'creating_habit_frequency',
   CREATING_HABIT_RATE: 'creating_habit_rate',
@@ -47,11 +49,11 @@ export default function FluxChat() {
 
   // Focus input when chat opens (but don't auto-focus on mobile to avoid keyboard issues)
   useEffect(() => {
-    if (isOpen && window.innerWidth > 768) {
+    if (isOpen && window.innerWidth > 768 && currentState !== STATES.CREATING_HABIT_FORM) {
       // Only auto-focus on desktop, with preventScroll to avoid zoom
       inputRef.current?.focus({ preventScroll: true })
     }
-  }, [isOpen])
+  }, [isOpen, currentState])
 
   // Handle keyboard/viewport changes on mobile using Visual Viewport API
   useEffect(() => {
@@ -206,8 +208,24 @@ export default function FluxChat() {
 
   // Handle quick action chips
   const handleQuickAction = (action) => {
-    setUserInput(action)
-    handleSendMessage(action)
+    if (action === 'add new habit') {
+      // Switch to form mode instead of conversation
+      setCurrentState(STATES.CREATING_HABIT_FORM)
+    } else {
+      setUserInput(action)
+      handleSendMessage(action)
+    }
+  }
+
+  // Handle form success
+  const handleFormSuccess = (newHabit) => {
+    addMessage(`✓ Created "${newHabit.name}"! It's now in your portfolio. Start earning by logging your activity.`)
+    resetConversation()
+  }
+
+  // Handle form cancel
+  const handleFormCancel = () => {
+    resetConversation()
   }
 
   // Handle option button clicks
@@ -243,71 +261,68 @@ export default function FluxChat() {
       case STATES.CREATING_HABIT_RATE:
         handleHabitRate(text)
         break
+      case STATES.LOGGING_SELECT_HABIT:
+        handleHabitSelectionByText(input)
+        break
       case STATES.LOGGING_ENTER_VALUE:
         handleLogValue(text)
         break
-      default:
+      case STATES.RESPONDING:
+        // Just listen for new commands
+        handleIdleState(input)
         break
+      default:
+        handleIdleState(input)
     }
   }
 
-  // Handle IDLE state - detect triggers
+  // Handle idle state - detect intent
   const handleIdleState = (input) => {
-    // Create habit triggers
-    if (
-      input.includes('add new habit') ||
-      input.includes('create habit') ||
-      input.includes('new habit')
-    ) {
-      setCurrentState(STATES.CREATING_HABIT_NAME)
-      addMessage("I can help you create a new habit! What would you like to start doing?")
+    // Check for habit creation intent - NOW USES FORM
+    if (input.includes('create') || input.includes('new habit') || input.includes('add habit')) {
+      setCurrentState(STATES.CREATING_HABIT_FORM)
       return
     }
 
-    // Log activity triggers
-    if (
-      input.includes('log activity') ||
-      input.includes('log workout') ||
-      input.includes('completed')
-    ) {
+    // Check for logging intent
+    if (input.includes('log') || input.includes('completed') || input.includes('did')) {
       if (habits.length === 0) {
-        addMessage("You don't have any habits yet. Want to create one?", 'flux', [
-          { label: 'Yes, create a habit', action: () => handleQuickAction('add new habit') },
-          { label: 'No, thanks', action: resetConversation }
+        addMessage("You don't have any habits yet. Would you like to create one?", 'flux', [
+          { label: 'Create habit', action: () => setCurrentState(STATES.CREATING_HABIT_FORM) },
         ])
         return
       }
+      
       setCurrentState(STATES.LOGGING_SELECT_HABIT)
-      addMessage("Which habit did you complete?", 'flux', 
-        habits.map(habit => ({
-          label: habit.name,
-          action: () => handleHabitSelection(habit)
+      const habitList = habits.map(h => `• ${h.name}`).join('\n')
+      addMessage(`Which habit did you complete?\n\n${habitList}`, 'flux', 
+        habits.map(h => ({
+          label: h.name,
+          action: () => handleHabitSelection(h)
         }))
       )
       return
     }
 
-    // Portfolio status triggers
-    if (
-      input.includes('how am i doing') ||
-      input.includes('show progress') ||
-      input.includes('portfolio status')
-    ) {
+    // Check for status/progress queries
+    if (input.includes('progress') || input.includes('status') || input.includes('how am i') || input.includes('earnings')) {
       handlePortfolioStatus()
       return
     }
 
-    // Unknown input
-    addMessage(
-      "I can help you with:\n• Creating new habits\n• Logging activities\n• Checking your progress\n\nWhat would you like to do?"
-    )
+    // Default response
+    addMessage("I can help you create habits, log activities, or check your progress. What would you like to do?", 'flux', [
+      { label: 'Create habit', action: () => setCurrentState(STATES.CREATING_HABIT_FORM) },
+      { label: 'Log activity', action: () => handleQuickAction('log activity') },
+      { label: 'Check progress', action: handlePortfolioStatus },
+    ])
   }
 
-  // Create Habit Flow
+  // Legacy conversation flow handlers (kept for compatibility)
   const handleHabitName = (name) => {
-    setFlowData({ ...flowData, name })
+    setFlowData({ ...flowData, name: name.trim() })
     setCurrentState(STATES.CREATING_HABIT_FREQUENCY)
-    addMessage(`Great! How many days per week do you want to ${name.toLowerCase()}?`)
+    addMessage(`Great choice! How many times per week do you want to do "${name.trim()}"?`)
   }
 
   const handleHabitFrequency = (input) => {
@@ -345,10 +360,12 @@ export default function FluxChat() {
   const handleCreateHabit = () => {
     const newHabit = addHabit({
       name: flowData.name,
-      type: 'build',
-      rateType: 'flat',
-      rateAmount: flowData.rate,
-      frequency: flowData.frequency,
+      category: 'fitness',
+      subcategory: 'cardio',
+      habitType: 'other_cardio',
+      rateType: 'per_session',
+      amount: flowData.rate,
+      schedule: { type: 'daily', days: [0, 1, 2, 3, 4, 5, 6] },
     })
     
     addMessage(`✓ Created! ${newHabit.name} is now in your portfolio. Start earning by completing it!`)
@@ -356,19 +373,33 @@ export default function FluxChat() {
   }
 
   // Log Activity Flow
+  const handleHabitSelectionByText = (input) => {
+    const habit = habits.find(h => h.name.toLowerCase().includes(input))
+    if (habit) {
+      handleHabitSelection(habit)
+    } else {
+      addMessage("I couldn't find that habit. Please select from the list above.")
+    }
+  }
+
   const handleHabitSelection = (habit) => {
     setFlowData({ ...flowData, selectedHabit: habit })
     
-    // For flat rate habits, log immediately
-    if (habit.rateType === 'flat') {
+    // For per_session rate, log immediately
+    if (habit.rateType === 'per_session' || habit.rateType === 'flat') {
       handleLogCompletion(habit, 1)
       return
     }
 
-    // For per-minute/per-rep habits, ask for value
+    // For per-minute/per-rep/per-mile habits, ask for value
     setCurrentState(STATES.LOGGING_ENTER_VALUE)
-    const unit = habit.rateType === 'per-minute' ? 'minutes' : 'reps'
-    addMessage(`How many ${unit} did you do?`)
+    let unitPrompt = 'units'
+    if (habit.rateType === 'per_minute') unitPrompt = 'minutes'
+    else if (habit.rateType === 'per_rep') unitPrompt = 'reps'
+    else if (habit.rateType === 'per_mile') unitPrompt = 'miles'
+    else if (habit.rateType === 'per_step') unitPrompt = 'steps'
+    
+    addMessage(`How many ${unitPrompt} did you do?`)
   }
 
   const handleLogValue = (input) => {
@@ -381,7 +412,8 @@ export default function FluxChat() {
   }
 
   const handleLogCompletion = (habit, value) => {
-    const earnings = habit.rateAmount * value
+    const rate = habit.amount || habit.rateAmount || 0
+    const earnings = rate * value
 
     const newLog = addLog({
       habitId: habit.id,
@@ -405,7 +437,9 @@ export default function FluxChat() {
     const weekEarnings = getWeekEarnings()
     
     if (habits.length === 0) {
-      addMessage("You haven't created any habits yet. Ready to start your first one?")
+      addMessage("You haven't created any habits yet. Ready to start your first one?", 'flux', [
+        { label: 'Create habit', action: () => setCurrentState(STATES.CREATING_HABIT_FORM) },
+      ])
       setCurrentState(STATES.RESPONDING)
       return
     }
@@ -417,7 +451,7 @@ export default function FluxChat() {
       statusMessage += `• ${habit.name}: ${stats.totalLogs} completion${stats.totalLogs !== 1 ? 's' : ''}, $${stats.totalEarnings.toFixed(2)} earned\n`
     })
 
-    statusMessage += '\nKeep it up! 🔥'
+    statusMessage += '\nKeep it up!'
     addMessage(statusMessage)
     setCurrentState(STATES.RESPONDING)
   }
@@ -429,6 +463,9 @@ export default function FluxChat() {
       handleSendMessage()
     }
   }
+
+  // Check if we should show the form
+  const showHabitForm = currentState === STATES.CREATING_HABIT_FORM
 
   return (
     <>
@@ -474,7 +511,7 @@ export default function FluxChat() {
               <div className="flux-avatar">F</div>
               <div className="flux-header-title">
                 <h1>Flux</h1>
-                <p>AI behavior coach</p>
+                <p>{showHabitForm ? 'Create new habit' : 'AI behavior coach'}</p>
               </div>
               <button className="flux-close-button" onClick={handleCloseChat}>
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -483,76 +520,88 @@ export default function FluxChat() {
               </button>
             </div>
 
-            {/* Messages Area */}
+            {/* Messages Area OR Form */}
             <div className="flux-messages-area">
-              {/* Quick Actions (only show in IDLE state) */}
-              {currentState === STATES.IDLE && messages.length === 0 && (
-                <div className="flux-suggested-actions">
-                  <div className="flux-suggested-actions-label">Quick actions</div>
-                  <div className="flux-suggestions-grid">
-                    <div className="flux-suggestion-chip" onClick={() => handleQuickAction('log activity')}>
-                      Log activity
-                    </div>
-                    <div className="flux-suggestion-chip" onClick={() => handleQuickAction('add new habit')}>
-                      Add new habit
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Messages */}
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flux-message ${msg.sender}-message`}>
-                  <div className={`flux-message-avatar ${msg.sender === 'user' ? 'user-avatar' : ''}`}>
-                    {msg.sender === 'user' ? 'U' : 'F'}
-                  </div>
-                  <div className="flux-message-content">
-                    {msg.content}
-                    {msg.showOptions && (
-                      <div className="flux-action-buttons">
-                        {msg.showOptions.map((option, idx) => (
-                          <button
-                            key={idx}
-                            className="flux-action-btn"
-                            onClick={() => handleOptionClick(option)}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
+              {showHabitForm ? (
+                /* Habit Creation Form */
+                <FitnessHabitForm 
+                  onSuccess={handleFormSuccess}
+                  onCancel={handleFormCancel}
+                />
+              ) : (
+                <>
+                  {/* Quick Actions (only show in IDLE state) */}
+                  {currentState === STATES.IDLE && messages.length === 0 && (
+                    <div className="flux-suggested-actions">
+                      <div className="flux-suggested-actions-label">Quick actions</div>
+                      <div className="flux-suggestions-grid">
+                        <div className="flux-suggestion-chip" onClick={() => handleQuickAction('log activity')}>
+                          Log activity
+                        </div>
+                        <div className="flux-suggestion-chip" onClick={() => handleQuickAction('add new habit')}>
+                          Add new habit
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
+                    </div>
+                  )}
+
+                  {/* Messages */}
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flux-message ${msg.sender}-message`}>
+                      <div className={`flux-message-avatar ${msg.sender === 'user' ? 'user-avatar' : ''}`}>
+                        {msg.sender === 'user' ? 'U' : 'F'}
+                      </div>
+                      <div className="flux-message-content">
+                        {msg.content}
+                        {msg.showOptions && (
+                          <div className="flux-action-buttons">
+                            {msg.showOptions.map((option, idx) => (
+                              <button
+                                key={idx}
+                                className="flux-action-btn"
+                                onClick={() => handleOptionClick(option)}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
             </div>
 
-            {/* Input Area */}
-            <div className="flux-input-area">
-              <div className="flux-input-container">
-                <div className="flux-input-wrapper">
-                  <textarea
-                    ref={inputRef}
-                    className="flux-message-input"
-                    placeholder="Message Flux..."
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows="1"
-                    inputMode="text"
-                  />
+            {/* Input Area - hide when showing form */}
+            {!showHabitForm && (
+              <div className="flux-input-area">
+                <div className="flux-input-container">
+                  <div className="flux-input-wrapper">
+                    <textarea
+                      ref={inputRef}
+                      className="flux-message-input"
+                      placeholder="Message Flux..."
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      rows="1"
+                      inputMode="text"
+                    />
+                  </div>
+                  <button
+                    className={`flux-send-button ${!userInput.trim() ? 'disabled' : ''}`}
+                    onClick={() => handleSendMessage()}
+                    disabled={!userInput.trim()}
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  className={`flux-send-button ${!userInput.trim() ? 'disabled' : ''}`}
-                  onClick={() => handleSendMessage()}
-                  disabled={!userInput.trim()}
-                >
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
