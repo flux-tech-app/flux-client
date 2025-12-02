@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
+import { generateHabitInsights } from '../../utils/habitInsights';
 import BackButton from '../../components/BackButton';
 import './HabitDetail.css';
 
@@ -11,12 +12,14 @@ export default function HabitDetail() {
   const { habits, logs, deleteHabit, pauseHabit, resumeHabit } = useHabits();
   
   // Chart state
-  const [chartType, setChartType] = useState('hhs'); // 'hhs' or 'earnings'
+  const [chartType, setChartType] = useState('earnings');
   const [timeRange, setTimeRange] = useState('1M');
   
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [showCalibrationInfo, setShowCalibrationInfo] = useState(false);
   
   const habit = habits.find(h => h.id === id);
   
@@ -36,7 +39,12 @@ export default function HabitDetail() {
   // Get all logs for this habit
   const habitLogs = logs.filter(log => log.habitId === habit.id);
   
-  // Calculate statistics including Resilience
+  // Generate insights using utility
+  const insights = useMemo(() => {
+    return generateHabitInsights(habit, logs);
+  }, [habit, logs]);
+  
+  // Calculate basic statistics for header/hero
   const stats = useMemo(() => {
     const now = new Date();
     const habitCreated = new Date(habit.createdAt);
@@ -45,10 +53,7 @@ export default function HabitDetail() {
     // Total earnings
     const totalEarnings = habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
     
-    // Total logged (units/minutes/etc)
-    const totalLogged = habitLogs.reduce((sum, log) => sum + (log.amount || 1), 0);
-    
-    // Get logs from last 30 days
+    // Get logs from last 30 days for completion rate
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const recentLogs = habitLogs.filter(log => new Date(log.timestamp) >= thirtyDaysAgo);
     
@@ -65,14 +70,13 @@ export default function HabitDetail() {
       }
     };
     
-    // Completion rate (last 30 days or since creation)
     const periodDays = Math.min(30, daysSinceCreation);
     const expected = getExpectedCompletions(periodDays);
     const completionRate = expected > 0 ? Math.min(100, Math.round((recentLogs.length / expected) * 100)) : 0;
     
-    // Calculate streaks and gaps for resilience
-    const calculateStreaksAndResilience = () => {
-      if (habitLogs.length === 0) return { current: 0, best: 0, resilience: 50 };
+    // Calculate current streak
+    const calculateCurrentStreak = () => {
+      if (habitLogs.length === 0) return 0;
       
       const sortedLogs = [...habitLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       const today = new Date();
@@ -81,18 +85,16 @@ export default function HabitDetail() {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
-      // Get unique dates sorted descending
       const uniqueDates = [...new Set(sortedLogs.map(log => {
         const d = new Date(log.timestamp);
         d.setHours(0, 0, 0, 0);
         return d.getTime();
       }))].sort((a, b) => b - a);
       
-      if (uniqueDates.length === 0) return { current: 0, best: 0, resilience: 50 };
+      if (uniqueDates.length === 0) return 0;
       
       const lastLogDate = new Date(uniqueDates[0]);
       
-      // Calculate current streak
       let currentStreak = 0;
       if (lastLogDate.getTime() === today.getTime() || lastLogDate.getTime() === yesterday.getTime()) {
         currentStreak = 1;
@@ -108,111 +110,21 @@ export default function HabitDetail() {
         }
       }
       
-      // Calculate best streak and track gaps for resilience
-      let bestStreak = currentStreak;
-      let tempStreak = 1;
-      const gaps = [];
-      
-      for (let i = 1; i < uniqueDates.length; i++) {
-        const diff = (uniqueDates[i - 1] - uniqueDates[i]) / (1000 * 60 * 60 * 24);
-        if (diff === 1) {
-          tempStreak++;
-          bestStreak = Math.max(bestStreak, tempStreak);
-        } else {
-          if (diff > 1 && diff <= 14) {
-            gaps.push(diff - 1);
-          }
-          tempStreak = 1;
-        }
-      }
-      
-      // Calculate Resilience Score (0-100)
-      let resilienceScore = 50;
-      
-      if (gaps.length > 0) {
-        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-        
-        if (avgGap <= 1) resilienceScore = 95;
-        else if (avgGap <= 2) resilienceScore = 85;
-        else if (avgGap <= 3) resilienceScore = 70;
-        else if (avgGap <= 5) resilienceScore = 55;
-        else if (avgGap <= 7) resilienceScore = 40;
-        else resilienceScore = 25;
-        
-        if (gaps.length >= 3) resilienceScore = Math.min(100, resilienceScore + 10);
-        if (gaps.length >= 5) resilienceScore = Math.min(100, resilienceScore + 5);
-      } else if (currentStreak > 0) {
-        resilienceScore = 70 + Math.min(20, currentStreak * 2);
-      }
-      
-      return { 
-        current: currentStreak, 
-        best: Math.max(bestStreak, habit.bestStreak || 0),
-        resilience: resilienceScore
-      };
+      return currentStreak;
     };
     
-    const streakData = calculateStreaksAndResilience();
+    const currentStreak = calculateCurrentStreak();
     
-    // Average per session
-    const avgPerSession = habitLogs.length > 0 
-      ? (totalLogged / habitLogs.length).toFixed(1) 
-      : 0;
-    
-    // Consistency score
-    const consistencyScore = Math.min(100, Math.round(
-      completionRate * 0.7 + 
-      (streakData.current > 7 ? 20 : streakData.current * 2.5) +
-      (streakData.best > 14 ? 10 : streakData.best * 0.7)
-    ));
-    
-    // Trend calculation
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
-    
-    const recentTwoWeeks = habitLogs.filter(log => new Date(log.timestamp) >= twoWeeksAgo).length;
-    const previousTwoWeeks = habitLogs.filter(log => {
-      const date = new Date(log.timestamp);
-      return date >= fourWeeksAgo && date < twoWeeksAgo;
-    }).length;
-    
-    let trendDirection = 'stable';
-    let trendChange = 0;
-    if (previousTwoWeeks > 0) {
-      trendChange = Math.round(((recentTwoWeeks - previousTwoWeeks) / previousTwoWeeks) * 100);
-      trendDirection = trendChange > 5 ? 'up' : trendChange < -5 ? 'down' : 'stable';
-    } else if (recentTwoWeeks > 0) {
-      trendDirection = 'up';
-      trendChange = 100;
-    }
-    
-    // Calculate HHS with proper weighting (MVT version)
-    const calculateHHS = () => {
-      const consistencyComponent = (consistencyScore / 100) * 40;
-      const resilienceComponent = (streakData.resilience / 100) * 30;
-      const completionComponent = (completionRate / 100) * 30;
-      
-      return Math.round(consistencyComponent + resilienceComponent + completionComponent);
-    };
-    
-    const hhs = calculateHHS();
-    
-    const previousHHS = Math.max(0, hhs - (trendChange > 0 ? Math.min(trendChange / 5, 10) : Math.max(trendChange / 5, -10)));
-    const hhsChange = hhs - previousHHS;
+    // Simple HSS calculation for header display
+    const consistencyScore = Math.min(100, completionRate);
+    const streakBonus = Math.min(20, currentStreak * 2);
+    const hss = Math.round((consistencyScore * 0.8) + streakBonus);
     
     return {
       totalEarnings,
-      totalLogged,
       completionRate,
-      currentStreak: streakData.current,
-      bestStreak: streakData.best,
-      resilienceScore: streakData.resilience,
-      avgPerSession,
-      consistencyScore,
-      trendDirection,
-      trendChange,
-      hhs,
-      hhsChange,
+      currentStreak,
+      hss: Math.min(100, hss),
       daysSinceCreation
     };
   }, [habit, habitLogs]);
@@ -235,22 +147,16 @@ export default function HabitDetail() {
       .slice(0, 10);
   }, [habitLogs]);
 
-  // Star rating based on HHS
-  const getStarRating = (hhs) => {
-    if (hhs >= 90) return { stars: 5, label: 'Exceptional' };
-    if (hhs >= 80) return { stars: 4, label: 'Strong' };
-    if (hhs >= 70) return { stars: 3, label: 'Solid' };
-    if (hhs >= 60) return { stars: 2, label: 'Developing' };
+  // Star rating based on HSS
+  const getStarRating = (hss) => {
+    if (hss >= 90) return { stars: 5, label: 'Exceptional' };
+    if (hss >= 80) return { stars: 4, label: 'Strong' };
+    if (hss >= 70) return { stars: 3, label: 'Solid' };
+    if (hss >= 60) return { stars: 2, label: 'Developing' };
     return { stars: 1, label: 'Building' };
   };
   
-  const rating = getStarRating(stats.hhs);
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  const rating = getStarRating(stats.hss);
 
   // Format time for activity
   const formatActivityTime = (timestamp) => {
@@ -261,7 +167,7 @@ export default function HabitDetail() {
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
-    return formatDate(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   // Get unit label
@@ -271,19 +177,26 @@ export default function HabitDetail() {
     return 'sessions';
   };
 
-  // Calendar heatmap data (last 12 weeks)
+  // Calendar heatmap data (current month with padding)
   const calendarData = useMemo(() => {
-    const weeks = 12;
-    const data = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
     
-    const startDate = new Date(startOfWeek);
-    startDate.setDate(startDate.getDate() - (weeks - 1) * 7);
+    // First day of the month
+    const firstOfMonth = new Date(currentYear, currentMonth, 1);
+    // Last day of the month
+    const lastOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastOfMonth.getDate();
     
+    // What day of week does the month start on? (0 = Sunday)
+    const startDayOfWeek = firstOfMonth.getDay();
+    // What day of week does the month end on?
+    const endDayOfWeek = lastOfMonth.getDay();
+    
+    // Build log map for quick lookup
     const logMap = new Map();
     habitLogs.forEach(log => {
       const d = new Date(log.timestamp);
@@ -292,29 +205,61 @@ export default function HabitDetail() {
       logMap.set(key, (logMap.get(key) || 0) + 1);
     });
     
-    for (let week = 0; week < weeks; week++) {
-      const weekData = [];
-      for (let day = 0; day < 7; day++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + week * 7 + day);
-        const key = date.getTime();
-        const count = logMap.get(key) || 0;
-        const isFuture = date > today;
-        
-        weekData.push({
-          date,
-          count,
-          isFuture,
-          level: isFuture ? 0 : count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
-        });
-      }
-      data.push(weekData);
+    const days = [];
+    
+    // Add padding days before the 1st (from previous month)
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push({
+        date: null,
+        count: 0,
+        isPadding: true,
+        isFuture: false,
+        level: 0
+      });
     }
     
-    return data;
+    // Add days of the current month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const key = date.getTime();
+      const count = logMap.get(key) || 0;
+      const isFuture = date > today;
+      
+      days.push({
+        date,
+        day,
+        count,
+        isPadding: false,
+        isFuture,
+        level: isFuture ? 0 : count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
+      });
+    }
+    
+    // Add padding days after the last day (to complete the week)
+    const remainingDays = 6 - endDayOfWeek;
+    for (let i = 0; i < remainingDays; i++) {
+      days.push({
+        date: null,
+        count: 0,
+        isPadding: true,
+        isFuture: false,
+        level: 0
+      });
+    }
+    
+    // Convert to weeks (array of 7-day arrays)
+    const weeks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      weeks.push(days.slice(i, i + 7));
+    }
+    
+    return {
+      weeks,
+      monthName: firstOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    };
   }, [habitLogs]);
 
-  // Chart data generation for line chart
+  // Chart data generation
   const chartData = useMemo(() => {
     const ranges = {
       '1W': 7,
@@ -354,18 +299,18 @@ export default function HabitDetail() {
       d.cumulativeEarnings = cumulative;
     });
     
-    // Calculate rolling HHS (7-day window)
+    // Calculate rolling HSS (7-day window)
     data.forEach((d, i) => {
       const start = Math.max(0, i - 6);
       const slice = data.slice(start, i + 1);
       const completedDays = slice.filter(s => s.logged).length;
-      d.hhs = Math.round((completedDays / slice.length) * 100);
+      d.hss = Math.round((completedDays / slice.length) * 100);
     });
     
     return data;
   }, [habitLogs, timeRange, habit.createdAt]);
 
-  // Generate SVG line chart path (Portfolio style)
+  // Generate SVG line chart path
   const generateChartPath = useMemo(() => {
     if (chartData.length < 2) return { linePath: '', areaPath: '', points: [] };
     
@@ -375,71 +320,26 @@ export default function HabitDetail() {
     const paddingTop = 5;
     const paddingBottom = 5;
     
-    const values = chartData.map(d => chartType === 'hhs' ? d.hhs : d.cumulativeEarnings);
-    const maxValue = chartType === 'hhs' ? 100 : Math.max(...values, 10);
+    const values = chartData.map(d => chartType === 'hss' ? d.hss : d.cumulativeEarnings);
+    const maxValue = chartType === 'hss' ? 100 : Math.max(...values, 10);
     const minValue = 0;
     
     const points = chartData.map((d, i) => {
       const x = paddingX + (i / (chartData.length - 1)) * (width - paddingX * 2);
-      const value = chartType === 'hhs' ? d.hhs : d.cumulativeEarnings;
+      const value = chartType === 'hss' ? d.hss : d.cumulativeEarnings;
       const y = paddingTop + ((maxValue - value) / (maxValue - minValue || 1)) * (height - paddingTop - paddingBottom);
       return { x, y };
     });
     
-    // Create smooth line path using basic line segments
     const linePath = points.reduce((path, point, i) => {
       if (i === 0) return `M ${point.x} ${point.y}`;
       return `${path} L ${point.x} ${point.y}`;
     }, '');
     
-    // Area path (for gradient fill)
     const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
     
     return { linePath, areaPath, points };
   }, [chartData, chartType]);
-
-  // Calculate achievements
-  const achievements = useMemo(() => {
-    const earned = [];
-    const { currentStreak, bestStreak, resilienceScore, hhs } = stats;
-    
-    if (bestStreak >= 28) earned.push({ type: 'streak', label: '4 Week Streak', icon: 'flame' });
-    if (bestStreak >= 56) earned.push({ type: 'streak', label: '8 Week Streak', icon: 'flame' });
-    if (bestStreak >= 84) earned.push({ type: 'streak', label: '12 Week Streak', icon: 'flame' });
-    
-    if (currentStreak >= 7) earned.push({ type: 'perfection', label: 'Perfect Week', icon: 'star' });
-    
-    if (resilienceScore >= 80) earned.push({ type: 'resilience', label: 'Quick Recovery', icon: 'refresh' });
-    
-    if (hhs >= 70) earned.push({ type: 'strength', label: 'HHS 70+', icon: 'chart' });
-    if (hhs >= 80) earned.push({ type: 'strength', label: 'HHS 80+', icon: 'chart' });
-    
-    const total = stats.totalLogged;
-    const milestones = habit.category === 'fitness' 
-      ? [50, 100, 250, 500, 1000]
-      : [25, 50, 100, 200, 500];
-    
-    const earnedMilestone = [...milestones].reverse().find(m => total >= m);
-    if (earnedMilestone) {
-      earned.push({ 
-        type: 'milestone', 
-        label: `${earnedMilestone} ${getUnitLabel()}`, 
-        icon: 'trophy' 
-      });
-    }
-    
-    const nextMilestone = milestones.find(m => total < m);
-    const remaining = nextMilestone ? nextMilestone - total : null;
-    
-    return { earned, nextMilestone, remaining };
-  }, [stats, habit]);
-
-  // HHS component scores for breakdown
-  const hhsComponents = useMemo(() => ({
-    consistency: stats.consistencyScore,
-    resilience: stats.resilienceScore,
-    completion: stats.completionRate
-  }), [stats]);
 
   // Handle actions
   const handleEdit = () => {
@@ -468,130 +368,160 @@ export default function HabitDetail() {
     navigate('/portfolio', { state: { direction: 'back' } });
   };
 
-  // Get current chart value for display
-  // For HHS: show actual HHS score; for Earnings: show cumulative
-  const currentChartValue = chartType === 'hhs' 
-    ? stats.hhs.toString()
-    : (chartData.length > 0 ? formatCurrency(chartData[chartData.length - 1].cumulativeEarnings) : '$0.00');
+  // Chart display value - show change over period
+  const chartChangeValue = useMemo(() => {
+    if (chartData.length < 2) return { value: '$0.00', isPositive: true };
+    
+    const firstPoint = chartData[0];
+    const lastPoint = chartData[chartData.length - 1];
+    
+    if (chartType === 'earnings') {
+      const change = lastPoint.cumulativeEarnings - firstPoint.cumulativeEarnings;
+      return {
+        value: `${change >= 0 ? '+' : ''}${formatCurrency(change)}`,
+        isPositive: change >= 0
+      };
+    } else {
+      // HSS change
+      const change = lastPoint.hss - firstPoint.hss;
+      return {
+        value: `${change >= 0 ? '+' : ''}${change}%`,
+        isPositive: change >= 0
+      };
+    }
+  }, [chartData, chartType]);
 
-  // Calculate HHS ring progress
-  const hhsProgress = stats.hhs / 100;
-  const circumference = 2 * Math.PI * 36; // radius = 36
-  const strokeDashoffset = circumference * (1 - hhsProgress);
+  // HSS ring calculations
+  const hssProgress = stats.hss / 100;
+  const circumference = 2 * Math.PI * 36;
+  const strokeDashoffset = circumference * (1 - hssProgress);
 
   return (
     <div className="habit-detail-page">
       <div className="habit-detail-container">
-        {/* Header with Ticker + HHS Ring */}
+        {/* Header with Habit Name */}
         <header className="detail-header">
           <BackButton to="/portfolio" />
-          <div className="header-ticker">${habit.ticker || 'HABIT'}</div>
-          <div className="header-hhs">
-            <div className="hhs-ring-container">
-              <svg className="hhs-ring" viewBox="0 0 80 80">
-                {/* Background circle */}
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="6"
-                />
-                {/* Progress circle */}
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  fill="none"
-                  stroke="url(#hhsGradient)"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  transform="rotate(-90 40 40)"
-                />
-                <defs>
-                  <linearGradient id="hhsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#60a5fa" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="hhs-ring-value">
-                <span className="hhs-number">{stats.hhs}</span>
-                <span className="hhs-label">HHS</span>
-              </div>
-            </div>
-            <div className="header-star-rating">
-              {[1, 2, 3, 4, 5].map(star => (
-                <span key={star} className={`header-star ${star <= rating.stars ? 'filled' : 'empty'}`}>
-                  ★
-                </span>
-              ))}
-            </div>
-          </div>
+          <h1 className="header-title">{habit.name}</h1>
+          <div className="header-spacer"></div>
         </header>
 
-        {/* Hero Section */}
+        {/* Hero Section - Two Column Layout */}
         <section className="hero-section">
-          <h2 className="habit-name-large">{habit.name}</h2>
-          <div className="habit-meta-line">
-            <span className="meta-rate">{formatCurrency(habit.rate ?? 0)}/{habit.rateType === 'per_unit' ? habit.unit || 'unit' : 'day'}</span>
-            <span className="meta-dot">·</span>
-            <span className="meta-schedule">{habit.schedule?.type === 'specific_days' ? 'Custom' : habit.schedule?.type || 'Daily'}</span>
-          </div>
-          <div className="total-earned">
-            <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
-            <span className="earned-label">lifetime earnings</span>
-          </div>
-          <div className="status-badges">
-            {isLoggedToday && (
-              <div className="today-status">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Completed today</span>
+          <div className="hero-content">
+            <div className="hero-left">
+              <div className="hero-ticker">${habit.ticker || 'HABIT'}</div>
+              <div className="habit-meta-line">
+                <span className="meta-rate">{formatCurrency(habit.rate ?? 0)}/{habit.rateType === 'per_unit' ? habit.unit || 'unit' : 'day'}</span>
+                <span className="meta-dot">·</span>
+                <span className="meta-schedule">{habit.schedule?.type === 'specific_days' ? 'Custom' : habit.schedule?.type || 'Daily'}</span>
               </div>
-            )}
-            {habit.isActive === false && (
-              <div className="paused-status">
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-                <span>Paused</span>
+              <div className="total-earned">
+                <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
+                <span className="earned-label">lifetime earnings</span>
               </div>
-            )}
-            <div className={`rating-badge ${rating.label.toLowerCase()}`}>
-              {rating.label}
+              <div className="status-badges">
+                {isLoggedToday && (
+                  <div className="today-status">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Completed today</span>
+                  </div>
+                )}
+                {habit.isActive === false && (
+                  <div className="paused-status">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                    <span>Paused</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="hero-right">
+              <div className="hss-tappable" onClick={() => {
+                setShowComingSoon(true);
+                setTimeout(() => setShowComingSoon(false), 2000);
+              }}>
+                <div className="hss-main">
+                  <div className="hss-ring-container">
+                    <svg className="hss-ring" viewBox="0 0 80 80">
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="6"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        fill="none"
+                        stroke="url(#hssGradient)"
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        transform="rotate(-90 40 40)"
+                      />
+                      <defs>
+                        <linearGradient id="hssGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#60a5fa" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="hss-ring-value">
+                      <span className="hss-number">{stats.hss}</span>
+                      <span className="hss-label">HSS</span>
+                    </div>
+                  </div>
+                  <div className="hero-star-rating">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} className={`hero-star ${star <= rating.stars ? 'filled' : 'empty'}`}>
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="hss-chevron">
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Performance Chart - Portfolio Style */}
+        {/* Performance Chart */}
         <section className="detail-chart-section">
           <div className="detail-chart-header">
             <div className="chart-title">Growth</div>
             <div className="chart-toggle-group">
-              <button 
-                className={`chart-toggle-btn ${chartType === 'hhs' ? 'active' : ''}`}
-                onClick={() => setChartType('hhs')}
-              >
-                HHS
-              </button>
               <button 
                 className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`}
                 onClick={() => setChartType('earnings')}
               >
                 Earnings
               </button>
+              <button 
+                className={`chart-toggle-btn ${chartType === 'hss' ? 'active' : ''}`}
+                onClick={() => setChartType('hss')}
+              >
+                HSS
+              </button>
             </div>
           </div>
           
-          <div className="chart-current-value">{currentChartValue}</div>
+          <div className={`chart-change-value ${chartChangeValue.isPositive ? 'positive' : 'negative'}`}>
+            {chartChangeValue.value}
+          </div>
           
           <div className="detail-chart-container">
-            {/* Grid lines */}
             <div className="chart-grid">
               <div className="grid-line"></div>
               <div className="grid-line"></div>
@@ -599,46 +529,28 @@ export default function HabitDetail() {
               <div className="grid-line"></div>
             </div>
             
-            {chartData.length > 1 ? (
-              <svg 
-                className="line-chart-svg" 
-                viewBox="0 0 100 100" 
-                preserveAspectRatio="none"
-              >
+            {chartData.length >= 2 ? (
+              <svg className="line-chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <defs>
-                  <linearGradient id="chartAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                {/* Area fill */}
-                <path 
-                  d={generateChartPath.areaPath} 
-                  fill="url(#chartAreaGradient)"
+                <path
+                  d={generateChartPath.areaPath}
+                  fill="url(#chartGradient)"
                 />
-                {/* Line */}
-                <path 
-                  d={generateChartPath.linePath} 
-                  fill="none" 
-                  stroke="#3b82f6" 
+                <path
+                  d={generateChartPath.linePath}
+                  fill="none"
+                  stroke="#3b82f6"
                   strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
                   vectorEffect="non-scaling-stroke"
                 />
-                {/* End dot */}
-                {generateChartPath.points && generateChartPath.points.length > 0 && (
-                  <circle 
-                    cx={generateChartPath.points[generateChartPath.points.length - 1].x}
-                    cy={generateChartPath.points[generateChartPath.points.length - 1].y}
-                    r="3"
-                    fill="#3b82f6"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                )}
               </svg>
             ) : (
-              <div className="chart-empty">Not enough data yet</div>
+              <div className="chart-empty">Log more activities to see trends</div>
             )}
           </div>
           
@@ -655,196 +567,193 @@ export default function HabitDetail() {
           </div>
         </section>
 
-        {/* Calendar Heatmap - GitHub Style */}
+        {/* Calendar Heatmap - Month View */}
         <section className="calendar-section">
-          <h3 className="detail-section-title">Activity</h3>
+          <div className="calendar-header">
+            <h3 className="detail-section-title">Activity</h3>
+            <span className="calendar-month-label">{calendarData.monthName}</span>
+          </div>
           <div className="calendar-heatmap">
-            <div className="calendar-container">
-              <div className="calendar-day-labels">
-                <span></span>
-                <span>M</span>
-                <span></span>
-                <span>W</span>
-                <span></span>
-                <span>F</span>
-                <span></span>
-              </div>
-              <div className="calendar-grid">
-                {calendarData.map((week, weekIndex) => (
-                  <div key={weekIndex} className="calendar-week">
-                    {week.map((day, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className={`calendar-day ${day.isFuture ? 'future' : `level-${day.level}`}`}
-                        title={`${day.date.toLocaleDateString()}: ${day.count} ${day.count === 1 ? 'entry' : 'entries'}`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
+            <div className="calendar-weekday-labels">
+              <span>S</span>
+              <span>M</span>
+              <span>T</span>
+              <span>W</span>
+              <span>T</span>
+              <span>F</span>
+              <span>S</span>
+            </div>
+            <div className="calendar-month-grid">
+              {calendarData.weeks.map((week, weekIndex) => (
+                <div key={weekIndex} className="calendar-week-row">
+                  {week.map((day, dayIndex) => (
+                    <div 
+                      key={dayIndex} 
+                      className={`calendar-day ${
+                        day.isPadding ? 'padding' : 
+                        day.isFuture ? 'future' : 
+                        `level-${day.level}`
+                      }`}
+                      title={day.isPadding || day.isFuture ? '' : `${day.date.toLocaleDateString()}: ${day.count} ${day.count === 1 ? 'log' : 'logs'}`}
+                    >
+                      {!day.isPadding && <span className="day-number">{day.day}</span>}
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
             <div className="calendar-legend">
               <span className="legend-label">Less</span>
               <div className="legend-squares">
-                <div className="calendar-day level-0"></div>
-                <div className="calendar-day level-1"></div>
-                <div className="calendar-day level-2"></div>
-                <div className="calendar-day level-3"></div>
+                <div className="legend-square level-0"></div>
+                <div className="legend-square level-1"></div>
+                <div className="legend-square level-2"></div>
+                <div className="legend-square level-3"></div>
               </div>
               <span className="legend-label">More</span>
             </div>
           </div>
         </section>
 
-        {/* Key Statistics */}
-        <section className="stats-section">
-          <h3 className="detail-section-title">Key Statistics</h3>
-          <div className="detail-stats-grid">
-            <div className="stat-row">
-              <span className="stat-label">Completion Rate</span>
-              <span className="stat-value">{stats.completionRate}%</span>
+        {/* === NEW INSIGHTS SECTION === */}
+        
+        {/* Progress Milestone */}
+        <section className="insight-section">
+          <div className="insight-card milestone">
+            <div className="insight-header">
+              <span className="insight-icon">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                  <circle cx="12" cy="12" r="6" strokeWidth="2"/>
+                  <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                </svg>
+              </span>
+              <h3 className="insight-title">Next Milestone</h3>
             </div>
-            <div className="stat-row">
-              <span className="stat-label">Resilience Score</span>
-              <span className="stat-value">{stats.resilienceScore}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Current Streak</span>
-              <span className="stat-value">{stats.currentStreak} days</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Best Streak</span>
-              <span className="stat-value">{stats.bestStreak} days</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Total Sessions</span>
-              <span className="stat-value">{habitLogs.length}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Total {getUnitLabel()}</span>
-              <span className="stat-value">{stats.totalLogged}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Avg per Session</span>
-              <span className="stat-value">{stats.avgPerSession} {getUnitLabel()}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Days Active</span>
-              <span className="stat-value">{stats.daysSinceCreation}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Lifetime Earnings</span>
-              <span className="stat-value earned">{formatCurrency(stats.totalEarnings)}</span>
-            </div>
-          </div>
-        </section>
-
-        {/* HHS Breakdown */}
-        <section className="breakdown-section">
-          <h3 className="detail-section-title">HHS Breakdown</h3>
-          <div className="breakdown-grid">
-            <div className="breakdown-row">
-              <span className="breakdown-label">Consistency</span>
-              <div className="breakdown-bar-container">
-                <div className="breakdown-bar consistency" style={{ width: `${hhsComponents.consistency}%` }} />
-              </div>
-              <span className="breakdown-value">{Math.round(hhsComponents.consistency)}</span>
-            </div>
-            <div className="breakdown-row">
-              <span className="breakdown-label">Resilience</span>
-              <div className="breakdown-bar-container">
-                <div className="breakdown-bar resilience" style={{ width: `${hhsComponents.resilience}%` }} />
-              </div>
-              <span className="breakdown-value">{Math.round(hhsComponents.resilience)}</span>
-            </div>
-            <div className="breakdown-row">
-              <span className="breakdown-label">Completion</span>
-              <div className="breakdown-bar-container">
-                <div className="breakdown-bar completion" style={{ width: `${hhsComponents.completion}%` }} />
-              </div>
-              <span className="breakdown-value">{Math.round(hhsComponents.completion)}</span>
-            </div>
-          </div>
-          <p className="breakdown-note">
-            Resilience measures how quickly you return after missing days
-          </p>
-        </section>
-
-        {/* Achievements */}
-        <section className="achievements-section">
-          <h3 className="detail-section-title">Achievements</h3>
-          {achievements.earned.length > 0 ? (
-            <div className="achievements-grid">
-              {achievements.earned.map((achievement, i) => (
-                <div key={i} className={`achievement-badge ${achievement.type}`}>
-                  <div className="achievement-icon">
-                    {achievement.icon === 'flame' && (
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 23c-4.97 0-9-4.03-9-9 0-3.53 2.04-6.58 5-8.05V4c0-.55.45-1 1-1s1 .45 1 1v2.05c.47-.03.95-.05 1.43-.05.48 0 .96.02 1.43.05V4c0-.55.45-1 1-1s1 .45 1 1v1.95c2.96 1.47 5 4.52 5 8.05 0 4.97-4.03 9-9 9z"/>
-                      </svg>
-                    )}
-                    {achievement.icon === 'star' && (
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                      </svg>
-                    )}
-                    {achievement.icon === 'chart' && (
-                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M3 3v18h18M9 17V9m4 8V5m4 12v-4"/>
-                      </svg>
-                    )}
-                    {achievement.icon === 'trophy' && (
-                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 15c-3.87 0-7-3.13-7-7V4h14v4c0 3.87-3.13 7-7 7zm0 3c-1.1 0-2-.9-2-2v-1h4v1c0 1.1-.9 2-2 2zm-7-9H2V5h3v4zm14 0h3V5h-3v4zm-5 11H10v-2h4v2z"/>
-                      </svg>
-                    )}
-                    {achievement.icon === 'refresh' && (
-                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                      </svg>
-                    )}
-                  </div>
-                  <span className="achievement-label">{achievement.label}</span>
+            {insights.milestone.reached ? (
+              <p className="insight-message">{insights.milestone.message}</p>
+            ) : (
+              <>
+                <div className="milestone-target">
+                  <span className="milestone-amount">${insights.milestone.target}</span>
+                  <span className="milestone-label">lifetime earnings</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="achievements-empty">Complete your first week to unlock achievements</p>
-          )}
-          {achievements.nextMilestone && (
-            <div className="next-milestone">
-              Next: {achievements.nextMilestone} {getUnitLabel()} ({achievements.remaining} to go)
-            </div>
-          )}
+                <div className="milestone-progress-container">
+                  <div className="milestone-progress-bar">
+                    <div 
+                      className="milestone-progress-fill"
+                      style={{ width: `${insights.milestone.progress}%` }}
+                    />
+                  </div>
+                  <div className="milestone-progress-text">
+                    <span>{formatCurrency(insights.milestone.current)}</span>
+                    <span>{formatCurrency(insights.milestone.target)}</span>
+                  </div>
+                </div>
+                <p className="insight-message">{insights.milestone.message}</p>
+              </>
+            )}
+          </div>
         </section>
 
-        {/* Flux Insights */}
-        <section className="insights-section">
-          <h3 className="detail-section-title">Flux Insights</h3>
-          <div className="insights-card">
-            <p className="detail-insight-text">
-              <strong>${habit.ticker}</strong> is a {rating.label.toLowerCase()} habit in your portfolio.
-              {stats.trendDirection === 'up' && ' Performance has been trending upward recently.'}
-              {stats.trendDirection === 'down' && ' Consider focusing on consistency to improve your score.'}
-              {stats.trendDirection === 'stable' && ' Maintain your current pace to keep building strength.'}
-              {stats.resilienceScore >= 80 && ' Your recovery rate after missed days is excellent.'}
-              {stats.resilienceScore < 50 && ' Try to get back on track quickly when you miss a day.'}
-            </p>
-            <div className="insight-meta">
-              <div className="insight-item">
-                <span className="insight-label">Risk</span>
-                <span className={`insight-value ${stats.trendDirection === 'down' ? 'caution' : 'good'}`}>
-                  {stats.trendDirection === 'down' ? 'Declining trend' : 'None identified'}
-                </span>
-              </div>
-              <div className="insight-item">
-                <span className="insight-label">Outlook</span>
-                <span className={`insight-value ${stats.trendDirection === 'down' ? 'neutral' : 'good'}`}>
-                  {stats.trendDirection === 'up' ? 'Positive' : stats.trendDirection === 'stable' ? 'Neutral' : 'Caution advised'}
-                </span>
-              </div>
+        {/* Habit Maturity Stage */}
+        <section className="insight-section">
+          <div className={`insight-card maturity ${insights.maturity.stage}`}>
+            <div className="insight-header">
+              <span className="insight-icon">
+                {insights.maturity.stage === 'forming' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19V5m0 14l-3-3m3 3l3-3M5 12a7 7 0 1114 0"/>
+                  </svg>
+                )}
+                {insights.maturity.stage === 'establishing' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                  </svg>
+                )}
+                {insights.maturity.stage === 'strengthening' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                  </svg>
+                )}
+                {insights.maturity.stage === 'stable' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  </svg>
+                )}
+                {insights.maturity.stage === 'mastered' && (
+                  <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                )}
+              </span>
+              <h3 className="insight-title">{insights.maturity.title}</h3>
+              <span className="maturity-badge">{insights.maturity.dayRange}</span>
             </div>
-            <p className="insight-note">AI-powered insights coming soon</p>
+            <p className="maturity-description">{insights.maturity.description}</p>
+            {insights.maturity.nextStage && (
+              <div className="maturity-progress-container">
+                <div className="maturity-progress-bar">
+                  <div 
+                    className="maturity-progress-fill"
+                    style={{ width: `${insights.maturity.progress}%` }}
+                  />
+                </div>
+                <p className="maturity-next">
+                  {insights.maturity.daysUntilNext} days until {insights.maturity.nextStage}
+                </p>
+              </div>
+            )}
+            <p className="insight-advice">{insights.maturity.insight}</p>
+          </div>
+        </section>
+
+        {/* Difficulty Calibration */}
+        <section className="insight-section">
+          <div className={`insight-card calibration ${insights.calibration.status}`}>
+            <div className="insight-header">
+              <span className="insight-icon">
+                {insights.calibration.status === 'evaluating' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                  </svg>
+                )}
+                {insights.calibration.status === 'struggling' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                )}
+                {insights.calibration.status === 'challenging' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                )}
+                {insights.calibration.status === 'calibrated' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                )}
+                {insights.calibration.status === 'mastered' && (
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                  </svg>
+                )}
+              </span>
+              <h3 className="insight-title">{insights.calibration.title}</h3>
+              <button 
+                className="info-button"
+                onClick={() => setShowCalibrationInfo(true)}
+                aria-label="What is difficulty calibration?"
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </button>
+            </div>
+            <p className="insight-message">{insights.calibration.message}</p>
+            {insights.calibration.suggestion && (
+              <p className="insight-suggestion">{insights.calibration.suggestion}</p>
+            )}
           </div>
         </section>
 
@@ -933,6 +842,51 @@ export default function HabitDetail() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Coming Soon Toast */}
+      {showComingSoon && (
+        <div className="coming-soon-toast">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>HSS Details Coming Soon</span>
+        </div>
+      )}
+
+      {/* Calibration Info Modal */}
+      {showCalibrationInfo && (
+        <div className="modal-overlay" onClick={() => setShowCalibrationInfo(false)}>
+          <div className="info-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="info-modal-header">
+              <h3 className="info-modal-title">Difficulty Calibration</h3>
+              <button 
+                className="info-modal-close"
+                onClick={() => setShowCalibrationInfo(false)}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <p className="info-modal-text">
+              Difficulty calibration analyzes your completion rate to determine if this habit is set at the right level for you.
+            </p>
+            <ul className="info-modal-list">
+              <li><strong>Evaluating:</strong> Still gathering data (first 14 days)</li>
+              <li><strong>Struggling:</strong> Below 70% - consider making it easier</li>
+              <li><strong>Challenging:</strong> 70-80% - a healthy growth zone</li>
+              <li><strong>Well Calibrated:</strong> 80-95% - sustainable and challenging</li>
+              <li><strong>Ready for More:</strong> Above 95% - consider increasing difficulty</li>
+            </ul>
+            <button 
+              className="info-modal-button"
+              onClick={() => setShowCalibrationInfo(false)}
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}

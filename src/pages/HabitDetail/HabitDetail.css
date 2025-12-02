@@ -13,7 +13,7 @@
   min-height: 100vh;
 }
 
-/* ===== Header with Ticker + HHS Ring ===== */
+/* ===== Header with Habit Name ===== */
 .habit-detail-page .detail-header {
   position: sticky;
   top: 0;
@@ -22,97 +22,57 @@
   padding: 12px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   z-index: 10;
 }
 
-.habit-detail-page .header-ticker {
+.habit-detail-page .header-title {
   flex: 1;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 18px;
-  font-weight: 700;
-  color: #3b82f6;
+  font-weight: 600;
+  color: #111827;
   text-align: center;
+  margin: 0;
 }
 
-.habit-detail-page .header-hhs {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+.habit-detail-page .header-spacer {
+  width: 40px;
   flex-shrink: 0;
 }
 
-.habit-detail-page .hhs-ring-container {
-  position: relative;
-  width: 56px;
-  height: 56px;
-}
-
-.habit-detail-page .hhs-ring {
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1); /* Flip to make progress go clockwise */
-}
-
-.habit-detail-page .hhs-ring-value {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1;
-}
-
-.habit-detail-page .hhs-number {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.habit-detail-page .hhs-label {
-  font-size: 8px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-top: 1px;
-}
-
-.habit-detail-page .header-star-rating {
-  display: flex;
-  gap: 1px;
-}
-
-.habit-detail-page .header-star {
-  font-size: 10px;
-  line-height: 1;
-}
-
-.habit-detail-page .header-star.filled {
-  color: #fbbf24;
-}
-
-.habit-detail-page .header-star.empty {
-  color: #d1d5db;
-}
-
-/* ===== Hero Section ===== */
+/* ===== Hero Section - Two Column Layout ===== */
 .habit-detail-page .hero-section {
   padding: 20px 16px;
   background: linear-gradient(180deg, #eff6ff 0%, white 100%);
 }
 
-.habit-detail-page .habit-name-large {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 8px;
-  line-height: 1.2;
+.habit-detail-page .hero-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.habit-detail-page .hero-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.habit-detail-page .hero-right {
+  flex-shrink: 0;
+}
+
+.habit-detail-page .hero-ticker {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 .habit-detail-page .habit-meta-line {
@@ -121,8 +81,6 @@
   gap: 8px;
   font-size: 13px;
   color: #6b7280;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
 }
 
 .habit-detail-page .meta-dot {
@@ -134,10 +92,7 @@
 }
 
 .habit-detail-page .total-earned {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 12px;
+  /* No extra margin - parent gap handles spacing */
 }
 
 .habit-detail-page .detail-earned-amount {
@@ -147,17 +102,20 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.2;
+  display: block;
 }
 
 .habit-detail-page .earned-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
+  display: block;
 }
 
 .habit-detail-page .status-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -165,11 +123,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  padding: 4px 8px;
   background: #d1fae5;
   color: #065f46;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 500;
 }
 
@@ -177,21 +135,21 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  padding: 4px 8px;
   background: #fef3c7;
   color: #92400e;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .habit-detail-page .rating-badge {
   display: inline-flex;
-  padding: 5px 10px;
+  padding: 4px 8px;
   background: #eff6ff;
   color: #3b82f6;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -205,6 +163,101 @@
   color: #065f46;
 }
 
+/* HSS Ring in Hero - Tappable */
+.habit-detail-page .hss-tappable {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.habit-detail-page .hss-tappable:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.habit-detail-page .hss-tappable:active {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.habit-detail-page .hss-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.habit-detail-page .hss-ring-container {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+
+.habit-detail-page .hss-ring {
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+}
+
+.habit-detail-page .hss-ring-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.habit-detail-page .hss-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.habit-detail-page .hss-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+.habit-detail-page .hero-star-rating {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.habit-detail-page .hero-star {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.habit-detail-page .hero-star.filled {
+  color: #fbbf24;
+}
+
+.habit-detail-page .hero-star.empty {
+  color: #d1d5db;
+}
+
+.habit-detail-page .hss-chevron {
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.habit-detail-page .hss-tappable:hover .hss-chevron {
+  color: #3b82f6;
+}
+
+
 /* ===== Section Titles ===== */
 .habit-detail-page .detail-section-title {
   font-size: 16px;
@@ -213,7 +266,7 @@
   margin-bottom: 12px;
 }
 
-/* ===== Chart Section - Portfolio Style ===== */
+/* ===== Chart Section ===== */
 .habit-detail-page .detail-chart-section {
   padding: 20px 16px;
   border-bottom: 8px solid #f5f5f5;
@@ -232,11 +285,18 @@
   color: #111827;
 }
 
-.habit-detail-page .chart-current-value {
+.habit-detail-page .chart-change-value {
   font-size: 28px;
   font-weight: 700;
-  color: #3b82f6;
   margin-bottom: 16px;
+}
+
+.habit-detail-page .chart-change-value.positive {
+  color: #16a34a;
+}
+
+.habit-detail-page .chart-change-value.negative {
+  color: #ef4444;
 }
 
 .habit-detail-page .chart-toggle-group {
@@ -264,7 +324,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Chart container - Portfolio style */
 .habit-detail-page .detail-chart-container {
   background: white;
   border: 1px solid #e5e7eb;
@@ -275,7 +334,6 @@
   overflow: hidden;
 }
 
-/* Chart grid lines */
 .habit-detail-page .chart-grid {
   position: absolute;
   top: 0;
@@ -295,7 +353,6 @@
   background: #f3f4f6;
 }
 
-/* Line chart SVG */
 .habit-detail-page .line-chart-svg {
   position: absolute;
   top: 20px;
@@ -315,7 +372,6 @@
   font-size: 14px;
 }
 
-/* Time filters */
 .habit-detail-page .time-filters {
   display: flex;
   justify-content: center;
@@ -343,10 +399,27 @@
   background: #f3f4f6;
 }
 
-/* ===== Calendar Heatmap - GitHub Style ===== */
+/* ===== Calendar Heatmap - Month View ===== */
 .habit-detail-page .calendar-section {
   padding: 20px 16px;
   border-bottom: 8px solid #f5f5f5;
+}
+
+.habit-detail-page .calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.habit-detail-page .calendar-header .detail-section-title {
+  margin-bottom: 0;
+}
+
+.habit-detail-page .calendar-month-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .habit-detail-page .calendar-heatmap {
@@ -355,62 +428,67 @@
   gap: 12px;
 }
 
-.habit-detail-page .calendar-container {
-  display: flex;
-  gap: 4px;
-}
-
-.habit-detail-page .calendar-day-labels {
-  display: flex;
-  flex-direction: column;
+.habit-detail-page .calendar-weekday-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: 3px;
-  padding-top: 0;
+  margin-bottom: 3px;
 }
 
-.habit-detail-page .calendar-day-labels span {
-  height: 14px;
-  width: 14px;
-  font-size: 10px;
+.habit-detail-page .calendar-weekday-labels span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
   color: #9ca3af;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 4px;
+  text-transform: uppercase;
 }
 
-.habit-detail-page .calendar-grid {
-  display: flex;
-  gap: 3px;
-  flex: 1;
-  overflow-x: auto;
-}
-
-.habit-detail-page .calendar-grid::-webkit-scrollbar {
-  display: none;
-}
-
-.habit-detail-page .calendar-week {
+.habit-detail-page .calendar-month-grid {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+}
+
+.habit-detail-page .calendar-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: 3px;
 }
 
 .habit-detail-page .calendar-day {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+  aspect-ratio: 1;
+  border-radius: 4px;
   background: #ebedf0;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 28px;
 }
 
-.habit-detail-page .calendar-day:hover:not(.future) {
-  outline: 1px solid #1b1f2326;
-  outline-offset: -1px;
+.habit-detail-page .calendar-day .day-number {
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.habit-detail-page .calendar-day:hover:not(.padding):not(.future) {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.habit-detail-page .calendar-day.padding {
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
 }
 
 .habit-detail-page .calendar-day.future {
-  background: transparent;
+  background: #f9fafb;
   border: 1px dashed #d1d5db;
+}
+
+.habit-detail-page .calendar-day.future .day-number {
+  color: #9ca3af;
 }
 
 .habit-detail-page .calendar-day.level-0 {
@@ -418,36 +496,61 @@
 }
 
 .habit-detail-page .calendar-day.level-1 {
-  background: #9be9a8;
+  background: #bbf7d0;
+}
+
+.habit-detail-page .calendar-day.level-1 .day-number {
+  color: #166534;
 }
 
 .habit-detail-page .calendar-day.level-2 {
-  background: #40c463;
+  background: #4ade80;
+}
+
+.habit-detail-page .calendar-day.level-2 .day-number {
+  color: #14532d;
 }
 
 .habit-detail-page .calendar-day.level-3 {
-  background: #30a14e;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.habit-detail-page .calendar-day.level-3 .day-number {
+  color: white;
 }
 
 .habit-detail-page .calendar-legend {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
 
 .habit-detail-page .legend-squares {
   display: flex;
-  gap: 2px;
+  gap: 3px;
 }
 
-.habit-detail-page .calendar-legend .calendar-day {
-  width: 12px;
-  height: 12px;
+.habit-detail-page .legend-square {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
 }
 
-.habit-detail-page .calendar-legend .calendar-day:hover {
-  outline: none;
+.habit-detail-page .legend-square.level-0 {
+  background: #ebedf0;
+}
+
+.habit-detail-page .legend-square.level-1 {
+  background: #bbf7d0;
+}
+
+.habit-detail-page .legend-square.level-2 {
+  background: #4ade80;
+}
+
+.habit-detail-page .legend-square.level-3 {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
 }
 
 .habit-detail-page .legend-label {
@@ -455,283 +558,297 @@
   color: #9ca3af;
 }
 
-/* ===== Key Statistics ===== */
-.habit-detail-page .stats-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
-}
-
-.habit-detail-page .detail-stats-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.habit-detail-page .stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
+/* ===== NEW INSIGHT CARDS ===== */
+.habit-detail-page .insight-section {
+  padding: 16px;
   border-bottom: 1px solid #f3f4f6;
 }
 
-.habit-detail-page .stat-row:last-child {
-  border-bottom: none;
-}
-
-.habit-detail-page .stat-label {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.habit-detail-page .stat-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.habit-detail-page .stat-value.earned {
-  color: #10b981;
-}
-
-/* ===== HHS Breakdown ===== */
-.habit-detail-page .breakdown-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
-}
-
-.habit-detail-page .breakdown-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.habit-detail-page .breakdown-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.habit-detail-page .breakdown-label {
-  width: 90px;
-  font-size: 14px;
-  color: #374151;
-  flex-shrink: 0;
-}
-
-.habit-detail-page .breakdown-bar-container {
-  flex: 1;
-  height: 8px;
-  background: #f3f4f6;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.habit-detail-page .breakdown-bar {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.5s ease;
-}
-
-.habit-detail-page .breakdown-bar.consistency {
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-}
-
-.habit-detail-page .breakdown-bar.resilience {
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-}
-
-.habit-detail-page .breakdown-bar.completion {
-  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
-}
-
-.habit-detail-page .breakdown-value {
-  width: 32px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  text-align: right;
-}
-
-.habit-detail-page .breakdown-note {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 12px;
-  font-style: italic;
-}
-
-/* ===== Achievements ===== */
-.habit-detail-page .achievements-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
-}
-
-.habit-detail-page .achievements-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.habit-detail-page .achievement-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+.habit-detail-page .insight-card {
+  padding: 20px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  transition: all 0.2s;
+  border-radius: 16px;
 }
 
-.habit-detail-page .achievement-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.habit-detail-page .insight-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.habit-detail-page .achievement-badge.streak {
-  border-color: #fed7aa;
-  background: #fff7ed;
-}
-
-.habit-detail-page .achievement-badge.streak .achievement-icon {
-  color: #ea580c;
-}
-
-.habit-detail-page .achievement-badge.perfection {
-  border-color: #fde68a;
-  background: #fefce8;
-}
-
-.habit-detail-page .achievement-badge.perfection .achievement-icon {
-  color: #ca8a04;
-}
-
-.habit-detail-page .achievement-badge.strength {
-  border-color: #a5b4fc;
-  background: #eef2ff;
-}
-
-.habit-detail-page .achievement-badge.strength .achievement-icon {
-  color: #4f46e5;
-}
-
-.habit-detail-page .achievement-badge.resilience {
-  border-color: #6ee7b7;
-  background: #ecfdf5;
-}
-
-.habit-detail-page .achievement-badge.resilience .achievement-icon {
-  color: #059669;
-}
-
-.habit-detail-page .achievement-badge.milestone {
-  border-color: #fcd34d;
-  background: #fffbeb;
-}
-
-.habit-detail-page .achievement-badge.milestone .achievement-icon {
-  color: #f59e0b;
-}
-
-.habit-detail-page .achievement-icon {
-  width: 24px;
-  height: 24px;
+.habit-detail-page .insight-icon {
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.habit-detail-page .achievement-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.habit-detail-page .achievements-empty {
-  font-size: 14px;
-  color: #9ca3af;
-  text-align: center;
-  padding: 20px;
-}
-
-.habit-detail-page .next-milestone {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: #f9fafb;
+  background: #eff6ff;
   border-radius: 8px;
-  font-size: 14px;
-  color: #6b7280;
-  text-align: center;
-}
-
-/* ===== Flux Insights ===== */
-.habit-detail-page .insights-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
-}
-
-.habit-detail-page .insights-card {
-  padding: 16px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-}
-
-.habit-detail-page .detail-insight-text {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #374151;
-  margin-bottom: 16px;
-}
-
-.habit-detail-page .detail-insight-text strong {
   color: #3b82f6;
+  flex-shrink: 0;
 }
 
-.habit-detail-page .insight-meta {
+.habit-detail-page .insight-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.habit-detail-page .insight-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.habit-detail-page .info-button {
+  width: 28px;
+  height: 28px;
   display: flex;
-  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.habit-detail-page .info-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #6b7280;
+}
+
+.habit-detail-page .info-button:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.habit-detail-page .insight-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b5563;
+  margin: 0;
+}
+
+.habit-detail-page .insight-suggestion {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+  margin: 12px 0 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.habit-detail-page .insight-advice {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+  margin: 12px 0 0 0;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+/* Milestone Card Specifics */
+.habit-detail-page .insight-card.milestone {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 50%, #f8fafc 100%);
+  border: 1px solid #bfdbfe;
+}
+
+.habit-detail-page .insight-card.milestone .insight-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+}
+
+.habit-detail-page .milestone-target {
+  text-align: center;
   margin-bottom: 16px;
 }
 
-.habit-detail-page .insight-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.habit-detail-page .milestone-amount {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
 }
 
-.habit-detail-page .insight-label {
-  font-size: 11px;
-  font-weight: 600;
+.habit-detail-page .milestone-label {
+  font-size: 12px;
   color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
-.habit-detail-page .insight-value {
-  font-size: 14px;
-  font-weight: 500;
+.habit-detail-page .milestone-progress-container {
+  margin-bottom: 16px;
 }
 
-.habit-detail-page .insight-value.good {
-  color: #10b981;
+.habit-detail-page .milestone-progress-bar {
+  height: 10px;
+  background: #e0e7ff;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.habit-detail-page .insight-value.caution {
-  color: #f59e0b;
+.habit-detail-page .milestone-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 40%, #60a5fa 80%, #93c5fd 100%);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
-.habit-detail-page .insight-value.neutral {
+.habit-detail-page .milestone-progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
   color: #6b7280;
 }
 
-.habit-detail-page .insight-note {
+/* Maturity Card Specifics */
+.habit-detail-page .maturity-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.habit-detail-page .maturity-description {
+  font-size: 14px;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.habit-detail-page .maturity-progress-container {
+  margin-bottom: 12px;
+}
+
+.habit-detail-page .maturity-progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.habit-detail-page .maturity-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.habit-detail-page .maturity-next {
   font-size: 12px;
-  color: #9ca3af;
-  font-style: italic;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 12px;
+  color: #6b7280;
   margin: 0;
+}
+
+/* Maturity stage colors */
+.habit-detail-page .insight-card.maturity.forming {
+  border-left: 4px solid #a3e635;
+}
+
+.habit-detail-page .insight-card.maturity.forming .insight-icon {
+  background: #ecfccb;
+  color: #65a30d;
+}
+
+.habit-detail-page .insight-card.maturity.establishing {
+  border-left: 4px solid #22c55e;
+}
+
+.habit-detail-page .insight-card.maturity.establishing .insight-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.habit-detail-page .insight-card.maturity.strengthening {
+  border-left: 4px solid #14b8a6;
+}
+
+.habit-detail-page .insight-card.maturity.strengthening .insight-icon {
+  background: #ccfbf1;
+  color: #0d9488;
+}
+
+.habit-detail-page .insight-card.maturity.stable {
+  border-left: 4px solid #3b82f6;
+}
+
+.habit-detail-page .insight-card.maturity.stable .insight-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.habit-detail-page .insight-card.maturity.mastered {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #f9fafb 100%);
+}
+
+.habit-detail-page .insight-card.maturity.mastered .insight-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* Calibration Card Specifics */
+.habit-detail-page .insight-card.calibration.calibrated {
+  border-left: 4px solid #22c55e;
+}
+
+.habit-detail-page .insight-card.calibration.calibrated .insight-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.habit-detail-page .insight-card.calibration.challenging {
+  border-left: 4px solid #3b82f6;
+}
+
+.habit-detail-page .insight-card.calibration.challenging .insight-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.habit-detail-page .insight-card.calibration.struggling {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #f9fafb 100%);
+}
+
+.habit-detail-page .insight-card.calibration.struggling .insight-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.habit-detail-page .insight-card.calibration.mastered {
+  border-left: 4px solid #8b5cf6;
+  background: linear-gradient(135deg, #f5f3ff 0%, #f9fafb 100%);
+}
+
+.habit-detail-page .insight-card.calibration.mastered .insight-icon {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.habit-detail-page .insight-card.calibration.evaluating {
+  border-left: 4px solid #6b7280;
+}
+
+.habit-detail-page .insight-card.calibration.evaluating .insight-icon {
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 /* ===== Recent Activity ===== */
@@ -803,7 +920,7 @@
 .habit-detail-page .activity-amount {
   font-size: 14px;
   font-weight: 600;
-  color: #10b981;
+  color: #16a34a;
   flex-shrink: 0;
 }
 
@@ -1017,72 +1134,191 @@
   background: #2563eb;
 }
 
+/* ===== Coming Soon Toast ===== */
+.habit-detail-page .coming-soon-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #1f2937;
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  animation: toastSlideUp 0.3s ease;
+}
+
+.habit-detail-page .coming-soon-toast svg {
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ===== Info Modal ===== */
+.habit-detail-page .info-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 340px;
+  width: 100%;
+  animation: detailSlideUp 0.3s ease;
+}
+
+.habit-detail-page .info-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.habit-detail-page .info-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.habit-detail-page .info-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.habit-detail-page .info-modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.habit-detail-page .info-modal-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 16px;
+}
+
+.habit-detail-page .info-modal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.habit-detail-page .info-modal-list li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4b5563;
+  padding-left: 12px;
+  position: relative;
+}
+
+.habit-detail-page .info-modal-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+.habit-detail-page .info-modal-list li strong {
+  color: #111827;
+}
+
+.habit-detail-page .info-modal-button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.habit-detail-page .info-modal-button:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 375px) {
-  .habit-detail-page .habit-name-large {
-    font-size: 20px;
+  .habit-detail-page .header-title {
+    font-size: 16px;
   }
 
   .habit-detail-page .detail-earned-amount {
     font-size: 24px;
   }
 
-  .habit-detail-page .hhs-ring-container {
-    width: 48px;
-    height: 48px;
+  .habit-detail-page .hss-ring-container {
+    width: 64px;
+    height: 64px;
   }
 
-  .habit-detail-page .hhs-number {
-    font-size: 16px;
+  .habit-detail-page .hss-number {
+    font-size: 20px;
   }
 
-  .habit-detail-page .header-star {
-    font-size: 8px;
+  .habit-detail-page .hero-star {
+    font-size: 10px;
   }
 
-  .habit-detail-page .header-ticker {
-    font-size: 16px;
-  }
-
-  .habit-detail-page .breakdown-label {
-    width: 80px;
+  .habit-detail-page .hero-ticker {
     font-size: 13px;
-  }
-
-  .habit-detail-page .insight-meta {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .habit-detail-page .achievements-grid {
-    gap: 8px;
-  }
-
-  .habit-detail-page .achievement-badge {
-    padding: 8px 12px;
+    padding: 4px 10px;
   }
 
   .habit-detail-page .calendar-day {
-    width: 12px;
-    height: 12px;
+    min-height: 24px;
   }
 
-  .habit-detail-page .calendar-day-labels span {
-    height: 12px;
-    width: 12px;
-    font-size: 9px;
-  }
-
-  .habit-detail-page .calendar-grid {
-    gap: 2px;
-  }
-
-  .habit-detail-page .calendar-week {
-    gap: 2px;
+  .habit-detail-page .calendar-day .day-number {
+    font-size: 10px;
   }
 
   .habit-detail-page .time-filter-btn {
     padding: 6px 8px;
     font-size: 11px;
+  }
+
+  .habit-detail-page .insight-card {
+    padding: 16px;
+  }
+
+  .habit-detail-page .milestone-amount {
+    font-size: 28px;
+  }
+
+  .habit-detail-page .insight-title {
+    font-size: 14px;
   }
 }
