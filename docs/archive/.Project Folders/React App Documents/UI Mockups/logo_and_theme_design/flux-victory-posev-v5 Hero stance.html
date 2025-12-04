@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Victory Pose X</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: #111827;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 48px;
+      font-size: 16px;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    .concept-card {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .concept-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 32px;
+    }
+
+    .logo-display {
+      margin-bottom: 32px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .concept-notes {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .favorite-badge {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 12px;
+    }
+
+    .logo-text {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .size-comparison {
+      background: white;
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-top: 32px;
+    }
+
+    .size-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .size-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .size-label {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 768px) {
+      .concept-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .logo-text {
+        font-size: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>The "Victory Pose" X</h1>
+    <p class="subtitle">Person with arms raised + X shape = celebrating personal wins</p>
+
+    <div class="concept-grid">
+      
+      <!-- Original (for reference) -->
+      <div class="concept-card">
+        <div class="concept-label">Original: Pure X</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="34" height="56" viewBox="0 0 34 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-original" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <circle cx="7" cy="14" r="5" fill="url(#grad-original)" opacity="0.5" />
+              <circle cx="27" cy="14" r="5" fill="url(#grad-original)" opacity="0.5" />
+              <circle cx="7" cy="42" r="5" fill="url(#grad-original)" opacity="0.5" />
+              <circle cx="27" cy="42" r="5" fill="url(#grad-original)" opacity="0.5" />
+              <circle cx="17" cy="28" r="7" fill="url(#grad-original)" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Your starting point. Clear X shape, but arms could be raised higher for more celebration energy.
+        </div>
+      </div>
+
+      <!-- Version 1: Arms Higher -->
+      <div class="concept-card">
+        <div class="concept-label">V1: Raised Arms (Subtle)</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="34" height="56" viewBox="0 0 34 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-v1" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <!-- Arms (upper dots) - moved up slightly -->
+              <circle cx="7" cy="11" r="5" fill="url(#grad-v1)" opacity="0.6" />
+              <circle cx="27" cy="11" r="5" fill="url(#grad-v1)" opacity="0.6" />
+              <!-- Torso (center) - slightly larger -->
+              <circle cx="17" cy="28" r="7.5" fill="url(#grad-v1)" />
+              <!-- Legs (lower dots) - spread slightly wider -->
+              <circle cx="6" cy="43" r="5" fill="url(#grad-v1)" opacity="0.5" />
+              <circle cx="28" cy="43" r="5" fill="url(#grad-v1)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Arms raised higher (Y-pose), torso slightly larger, legs spread. Still reads as X, now feels like celebration.
+        </div>
+        <div class="favorite-badge">Balanced</div>
+      </div>
+
+      <!-- Version 2: Victory V -->
+      <div class="concept-card">
+        <div class="concept-label">V2: Wide V Victory</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="36" height="56" viewBox="0 0 36 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-v2" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <!-- Arms - wide V shape, higher up -->
+              <circle cx="5" cy="10" r="5" fill="url(#grad-v2)" opacity="0.6" />
+              <circle cx="31" cy="10" r="5" fill="url(#grad-v2)" opacity="0.6" />
+              <!-- Torso/head - larger, prominent -->
+              <circle cx="18" cy="27" r="8" fill="url(#grad-v2)" />
+              <!-- Legs - grounded, stable -->
+              <circle cx="11" cy="44" r="5" fill="url(#grad-v2)" opacity="0.5" />
+              <circle cx="25" cy="44" r="5" fill="url(#grad-v2)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Wide V-shape arms (like Rocky!). Stronger victory pose, still maintains X silhouette. Most celebratory.
+        </div>
+        <div class="favorite-badge">My Pick</div>
+      </div>
+
+      <!-- Version 3: Subtle Head -->
+      <div class="concept-card">
+        <div class="concept-label">V3: Head + Body</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="34" height="56" viewBox="0 0 34 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-v3" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <!-- Arms raised -->
+              <circle cx="7" cy="12" r="5" fill="url(#grad-v3)" opacity="0.6" />
+              <circle cx="27" cy="12" r="5" fill="url(#grad-v3)" opacity="0.6" />
+              <!-- Head (small, subtle) -->
+              <circle cx="17" cy="20" r="4" fill="url(#grad-v3)" opacity="0.8" />
+              <!-- Torso (main body) -->
+              <circle cx="17" cy="31" r="6.5" fill="url(#grad-v3)" />
+              <!-- Legs -->
+              <circle cx="10" cy="43" r="5" fill="url(#grad-v3)" opacity="0.5" />
+              <circle cx="24" cy="43" r="5" fill="url(#grad-v3)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Adds subtle head dot above torso. Most literal "person" interpretation. 6 dots total.
+        </div>
+      </div>
+
+      <!-- Version 4: Dynamic Lean -->
+      <div class="concept-card">
+        <div class="concept-label">V4: Forward Momentum</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="36" height="56" viewBox="0 0 36 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-v4" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <!-- Arms - one slightly higher (dynamic) -->
+              <circle cx="6" cy="9" r="5" fill="url(#grad-v4)" opacity="0.6" />
+              <circle cx="28" cy="12" r="5" fill="url(#grad-v4)" opacity="0.6" />
+              <!-- Torso - offset for lean -->
+              <circle cx="17" cy="28" r="7.5" fill="url(#grad-v4)" />
+              <!-- Legs - slight forward stance -->
+              <circle cx="8" cy="43" r="5" fill="url(#grad-v4)" opacity="0.5" />
+              <circle cx="26" cy="44" r="5" fill="url(#grad-v4)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Slight asymmetry suggests forward motion. Person climbing/reaching upward, not static. More dynamic energy.
+        </div>
+      </div>
+
+      <!-- Version 5: Strongest Contrast -->
+      <div class="concept-card">
+        <div class="concept-label">V5: Hero Stance</div>
+        <div class="logo-display">
+          <div class="logo-text">
+            <span class="gradient-text">Flu</span>
+            <svg width="36" height="56" viewBox="0 0 36 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-v5" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <!-- Arms - very high, wide -->
+              <circle cx="4" cy="8" r="5" fill="url(#grad-v5)" opacity="0.5" />
+              <circle cx="32" cy="8" r="5" fill="url(#grad-v5)" opacity="0.5" />
+              <!-- Torso - very prominent -->
+              <circle cx="18" cy="26" r="9" fill="url(#grad-v5)" />
+              <!-- Legs - wide stance -->
+              <circle cx="9" cy="45" r="5" fill="url(#grad-v5)" opacity="0.4" />
+              <circle cx="27" cy="45" r="5" fill="url(#grad-v5)" opacity="0.4" />
+            </svg>
+          </div>
+        </div>
+        <div class="concept-notes">
+          Maximum victory energy. Wide stance, arms way up, large torso. Superhero/champion pose. Bold statement.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Size Test with Winner -->
+    <div class="size-comparison">
+      <h2 style="font-size: 24px; color: #111827; margin-bottom: 32px; text-align: center;">
+        V2 (Wide V Victory) at All Sizes
+      </h2>
+
+      <div class="size-row">
+        <div style="text-align: center;">
+          <div class="size-label">Hero (72px)</div>
+          <div style="font-size: 72px; font-weight: 700; letter-spacing: -1.5px; display: inline-flex; align-items: center;">
+            <span style="background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Flu</span>
+            <svg width="46" height="72" viewBox="0 0 36 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-hero" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <circle cx="5" cy="10" r="5" fill="url(#grad-hero)" opacity="0.6" />
+              <circle cx="31" cy="10" r="5" fill="url(#grad-hero)" opacity="0.6" />
+              <circle cx="18" cy="27" r="8" fill="url(#grad-hero)" />
+              <circle cx="11" cy="44" r="5" fill="url(#grad-hero)" opacity="0.5" />
+              <circle cx="25" cy="44" r="5" fill="url(#grad-hero)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="size-row">
+        <div style="text-align: center;">
+          <div class="size-label">Large (56px)</div>
+          <div style="font-size: 56px; font-weight: 700; letter-spacing: -1.5px; display: inline-flex; align-items: center;">
+            <span style="background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Flu</span>
+            <svg width="36" height="56" viewBox="0 0 36 56" style="margin: 0 2px;">
+              <defs>
+                <linearGradient id="grad-large" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <circle cx="5" cy="10" r="5" fill="url(#grad-large)" opacity="0.6" />
+              <circle cx="31" cy="10" r="5" fill="url(#grad-large)" opacity="0.6" />
+              <circle cx="18" cy="27" r="8" fill="url(#grad-large)" />
+              <circle cx="11" cy="44" r="5" fill="url(#grad-large)" opacity="0.5" />
+              <circle cx="25" cy="44" r="5" fill="url(#grad-large)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="size-row">
+        <div style="text-align: center;">
+          <div class="size-label">App Header (22px)</div>
+          <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px; display: inline-flex; align-items: center;">
+            <span style="background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Flu</span>
+            <svg width="14" height="22" viewBox="0 0 36 56" style="margin: 0 1px;">
+              <defs>
+                <linearGradient id="grad-header" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <circle cx="5" cy="10" r="5" fill="url(#grad-header)" opacity="0.6" />
+              <circle cx="31" cy="10" r="5" fill="url(#grad-header)" opacity="0.6" />
+              <circle cx="18" cy="27" r="8" fill="url(#grad-header)" />
+              <circle cx="11" cy="44" r="5" fill="url(#grad-header)" opacity="0.5" />
+              <circle cx="25" cy="44" r="5" fill="url(#grad-header)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="size-row">
+        <div style="text-align: center;">
+          <div class="size-label">Tiny (16px)</div>
+          <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.3px; display: inline-flex; align-items: center;">
+            <span style="background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Flu</span>
+            <svg width="10" height="16" viewBox="0 0 36 56" style="margin: 0 1px;">
+              <defs>
+                <linearGradient id="grad-tiny" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a78bfa" />
+                  <stop offset="100%" stop-color="#93c5fd" />
+                </linearGradient>
+              </defs>
+              <circle cx="5" cy="10" r="5" fill="url(#grad-tiny)" opacity="0.6" />
+              <circle cx="31" cy="10" r="5" fill="url(#grad-tiny)" opacity="0.6" />
+              <circle cx="18" cy="27" r="8" fill="url(#grad-tiny)" />
+              <circle cx="11" cy="44" r="5" fill="url(#grad-tiny)" opacity="0.5" />
+              <circle cx="25" cy="44" r="5" fill="url(#grad-tiny)" opacity="0.5" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</body>
+</html>

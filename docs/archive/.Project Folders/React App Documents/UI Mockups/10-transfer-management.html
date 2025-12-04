@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Transfers</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .transfers-page {
+      min-height: 100vh;
+      background: white;
+      padding-bottom: 80px;
+    }
+
+    .transfers-container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .transfers-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .back-button:hover {
+      background: #f3f4f6;
+    }
+
+    .header-title {
+      flex: 1;
+    }
+
+    .header-title h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    /* Current Week Pending Section */
+    .pending-section {
+      padding: 24px 16px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border-bottom: 1px solid #fde68a;
+    }
+
+    .pending-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .pending-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pending-title h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #92400e;
+    }
+
+    .pending-badge {
+      padding: 4px 10px;
+      background: #fbbf24;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #78350f;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pending-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: #78350f;
+      margin-bottom: 8px;
+    }
+
+    .pending-schedule {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #92400e;
+      margin-bottom: 20px;
+    }
+
+    .pending-schedule svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Breakdown Section */
+    .breakdown-toggle {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .breakdown-toggle:hover {
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .breakdown-toggle-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: #92400e;
+    }
+
+    .breakdown-icon {
+      width: 16px;
+      height: 16px;
+      color: #92400e;
+      transition: transform 0.2s;
+    }
+
+    .breakdown-toggle.expanded .breakdown-icon {
+      transform: rotate(180deg);
+    }
+
+    .breakdown-content {
+      margin-top: 12px;
+      background: white;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 16px;
+      display: none;
+    }
+
+    .breakdown-content.visible {
+      display: block;
+    }
+
+    .breakdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .breakdown-item:not(:last-child) {
+      border-bottom: 1px solid #fef3c7;
+    }
+
+    .breakdown-item.removed {
+      opacity: 0.5;
+      background: #f3f4f6;
+      margin: 0 -16px;
+      padding: 10px 16px;
+      border-radius: 8px;
+    }
+
+    .breakdown-item.removed .breakdown-amount {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+
+    .breakdown-habit {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .breakdown-habit-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111827;
+    }
+
+    .breakdown-habit-count {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .breakdown-amount {
+      font-size: 16px;
+      font-weight: 600;
+      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remove-button {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.1);
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      opacity: 0;
+      margin-left: 8px;
+    }
+
+    .breakdown-item:hover .remove-button {
+      opacity: 1;
+    }
+
+    .remove-button:hover {
+      background: rgba(239, 68, 68, 0.2);
+      transform: scale(1.1);
+    }
+
+    .remove-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .removed-badge {
+      padding: 4px 8px;
+      background: #6b7280;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .undo-button {
+      padding: 4px 10px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .undo-button:hover {
+      background: #2563eb;
+    }
+
+    /* Transfer History Section */
+    .history-section {
+      padding: 24px 16px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .history-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .history-filter {
+      padding: 6px 12px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #6b7280;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .history-filter:hover {
+      background: #e5e7eb;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Transfer Card */
+    .transfer-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .transfer-card:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    .transfer-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .transfer-date {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .transfer-date-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .transfer-date-icon svg {
+      width: 18px;
+      height: 18px;
+      color: #3b82f6;
+    }
+
+    .transfer-date-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .transfer-date-info p {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .transfer-amount {
+      text-align: right;
+    }
+
+    .transfer-amount-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    .transfer-amount-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .transfer-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .transfer-route {
+      font-size: 12px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .transfer-route svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .transfer-expand {
+      padding: 4px 12px;
+      background: none;
+      border: none;
+      font-size: 12px;
+      font-weight: 500;
+      color: #3b82f6;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .transfer-expand:hover {
+      background: #eff6ff;
+    }
+
+    /* Expanded Breakdown */
+    .transfer-breakdown {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      display: none;
+    }
+
+    .transfer-breakdown.visible {
+      display: block;
+    }
+
+    .transfer-breakdown-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+    .breakdown-row:not(:last-child) {
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .breakdown-label {
+      color: #6b7280;
+    }
+
+    .breakdown-value {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .empty-state-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state-icon svg {
+      width: 36px;
+      height: 36px;
+      color: #9ca3af;
+    }
+
+    .empty-state-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-description {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* FAB */
+    .fab-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      z-index: 50;
+    }
+
+    .fab-button {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+    }
+
+    .fab-button:hover {
+      transform: scale(1.1);
+    }
+
+    .fab-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+
+    .bottom-nav-container {
+      max-width: 768px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Confirmation Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .modal-icon svg {
+      width: 24px;
+      height: 24px;
+      color: #ef4444;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-description {
+      font-size: 14px;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .modal-button.cancel {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .modal-button.cancel:hover {
+      background: #e5e7eb;
+    }
+
+    .modal-button.confirm {
+      background: #ef4444;
+      color: white;
+    }
+
+    .modal-button.confirm:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+
+<div class="transfers-page">
+  <div class="transfers-container">
+    <!-- Header -->
+    <div class="transfers-header">
+      <button class="back-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-title">
+        <h1>Transfers</h1>
+        <p>Weekly savings transfers</p>
+      </div>
+    </div>
+
+    <!-- Current Week Pending Section -->
+    <div class="pending-section">
+      <div class="pending-header">
+        <div class="pending-title">
+          <h2>This Week</h2>
+          <span class="pending-badge">Pending</span>
+        </div>
+      </div>
+
+      <div class="pending-amount">$186.50</div>
+      
+      <div class="pending-schedule">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Transfers Friday, Nov 15 at 12:01 AM
+      </div>
+
+      <button class="breakdown-toggle" onclick="toggleBreakdown()">
+        <span class="breakdown-toggle-text">View breakdown (6 habits)</span>
+        <svg class="breakdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      <div class="breakdown-content" id="currentBreakdown">
+        <div class="breakdown-item" data-amount="75.00">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">Morning Workout</div>
+            <div class="breakdown-habit-count">5 completions</div>
+          </div>
+          <div class="breakdown-amount">
+            $75.00
+            <button class="remove-button" onclick="confirmRemove(this, 'Morning Workout', 75.00)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="breakdown-item" data-amount="35.00">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">Read 30 Minutes</div>
+            <div class="breakdown-habit-count">7 completions</div>
+          </div>
+          <div class="breakdown-amount">
+            $35.00
+            <button class="remove-button" onclick="confirmRemove(this, 'Read 30 Minutes', 35.00)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="breakdown-item" data-amount="42.00">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">No DoorDash</div>
+            <div class="breakdown-habit-count">6 days</div>
+          </div>
+          <div class="breakdown-amount">
+            $42.00
+            <button class="remove-button" onclick="confirmRemove(this, 'No DoorDash', 42.00)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="breakdown-item" data-amount="18.00">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">Meditation</div>
+            <div class="breakdown-habit-count">6 completions</div>
+          </div>
+          <div class="breakdown-amount">
+            $18.00
+            <button class="remove-button" onclick="confirmRemove(this, 'Meditation', 18.00)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="breakdown-item" data-amount="10.00">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">No Social Media</div>
+            <div class="breakdown-habit-count">5 days</div>
+          </div>
+          <div class="breakdown-amount">
+            $10.00
+            <button class="remove-button" onclick="confirmRemove(this, 'No Social Media', 10.00)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="breakdown-item" data-amount="6.50">
+          <div class="breakdown-habit">
+            <div class="breakdown-habit-name">Journal Entry</div>
+            <div class="breakdown-habit-count">4 completions</div>
+          </div>
+          <div class="breakdown-amount">
+            $6.50
+            <button class="remove-button" onclick="confirmRemove(this, 'Journal Entry', 6.50)" title="Remove from this week's transfer">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer History Section -->
+    <div class="history-section">
+      <div class="history-header">
+        <h2 class="history-title">Recent Transfers</h2>
+        <button class="history-filter">
+          All Time
+          <svg style="width: 12px; height: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="history-list">
+        <!-- Last Week Transfer -->
+        <div class="transfer-card">
+          <div class="transfer-card-header">
+            <div class="transfer-date">
+              <div class="transfer-date-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="transfer-date-info">
+                <h3>Week of Nov 4-8</h3>
+                <p>Friday, Nov 8 at 12:01 AM</p>
+              </div>
+            </div>
+            <div class="transfer-amount">
+              <div class="transfer-amount-value">$223.50</div>
+              <div class="transfer-amount-label">Transferred</div>
+            </div>
+          </div>
+          <div class="transfer-meta">
+            <div class="transfer-route">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+              Checking → Savings
+            </div>
+            <button class="transfer-expand" onclick="toggleTransferBreakdown(this)">View details</button>
+          </div>
+          <div class="transfer-breakdown">
+            <div class="transfer-breakdown-title">Breakdown</div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Morning Workout (5×)</span>
+              <span class="breakdown-value">$75.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Read 30 Minutes (7×)</span>
+              <span class="breakdown-value">$35.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No DoorDash (7 days)</span>
+              <span class="breakdown-value">$49.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Meditation (7×)</span>
+              <span class="breakdown-value">$21.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Social Media (7 days)</span>
+              <span class="breakdown-value">$14.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Journal Entry (6×)</span>
+              <span class="breakdown-value">$9.75</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Cold Shower (6×)</span>
+              <span class="breakdown-value">$12.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Caffeine After 2PM (5 days)</span>
+              <span class="breakdown-value">$7.75</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Weeks Ago Transfer -->
+        <div class="transfer-card">
+          <div class="transfer-card-header">
+            <div class="transfer-date">
+              <div class="transfer-date-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="transfer-date-info">
+                <h3>Week of Oct 28 - Nov 1</h3>
+                <p>Friday, Nov 1 at 12:01 AM</p>
+              </div>
+            </div>
+            <div class="transfer-amount">
+              <div class="transfer-amount-value">$195.25</div>
+              <div class="transfer-amount-label">Transferred</div>
+            </div>
+          </div>
+          <div class="transfer-meta">
+            <div class="transfer-route">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+              Checking → Savings
+            </div>
+            <button class="transfer-expand" onclick="toggleTransferBreakdown(this)">View details</button>
+          </div>
+          <div class="transfer-breakdown">
+            <div class="transfer-breakdown-title">Breakdown</div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Morning Workout (4×)</span>
+              <span class="breakdown-value">$60.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Read 30 Minutes (6×)</span>
+              <span class="breakdown-value">$30.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No DoorDash (6 days)</span>
+              <span class="breakdown-value">$42.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Meditation (5×)</span>
+              <span class="breakdown-value">$15.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Social Media (6 days)</span>
+              <span class="breakdown-value">$12.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Journal Entry (5×)</span>
+              <span class="breakdown-value">$8.13</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Cold Shower (7×)</span>
+              <span class="breakdown-value">$14.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Caffeine After 2PM (7 days)</span>
+              <span class="breakdown-value">$14.12</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Three Weeks Ago Transfer -->
+        <div class="transfer-card">
+          <div class="transfer-card-header">
+            <div class="transfer-date">
+              <div class="transfer-date-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <div class="transfer-date-info">
+                <h3>Week of Oct 21-25</h3>
+                <p>Friday, Oct 25 at 12:01 AM</p>
+              </div>
+            </div>
+            <div class="transfer-amount">
+              <div class="transfer-amount-value">$167.75</div>
+              <div class="transfer-amount-label">Transferred</div>
+            </div>
+          </div>
+          <div class="transfer-meta">
+            <div class="transfer-route">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+              Checking → Savings
+            </div>
+            <button class="transfer-expand" onclick="toggleTransferBreakdown(this)">View details</button>
+          </div>
+          <div class="transfer-breakdown">
+            <div class="transfer-breakdown-title">Breakdown</div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Morning Workout (3×)</span>
+              <span class="breakdown-value">$45.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Read 30 Minutes (5×)</span>
+              <span class="breakdown-value">$25.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No DoorDash (5 days)</span>
+              <span class="breakdown-value">$35.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Meditation (6×)</span>
+              <span class="breakdown-value">$18.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Social Media (5 days)</span>
+              <span class="breakdown-value">$10.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Journal Entry (4×)</span>
+              <span class="breakdown-value">$6.50</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">Cold Shower (5×)</span>
+              <span class="breakdown-value">$10.00</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-label">No Caffeine After 2PM (6 days)</span>
+              <span class="breakdown-value">$18.25</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+    </div>
+    <h3 class="modal-title">Remove from transfer?</h3>
+    <p class="modal-description" id="modalDescription">
+      This will remove $42.00 from your pending transfer. Your activity logs will remain unchanged.
+    </p>
+    <div class="modal-actions">
+      <button class="modal-button cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-button confirm" onclick="executeRemove()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-container">
+  <button class="fab-button" aria-label="Talk to Flux">
+    <svg class="fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.5a8.38 8.38 0 0 0 .9 3.8 8.5 8.5 0 0 0 7.6 4.7 8.38 8.38 0 0 0 3.8-.9L21 21l-1.9-5.7a8.38 8.38 0 0 0 .9-3.8 8.5 8.5 0 0 0-4.7-7.6 8.38 8.38 0 0 0-3.8-.9h-.5a8.48 8.48 0 0 0-8 8v.5z"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-container">
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      <span class="nav-label">Portfolio</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span class="nav-label">Indices</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="nav-label">Activity</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+      <span class="nav-label">Account</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+let pendingRemoval = null;
+
+function toggleBreakdown() {
+  const toggle = document.querySelector('.breakdown-toggle');
+  const content = document.getElementById('currentBreakdown');
+  
+  toggle.classList.toggle('expanded');
+  content.classList.toggle('visible');
+}
+
+function toggleTransferBreakdown(button) {
+  const card = button.closest('.transfer-card');
+  const breakdown = card.querySelector('.transfer-breakdown');
+  
+  breakdown.classList.toggle('visible');
+  button.textContent = breakdown.classList.contains('visible') ? 'Hide details' : 'View details';
+}
+
+function confirmRemove(button, habitName, amount) {
+  pendingRemoval = {
+    button: button,
+    habitName: habitName,
+    amount: amount,
+    item: button.closest('.breakdown-item')
+  };
+  
+  const modal = document.getElementById('confirmModal');
+  const description = document.getElementById('modalDescription');
+  
+  description.textContent = `This will remove $${amount.toFixed(2)} (${habitName}) from your pending transfer. Your activity logs will remain unchanged.`;
+  
+  modal.classList.add('visible');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('visible');
+  pendingRemoval = null;
+}
+
+function executeRemove() {
+  if (!pendingRemoval) return;
+  
+  const item = pendingRemoval.item;
+  const amount = pendingRemoval.amount;
+  
+  // Mark as removed
+  item.classList.add('removed');
+  
+  // Replace remove button with undo button
+  const amountDiv = item.querySelector('.breakdown-amount');
+  amountDiv.innerHTML = `
+    <span style="text-decoration: line-through; color: #6b7280;">$${amount.toFixed(2)}</span>
+    <span class="removed-badge">Excluded</span>
+    <button class="undo-button" onclick="undoRemove(this, ${amount})">
+      Undo
+    </button>
+  `;
+  
+  // Update total
+  updateTotal(-amount);
+  
+  // Close modal
+  closeModal();
+}
+
+function undoRemove(button, amount) {
+  const item = button.closest('.breakdown-item');
+  
+  // Remove the removed state
+  item.classList.remove('removed');
+  
+  // Restore original amount display with remove button
+  const habitName = item.querySelector('.breakdown-habit-name').textContent;
+  const amountDiv = item.querySelector('.breakdown-amount');
+  amountDiv.innerHTML = `
+    $${amount.toFixed(2)}
+    <button class="remove-button" onclick="confirmRemove(this, '${habitName}', ${amount})" title="Remove from this week's transfer">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  `;
+  
+  // Update total
+  updateTotal(amount);
+}
+
+function updateTotal(changeAmount) {
+  const totalElement = document.querySelector('.pending-amount');
+  const currentTotal = parseFloat(totalElement.textContent.replace('$', ''));
+  const newTotal = currentTotal + changeAmount;
+  
+  totalElement.textContent = `$${newTotal.toFixed(2)}`;
+  
+  // Update habit count
+  const items = document.querySelectorAll('.breakdown-item:not(.removed)');
+  const toggleText = document.querySelector('.breakdown-toggle-text');
+  toggleText.textContent = `View breakdown (${items.length} habits)`;
+}
+
+// Close modal when clicking outside
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeModal();
+  }
+});
+</script>
+
+</body>
+</html>

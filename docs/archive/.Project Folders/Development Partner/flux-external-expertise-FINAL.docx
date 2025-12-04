@@ -1,0 +1,128 @@
+Flux 2.0: External Development Scope
+
+*Two-Sided Habit Reward Platform with Real Money*
+
+Core Innovation: Two-Sided Earning System
+
+Flux is the first platform where users earn real money for BOTH doing
+positive things AND avoiding negative things. Every successful action
+transfers real money from checking to savings.
+
+**BUILD Habits - Earn for doing positive things:**
+
+-   Workout 30 min → Earn \$1.50 (checking → Flux savings)
+
+-   Read 20 pages → Earn \$1.00
+
+-   Meal prep → Earn \$3.00
+
+**RESIST Habits - Earn for NOT doing negative things:**
+
+-   Each day without DoorDash → Earn \$35 (checking → Flux savings)
+
+-   Each day without gambling → Earn \$50
+
+-   Each day without nail biting → Earn \$2
+
+**Key:** Users only earn when they succeed---never lose money.
+Motivation comes from opportunity cost: \"If I order DoorDash, I miss
+out on earning \$35 today.\"
+
+How RESIST Habits Work (Critical Feature)
+
+**Daily Detection & Transfer:**
+
+-   Automated: Bank account reading detects DoorDash, gambling, shopping
+    apps
+
+-   Manual: User confirms behaviors like nail biting, snacking,
+    doomscrolling
+
+-   Each scheduled day resisted = money transfer
+
+-   Each scheduled day failed = no transfer (missed opportunity, not
+    penalty)
+
+**Example week:** 5 days no DoorDash (\$35 × 5 = \$175) + 3 workouts
+(\$1.50 × 3 = \$4.50) + 7 days no nail biting (\$2 × 7 = \$14) =
+**\$193.50 transferred Friday**
+
+In-House Development (Frontend)
+
+-   React application with mobile-first design
+
+-   Portfolio dashboard with investment aesthetic
+
+-   BUILD and RESIST habit creation and logging UI
+
+-   Onboarding, settings, activity feed, behavioral indices UI
+
+Required External Expertise
+
+Tier 1: Critical Infrastructure (Must Outsource)
+
+**Banking Infrastructure** --- \$15-25K
+
+-   Plaid integration for bank account connections
+
+-   Daily transaction reading for RESIST habit detection (DoorDash,
+    gambling, etc.)
+
+-   Stripe Connect for automated transfers (checking → Flux savings)
+
+-   PCI compliance and financial security standards
+
+**Backend & Database** --- \$8-12K
+
+-   Supabase architecture with PostgreSQL
+
+-   User authentication (email/Google/Apple)
+
+-   Daily RESIST habit success detection logic
+
+-   RESTful API and real-time sync
+
+Tier 2: Core Features (Strongly Recommended)
+
+**Behavioral Indices & HHS Calculations** --- \$10-15K
+
+-   Habit Health Score (HHS) algorithm
+
+-   Category aggregation for anonymized data
+
+-   Percentile rankings and gaming prevention
+
+**Smart Notifications** --- \$5-8K
+
+-   Firebase/OneSignal infrastructure
+
+-   ML-optimized timing and churn prevention
+
+Budget Breakdown
+
+  -----------------------------------------------------------------------
+  **Development Area**    **Cost Range**    **Priority**
+  ----------------------- ----------------- -----------------------------
+  Banking Infrastructure  \$15-25K          **Critical**
+
+  Backend & Database      \$8-12K           **Critical**
+
+  Indices & HHS Logic     \$10-15K          **High**
+
+  Smart Notifications     \$5-8K            **High**
+  -----------------------------------------------------------------------
+
+**Critical Phase 1 Total:** \$23-37K (Banking + Backend + Indices)
+
+Why This Matters
+
+-   **Only app rewarding BOTH positive actions AND avoided negative
+    actions**
+
+-   Pure positive reinforcement---users never lose money, only earn
+
+-   Daily RESIST habit detection creates continuous engagement
+
+-   Real money transfers from day one---not a future feature
+
+-   Behavioral indices create competitive advantage and data moat

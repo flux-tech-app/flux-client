@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Constellation Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+    .dashboard-page {
+      min-height: 100vh;
+      background: #f8fafc;
+      padding-bottom: 100px;
+    }
+
+    .dashboard-container {
+      max-width: 768px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* Dark Sky Section */
+    .sky-section {
+      background: linear-gradient(180deg, #070b14 0%, #0c1222 60%, #1a1f35 85%, #2d3555 100%);
+      padding-top: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Fade overlay at bottom of sky */
+    .sky-section::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(180deg, transparent 0%, #f8fafc 100%);
+      pointer-events: none;
+    }
+
+    /* Header - inside dark section */
+    .dashboard-header {
+      padding: 0 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+
+    .app-logo {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-button {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+      color: rgba(255,255,255,0.7);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .icon-button:hover {
+      background: rgba(255,255,255,0.15);
+      color: white;
+    }
+
+    .icon-button svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Stats Bar - inside dark section */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 8px 20px 16px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Constellation Container */
+    .constellation-container {
+      position: relative;
+      height: 340px;
+      margin: 0 16px;
+    }
+
+    /* Background stars */
+    .bg-stars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    .bg-star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Constellation SVG */
+    .constellation-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .constellation-line {
+      stroke-width: 1.5;
+      fill: none;
+      opacity: 0.4;
+      stroke-dasharray: 4, 4;
+    }
+
+    .constellation-line.health { stroke: #4ade80; }
+    .constellation-line.finance { stroke: #a855f7; }
+    .constellation-line.productivity { stroke: #60a5fa; }
+    .constellation-line.mindfulness { stroke: #2dd4bf; }
+    .constellation-line.relationships { stroke: #fbbf24; }
+
+    /* Stars */
+    .star {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 5;
+    }
+
+    .star-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      filter: blur(8px);
+      opacity: 0.6;
+      transition: all 0.3s ease;
+    }
+
+    .star-core {
+      position: relative;
+      border-radius: 50%;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    .star:hover .star-glow {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.8);
+    }
+
+    .star:hover .star-core {
+      transform: scale(1.4);
+    }
+
+    /* Star sizes based on HHS */
+    .star.dim .star-core { width: 6px; height: 6px; opacity: 0.5; }
+    .star.dim .star-glow { width: 14px; height: 14px; }
+    
+    .star.growing .star-core { width: 10px; height: 10px; opacity: 0.7; }
+    .star.growing .star-glow { width: 22px; height: 22px; }
+    
+    .star.bright .star-core { width: 14px; height: 14px; opacity: 0.85; }
+    .star.bright .star-glow { width: 32px; height: 32px; }
+    
+    .star.blazing .star-core { width: 18px; height: 18px; opacity: 1; }
+    .star.blazing .star-glow { width: 44px; height: 44px; }
+
+    /* Star colors by category */
+    .star.health .star-core { color: #4ade80; background: radial-gradient(circle, white 20%, #4ade80 100%); box-shadow: 0 0 12px #4ade80, 0 0 24px rgba(74, 222, 128, 0.5); }
+    .star.health .star-glow { background: #4ade80; }
+    
+    .star.finance .star-core { color: #a855f7; background: radial-gradient(circle, white 20%, #a855f7 100%); box-shadow: 0 0 12px #a855f7, 0 0 24px rgba(168, 85, 247, 0.5); }
+    .star.finance .star-glow { background: #a855f7; }
+    
+    .star.productivity .star-core { color: #60a5fa; background: radial-gradient(circle, white 20%, #60a5fa 100%); box-shadow: 0 0 12px #60a5fa, 0 0 24px rgba(96, 165, 250, 0.5); }
+    .star.productivity .star-glow { background: #60a5fa; }
+    
+    .star.mindfulness .star-core { color: #2dd4bf; background: radial-gradient(circle, white 20%, #2dd4bf 100%); box-shadow: 0 0 12px #2dd4bf, 0 0 24px rgba(45, 212, 191, 0.5); }
+    .star.mindfulness .star-glow { background: #2dd4bf; }
+    
+    .star.relationships .star-core { color: #fbbf24; background: radial-gradient(circle, white 20%, #fbbf24 100%); box-shadow: 0 0 12px #fbbf24, 0 0 24px rgba(251, 191, 36, 0.5); }
+    .star.relationships .star-glow { background: #fbbf24; }
+
+    /* Blazing stars pulse */
+    .star.blazing .star-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.3); }
+    }
+
+    /* Star tooltip */
+    .star-tooltip {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 14px 18px;
+      min-width: 180px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .star:hover .star-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .tooltip-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 4px;
+    }
+
+    .tooltip-category {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .tooltip-stats {
+      display: flex;
+      gap: 24px;
+    }
+
+    .tooltip-stat {
+      text-align: left;
+    }
+
+    .tooltip-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .tooltip-stat-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Constellation Label */
+    .constellation-label {
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .constellation-label h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 4px;
+    }
+
+    .constellation-label p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* Light mode content below */
+    .content-section {
+      padding: 24px 16px;
+      background: #f8fafc;
+    }
+
+    /* Legend */
+    .legend-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .legend-items {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #475569;
+      font-weight: 500;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .legend-dot.health { background: #4ade80; color: #4ade80; }
+    .legend-dot.finance { background: #a855f7; color: #a855f7; }
+    .legend-dot.productivity { background: #60a5fa; color: #60a5fa; }
+    .legend-dot.mindfulness { background: #2dd4bf; color: #2dd4bf; }
+    .legend-dot.relationships { background: #fbbf24; color: #fbbf24; }
+
+    /* Journey Card */
+    .journey-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .journey-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 20px;
+    }
+
+    .journey-stages {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .journey-stages::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 28px;
+      right: 28px;
+      height: 3px;
+      background: #e2e8f0;
+      border-radius: 2px;
+    }
+
+    .journey-stages::after {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 28px;
+      width: 55%;
+      height: 3px;
+      background: linear-gradient(90deg, #4ade80, #60a5fa, #a855f7);
+      border-radius: 2px;
+    }
+
+    .journey-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stage-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .stage-icon.complete {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      border-color: #22c55e;
+      color: white;
+    }
+
+    .stage-icon.current {
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      border-color: #3b82f6;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .stage-name {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .stage-name.active {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    /* Summary Card */
+    .summary-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .summary-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .summary-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      background: #ecfdf5;
+      color: #059669;
+      border-radius: 20px;
+    }
+
+    .summary-value {
+      font-size: 42px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding-top: 20px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .summary-stat {
+      text-align: center;
+    }
+
+    .summary-stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 2px;
+    }
+
+    .summary-stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Member Badge */
+    .member-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #faf5ff 100%);
+      border: 1px solid #e0e7ff;
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .member-icon {
+      width: 44px;
+      height: 44px;
+      background: white;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    }
+
+    .member-text {
+      font-size: 14px;
+      color: #475569;
+    }
+
+    .member-text strong {
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 28px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-page">
+    <div class="dashboard-container">
+      
+      <!-- Dark Sky Section -->
+      <div class="sky-section">
+        
+        <!-- Header -->
+        <header class="dashboard-header">
+          <span class="app-logo">Flux</span>
+          <div class="header-actions">
+            <button class="icon-button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-value">$347.50</div>
+            <div class="stat-label">Portfolio</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">42</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">8</div>
+            <div class="stat-label">Stars</div>
+          </div>
+        </div>
+
+        <!-- Constellation -->
+        <div class="constellation-container" id="constellationContainer">
+          <!-- Background stars -->
+          <div class="bg-stars" id="bgStars"></div>
+          
+          <!-- Constellation lines SVG -->
+          <svg class="constellation-svg">
+            <!-- Health constellation -->
+            <line class="constellation-line health" x1="22%" y1="25%" x2="32%" y2="42%"/>
+            <line class="constellation-line health" x1="32%" y1="42%" x2="18%" y2="58%"/>
+            
+            <!-- Finance constellation -->
+            <line class="constellation-line finance" x1="72%" y1="20%" x2="82%" y2="38%"/>
+            
+            <!-- Productivity constellation -->
+            <line class="constellation-line productivity" x1="55%" y1="50%" x2="68%" y2="68%"/>
+            
+            <!-- Mindfulness constellation -->
+            <line class="constellation-line mindfulness" x1="38%" y1="72%" x2="28%" y2="85%"/>
+          </svg>
+          
+          <!-- Stars -->
+          
+          <!-- Health stars -->
+          <div class="star blazing health" style="left: 22%; top: 25%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Morning Run</div>
+              <div class="tooltip-category" style="color: #4ade80;">Health</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">94</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$52</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="star bright health" style="left: 32%; top: 42%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">8 Glasses Water</div>
+              <div class="tooltip-category" style="color: #4ade80;">Health</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">78</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$38</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="star growing health" style="left: 18%; top: 58%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">No Alcohol</div>
+              <div class="tooltip-category" style="color: #4ade80;">Health</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">62</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$28</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Finance stars -->
+          <div class="star blazing finance" style="left: 72%; top: 20%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">No-Spend Day</div>
+              <div class="tooltip-category" style="color: #a855f7;">Finance</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">91</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$67</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="star bright finance" style="left: 82%; top: 38%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Pack Lunch</div>
+              <div class="tooltip-category" style="color: #a855f7;">Finance</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">85</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$45</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Productivity stars -->
+          <div class="star bright productivity" style="left: 55%; top: 50%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Deep Work Block</div>
+              <div class="tooltip-category" style="color: #60a5fa;">Productivity</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">82</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$41</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="star dim productivity" style="left: 68%; top: 68%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Read 30 Min</div>
+              <div class="tooltip-category" style="color: #60a5fa;">Productivity</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">45</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$18</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Mindfulness stars -->
+          <div class="star growing mindfulness" style="left: 38%; top: 72%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Meditation</div>
+              <div class="tooltip-category" style="color: #2dd4bf;">Mindfulness</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">68</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$32</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="star dim mindfulness" style="left: 28%; top: 85%;">
+            <div class="star-glow"></div>
+            <div class="star-core"></div>
+            <div class="star-tooltip">
+              <div class="tooltip-name">Gratitude Journal</div>
+              <div class="tooltip-category" style="color: #2dd4bf;">Mindfulness</div>
+              <div class="tooltip-stats">
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">38</div>
+                  <div class="tooltip-stat-label">HHS</div>
+                </div>
+                <div class="tooltip-stat">
+                  <div class="tooltip-stat-value">$12</div>
+                  <div class="tooltip-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Label -->
+          <div class="constellation-label">
+            <h2>Your Constellation</h2>
+            <p>42 days of growth • 8 stars</p>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- Light Mode Content -->
+      <div class="content-section">
+        
+        <!-- Legend -->
+        <div class="legend-card">
+          <div class="legend-items">
+            <div class="legend-item">
+              <div class="legend-dot health"></div>
+              <span>Health</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot finance"></div>
+              <span>Finance</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot productivity"></div>
+              <span>Productivity</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot mindfulness"></div>
+              <span>Mindfulness</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Journey -->
+        <div class="journey-card">
+          <div class="journey-title">Your Journey</div>
+          <div class="journey-stages">
+            <div class="journey-stage">
+              <div class="stage-icon complete">✓</div>
+              <div class="stage-name">First Star</div>
+            </div>
+            <div class="journey-stage">
+              <div class="stage-icon complete">✓</div>
+              <div class="stage-name">First Constellation</div>
+            </div>
+            <div class="journey-stage">
+              <div class="stage-icon current">★</div>
+              <div class="stage-name active">Rising Sky</div>
+            </div>
+            <div class="journey-stage">
+              <div class="stage-icon">✦</div>
+              <div class="stage-name">Galaxy Builder</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-card">
+          <div class="summary-header">
+            <span class="summary-title">Portfolio Value</span>
+            <span class="summary-badge">+$42.50 this week</span>
+          </div>
+          <div class="summary-value">$347.50</div>
+          <div class="summary-label">Total earned across 8 habits</div>
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <div class="summary-stat-value">42</div>
+              <div class="summary-stat-label">Day Streak</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-value">89%</div>
+              <div class="summary-stat-label">Success Rate</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-value">76</div>
+              <div class="summary-stat-label">Avg HHS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Member Badge -->
+        <div class="member-card">
+          <div class="member-icon">⭐</div>
+          <div class="member-text">
+            <strong>Founding Member</strong> • Building your sky since November 2025
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="#" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+      </a>
+      <a href="#" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+        Portfolio
+      </a>
+      <a href="#" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        Sky
+      </a>
+      <a href="#" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="20" x2="12" y2="10"/>
+          <line x1="18" y1="20" x2="18" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="16"/>
+        </svg>
+        Indices
+      </a>
+      <a href="#" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Account
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    // Generate background stars
+    const bgStars = document.getElementById('bgStars');
+    for (let i = 0; i < 100; i++) {
+      const star = document.createElement('div');
+      star.className = 'bg-star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = Math.random() * 3 + 's';
+      star.style.opacity = Math.random() * 0.4 + 0.1;
+      const size = Math.random() * 2 + 1;
+      star.style.width = size + 'px';
+      star.style.height = size + 'px';
+      bgStars.appendChild(star);
+    }
+  </script>
+</body>
+</html>

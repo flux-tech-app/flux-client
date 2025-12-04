@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Compact Layout with Weekly View</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 390px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px;
+      background: linear-gradient(180deg, #eff6ff 0%, white 100%);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .habit-name {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .earnings {
+      font-size: 28px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 24px 16px 16px 16px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .view-option {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-option.active {
+      background: white;
+      color: #2563eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chart-toggle {
+      padding: 6px 12px;
+      border: 1px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chart-toggle.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    /* Metric summary */
+    .metric-display {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .metric-value-large {
+      font-size: 32px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* Chart Container */
+    .chart-wrapper {
+      position: relative;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px 12px 32px 12px;
+      height: 200px;
+      margin-bottom: 16px;
+    }
+
+    /* Y-axis labels */
+    .y-axis {
+      position: absolute;
+      left: 0;
+      top: 16px;
+      bottom: 32px;
+      width: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #9ca3af;
+      text-align: right;
+      padding-right: 8px;
+    }
+
+    /* Chart area */
+    .chart-container {
+      position: absolute;
+      left: 48px;
+      right: 12px;
+      top: 16px;
+      bottom: 32px;
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    /* Bars */
+    .chart-bar {
+      flex: 1;
+      background: #93c5fd;
+      border-radius: 3px 3px 0 0;
+      transition: all 0.2s;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .chart-bar:hover {
+      background: #60a5fa;
+    }
+
+    /* X-axis labels */
+    .x-axis {
+      position: absolute;
+      left: 48px;
+      right: 12px;
+      bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #9ca3af;
+    }
+
+    /* Calendar Section - VERY COMPACT */
+    .calendar-section {
+      padding: 0 16px 24px 16px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .calendar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .calendar-month {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Calendar Grid - VERY COMPACT */
+    .calendar-grid {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    /* Day labels (S M T W T F S) - smaller */
+    .day-headers {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-bottom: 3px;
+    }
+
+    .day-header {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 600;
+      color: #9ca3af;
+      padding: 0;
+    }
+
+    /* Calendar weeks - tighter spacing */
+    .calendar-weeks {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .calendar-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    /* Day cells - MUCH SMALLER */
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .day-cell:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1;
+    }
+
+    .day-cell.empty {
+      background: transparent;
+      cursor: default;
+    }
+
+    .day-cell.empty:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .day-cell.future {
+      background: #f3f4f6;
+      color: #d1d5db;
+      cursor: default;
+    }
+
+    .day-cell.future:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .day-cell.missed {
+      background: #fecaca;
+      color: #dc2626;
+    }
+
+    .day-cell.completed {
+      background: #a7f3d0;
+      color: #065f46;
+    }
+
+    .day-cell.completed.intensity-2 {
+      background: #6ee7b7;
+    }
+
+    .day-cell.completed.intensity-3 {
+      background: #34d399;
+    }
+
+    .day-cell.completed.intensity-4 {
+      background: #10b981;
+      color: white;
+    }
+
+    .day-cell.today {
+      box-shadow: 0 0 0 1.5px #2563eb;
+    }
+
+    /* Legend - very compact */
+    .calendar-legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 9px;
+      color: #6b7280;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="label">FINAL COMPACT LAYOUT</div>
+      <h1 class="habit-name">Meditation</h1>
+      <div class="earnings">$12.50 <span style="font-size: 14px; color: #6b7280; font-weight: 400;">lifetime earnings</span></div>
+    </div>
+
+    <!-- Toggle Chart Section -->
+    <div class="chart-section">
+      <div class="section-header">
+        <h2 class="section-title">Activity</h2>
+        <div class="view-toggle">
+          <button class="view-option active">Progress</button>
+          <button class="view-option">Earnings</button>
+        </div>
+      </div>
+
+      <!-- Added 7D weekly view -->
+      <div class="chart-controls">
+        <button class="chart-toggle">7D</button>
+        <button class="chart-toggle active">30D</button>
+        <button class="chart-toggle">90D</button>
+        <button class="chart-toggle">1Y</button>
+        <button class="chart-toggle">All</button>
+      </div>
+
+      <div class="metric-display">
+        <div class="metric-label">Completion Rate (30 days)</div>
+        <div class="metric-value-large">83%</div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrapper">
+        <!-- Y-axis -->
+        <div class="y-axis">
+          <div>100%</div>
+          <div>75%</div>
+          <div>50%</div>
+          <div>25%</div>
+          <div>0%</div>
+        </div>
+
+        <!-- Bars -->
+        <div class="chart-container">
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 0%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 0%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+          <div class="chart-bar" style="height: 100%;"></div>
+        </div>
+
+        <!-- X-axis -->
+        <div class="x-axis">
+          <div>Oct 25</div>
+          <div>Nov 1</div>
+          <div>Nov 8</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar Heatmap Section - VERY COMPACT -->
+    <div class="calendar-section">
+      <div class="calendar-header">
+        <h2 class="calendar-title">This Month</h2>
+        <div class="calendar-month">November 2025</div>
+      </div>
+
+      <div class="calendar-grid">
+        <!-- Day headers -->
+        <div class="day-headers">
+          <div class="day-header">S</div>
+          <div class="day-header">M</div>
+          <div class="day-header">T</div>
+          <div class="day-header">W</div>
+          <div class="day-header">T</div>
+          <div class="day-header">F</div>
+          <div class="day-header">S</div>
+        </div>
+
+        <!-- Calendar weeks -->
+        <div class="calendar-weeks">
+          <!-- Week 1 -->
+          <div class="calendar-week">
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell completed intensity-2">1</div>
+          </div>
+
+          <!-- Week 2 -->
+          <div class="calendar-week">
+            <div class="day-cell completed">2</div>
+            <div class="day-cell completed intensity-3">3</div>
+            <div class="day-cell missed">4</div>
+            <div class="day-cell completed intensity-2">5</div>
+            <div class="day-cell completed">6</div>
+            <div class="day-cell completed intensity-4">7</div>
+            <div class="day-cell today completed intensity-3">8</div>
+          </div>
+
+          <!-- Week 3 -->
+          <div class="calendar-week">
+            <div class="day-cell future">9</div>
+            <div class="day-cell future">10</div>
+            <div class="day-cell future">11</div>
+            <div class="day-cell future">12</div>
+            <div class="day-cell future">13</div>
+            <div class="day-cell future">14</div>
+            <div class="day-cell future">15</div>
+          </div>
+
+          <!-- Week 4 -->
+          <div class="calendar-week">
+            <div class="day-cell future">16</div>
+            <div class="day-cell future">17</div>
+            <div class="day-cell future">18</div>
+            <div class="day-cell future">19</div>
+            <div class="day-cell future">20</div>
+            <div class="day-cell future">21</div>
+            <div class="day-cell future">22</div>
+          </div>
+
+          <!-- Week 5 -->
+          <div class="calendar-week">
+            <div class="day-cell future">23</div>
+            <div class="day-cell future">24</div>
+            <div class="day-cell future">25</div>
+            <div class="day-cell future">26</div>
+            <div class="day-cell future">27</div>
+            <div class="day-cell future">28</div>
+            <div class="day-cell future">29</div>
+          </div>
+
+          <!-- Week 6 -->
+          <div class="calendar-week">
+            <div class="day-cell future">30</div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="calendar-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #a7f3d0;"></div>
+            <span>Done</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #fecaca;"></div>
+            <span>Missed</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: #f3f4f6;"></div>
+            <span>Future</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

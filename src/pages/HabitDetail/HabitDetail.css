@@ -292,7 +292,7 @@
 }
 
 .habit-detail-page .chart-change-value.positive {
-  color: #16a34a;
+  color: #0d9488;
 }
 
 .habit-detail-page .chart-change-value.negative {
@@ -401,7 +401,7 @@
 
 /* ===== Calendar Heatmap - Month View ===== */
 .habit-detail-page .calendar-section {
-  padding: 20px 16px;
+  padding: 16px;
   border-bottom: 8px solid #f5f5f5;
 }
 
@@ -409,7 +409,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .habit-detail-page .calendar-header .detail-section-title {
@@ -417,7 +417,7 @@
 }
 
 .habit-detail-page .calendar-month-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #6b7280;
 }
@@ -425,19 +425,19 @@
 .habit-detail-page .calendar-heatmap {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .habit-detail-page .calendar-weekday-labels {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 20px);
   gap: 3px;
-  margin-bottom: 3px;
+  justify-content: center;
 }
 
 .habit-detail-page .calendar-weekday-labels span {
   text-align: center;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
   color: #9ca3af;
   text-transform: uppercase;
@@ -447,28 +447,28 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  align-items: center;
 }
 
 .habit-detail-page .calendar-week-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 20px);
   gap: 3px;
 }
 
 .habit-detail-page .calendar-day {
-  aspect-ratio: 1;
-  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
   background: #ebedf0;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  min-height: 28px;
 }
 
 .habit-detail-page .calendar-day .day-number {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 8px;
+  font-weight: 600;
   color: #374151;
 }
 
@@ -492,27 +492,27 @@
 }
 
 .habit-detail-page .calendar-day.level-0 {
-  background: #ebedf0;
+  background: #f3f4f6;
 }
 
 .habit-detail-page .calendar-day.level-1 {
-  background: #bbf7d0;
+  background: #ccfbf1;
 }
 
 .habit-detail-page .calendar-day.level-1 .day-number {
-  color: #166534;
+  color: #0f766e;
 }
 
 .habit-detail-page .calendar-day.level-2 {
-  background: #4ade80;
+  background: #5eead4;
 }
 
 .habit-detail-page .calendar-day.level-2 .day-number {
-  color: #14532d;
+  color: #134e4a;
 }
 
 .habit-detail-page .calendar-day.level-3 {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
 }
 
 .habit-detail-page .calendar-day.level-3 .day-number {
@@ -522,39 +522,39 @@
 .habit-detail-page .calendar-legend {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 6px;
 }
 
 .habit-detail-page .legend-squares {
   display: flex;
-  gap: 3px;
+  gap: 2px;
 }
 
 .habit-detail-page .legend-square {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
 }
 
 .habit-detail-page .legend-square.level-0 {
-  background: #ebedf0;
+  background: #f3f4f6;
 }
 
 .habit-detail-page .legend-square.level-1 {
-  background: #bbf7d0;
+  background: #ccfbf1;
 }
 
 .habit-detail-page .legend-square.level-2 {
-  background: #4ade80;
+  background: #5eead4;
 }
 
 .habit-detail-page .legend-square.level-3 {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
 }
 
 .habit-detail-page .legend-label {
-  font-size: 11px;
+  font-size: 9px;
   color: #9ca3af;
 }
 
@@ -745,7 +745,7 @@
 
 .habit-detail-page .maturity-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+  background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -920,7 +920,7 @@
 .habit-detail-page .activity-amount {
   font-size: 14px;
   font-weight: 600;
-  color: #16a34a;
+  color: #0d9488;
   flex-shrink: 0;
 }
 
@@ -1297,12 +1297,23 @@
     padding: 4px 10px;
   }
 
+  .habit-detail-page .calendar-weekday-labels {
+    grid-template-columns: repeat(7, 18px);
+    gap: 2px;
+  }
+
+  .habit-detail-page .calendar-week-row {
+    grid-template-columns: repeat(7, 18px);
+    gap: 2px;
+  }
+
   .habit-detail-page .calendar-day {
-    min-height: 24px;
+    width: 18px;
+    height: 18px;
   }
 
   .habit-detail-page .calendar-day .day-number {
-    font-size: 10px;
+    font-size: 7px;
   }
 
   .habit-detail-page .time-filter-btn {

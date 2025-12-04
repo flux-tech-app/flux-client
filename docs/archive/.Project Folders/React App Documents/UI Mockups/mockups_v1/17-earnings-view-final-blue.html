@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earnings View - Final (Blue Gradient + Points)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 390px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 16px;
+      background: linear-gradient(180deg, #eff6ff 0%, white 100%);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .habit-name {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .earnings {
+      font-size: 28px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 24px 16px 16px 16px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      gap: 0;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .view-option {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-option.active {
+      background: white;
+      color: #2563eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chart-toggle {
+      padding: 6px 12px;
+      border: 1px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chart-toggle.active {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    /* Metric summary */
+    .metric-display {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .metric-value-large {
+      font-size: 32px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    .metric-change {
+      font-size: 13px;
+      color: #2563eb;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Chart Container */
+    .chart-wrapper {
+      position: relative;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px 12px 32px 12px;
+      height: 200px;
+      margin-bottom: 16px;
+    }
+
+    /* Y-axis labels */
+    .y-axis {
+      position: absolute;
+      left: 0;
+      top: 16px;
+      bottom: 32px;
+      width: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #9ca3af;
+      text-align: right;
+      padding-right: 8px;
+    }
+
+    /* SVG line chart */
+    .line-chart {
+      position: absolute;
+      left: 48px;
+      right: 12px;
+      top: 16px;
+      bottom: 32px;
+      overflow: visible;
+    }
+
+    /* X-axis labels */
+    .x-axis {
+      position: absolute;
+      left: 48px;
+      right: 12px;
+      bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #9ca3af;
+    }
+
+    /* Data points */
+    .data-point {
+      fill: white;
+      stroke: #2563eb;
+      stroke-width: 2;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .data-point:hover {
+      r: 5;
+      fill: #2563eb;
+    }
+
+    .active-dot {
+      fill: #2563eb;
+      filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="label">FINAL EARNINGS VIEW</div>
+      <h1 class="habit-name">Cardio</h1>
+      <div class="earnings">$63.00 <span style="font-size: 14px; color: #6b7280; font-weight: 400;">lifetime earnings</span></div>
+    </div>
+
+    <!-- Toggle Chart Section -->
+    <div class="chart-section">
+      <div class="section-header">
+        <h2 class="section-title">Activity</h2>
+        <div class="view-toggle">
+          <button class="view-option">Progress</button>
+          <button class="view-option active">Earnings</button>
+        </div>
+      </div>
+
+      <div class="chart-controls">
+        <button class="chart-toggle">7D</button>
+        <button class="chart-toggle active">30D</button>
+        <button class="chart-toggle">90D</button>
+        <button class="chart-toggle">1Y</button>
+        <button class="chart-toggle">All</button>
+      </div>
+
+      <div class="metric-display">
+        <div class="metric-label">Total Earnings (30 days)</div>
+        <div class="metric-value-large">$63.00</div>
+        <div class="metric-change">↑ +$8.50 from last period</div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-wrapper">
+        <!-- Y-axis -->
+        <div class="y-axis">
+          <div>$3.50</div>
+          <div>$2.65</div>
+          <div>$1.75</div>
+          <div>$0.90</div>
+          <div>$0.00</div>
+        </div>
+
+        <!-- Line Chart SVG with Gradient Fill and Data Points -->
+        <svg class="line-chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 152" preserveAspectRatio="none">
+          <!-- Gradient definition -->
+          <defs>
+            <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.3" />
+              <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Area fill -->
+          <path
+            d="M 0,120 L 20,110 L 40,95 L 60,85 L 80,70 L 100,60 L 120,50 L 140,45 L 160,40 L 180,35 L 200,30 L 220,25 L 240,20 L 260,15 L 280,10 L 300,5 L 300,152 L 0,152 Z"
+            fill="url(#blueGradient)"
+          />
+          
+          <!-- Line -->
+          <polyline
+            points="0,120 20,110 40,95 60,85 80,70 100,60 120,50 140,45 160,40 180,35 200,30 220,25 240,20 260,15 280,10 300,5"
+            fill="none"
+            stroke="#2563eb"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+          
+          <!-- Data points (every few days for clarity) -->
+          <circle cx="0" cy="120" r="3" class="data-point" />
+          <circle cx="40" cy="95" r="3" class="data-point" />
+          <circle cx="80" cy="70" r="3" class="data-point" />
+          <circle cx="120" cy="50" r="3" class="data-point" />
+          <circle cx="160" cy="40" r="3" class="data-point" />
+          <circle cx="200" cy="30" r="3" class="data-point" />
+          <circle cx="240" cy="20" r="3" class="data-point" />
+          <circle cx="280" cy="10" r="3" class="data-point" />
+          
+          <!-- Active dot at end -->
+          <circle cx="300" cy="5" r="5" class="active-dot" />
+        </svg>
+
+        <!-- X-axis -->
+        <div class="x-axis">
+          <div>Oct 9</div>
+          <div>Oct 23</div>
+          <div>Nov 8</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

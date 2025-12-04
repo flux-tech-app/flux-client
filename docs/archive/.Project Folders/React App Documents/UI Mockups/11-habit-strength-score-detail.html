@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Habit Strength Score</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .hss-page {
+      min-height: 100vh;
+      background: white;
+      padding-bottom: 80px;
+    }
+
+    .hss-container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .hss-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .back-button:hover {
+      background: #f3f4f6;
+    }
+
+    .header-title {
+      flex: 1;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .info-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .info-button:hover {
+      background: #f3f4f6;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      padding: 24px 16px 20px;
+      background: linear-gradient(180deg, #f9fafb 0%, white 100%);
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .habit-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 20px;
+    }
+
+    /* HSS Circle */
+    .hss-circle-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .hss-circle {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+
+    .hss-circle svg {
+      transform: rotate(-90deg);
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: #e5e7eb;
+      stroke-width: 10;
+    }
+
+    .circle-progress {
+      fill: none;
+      stroke: url(#hss-gradient);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 534.07;
+      stroke-dashoffset: 133.52; /* 75% */
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .hss-score-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .hss-score-value {
+      font-size: 44px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .hss-score-label {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .score-tier {
+      display: inline-block;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .score-description {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 20px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .period-toggle-group {
+      display: flex;
+      gap: 4px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .period-toggle {
+      padding: 5px 12px;
+      border: none;
+      background: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .period-toggle.active {
+      background: white;
+      color: #3b82f6;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Line Chart */
+    .line-chart-container {
+      position: relative;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px 12px 12px 32px;
+      margin-bottom: 12px;
+    }
+
+    .line-chart {
+      width: 100%;
+      height: 160px;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart-area {
+      fill: url(#area-gradient);
+      opacity: 0.1;
+    }
+
+    .chart-dot {
+      fill: white;
+      stroke: #3b82f6;
+      stroke-width: 2.5;
+    }
+
+    .chart-y-axis {
+      position: absolute;
+      left: 4px;
+      top: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 160px;
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding-left: 32px;
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-box {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .stat-value.positive {
+      color: #10b981;
+    }
+
+    /* Components Section */
+    .components-section {
+      padding: 20px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .components-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .component-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .component-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .component-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .component-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .component-score {
+      font-size: 18px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .component-bar-container {
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .component-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .component-description {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    /* Improvement Tips */
+    .tips-section {
+      padding: 20px 16px;
+    }
+
+    .tip-card {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .tip-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .tip-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .tip-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+
+    .tip-text {
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+
+    /* FAB */
+    .fab-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      z-index: 50;
+    }
+
+    .fab-button {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+    }
+
+    .fab-button:hover {
+      transform: scale(1.1);
+    }
+
+    .fab-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+
+    .bottom-nav-container {
+      max-width: 768px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="hss-page">
+  <div class="hss-container">
+    <!-- Header -->
+    <div class="hss-header">
+      <button class="back-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-title">Habit Strength Score</div>
+      <button class="info-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <h1 class="habit-name">Morning Workout</h1>
+      
+      <div class="hss-circle-container">
+        <div class="hss-circle">
+          <svg viewBox="0 0 180 180">
+            <defs>
+              <linearGradient id="hss-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#3b82f6" />
+                <stop offset="100%" style="stop-color:#93c5fd" />
+              </linearGradient>
+            </defs>
+            <circle class="circle-bg" cx="90" cy="90" r="85" />
+            <circle class="circle-progress" cx="90" cy="90" r="85" />
+          </svg>
+          <div class="hss-score-display">
+            <div class="hss-score-value">75</div>
+            <div class="hss-score-label">HSS</div>
+          </div>
+        </div>
+      </div>
+      
+      <span class="score-tier">Strong</span>
+      <p class="score-description">Your consistency is excellent. Keep up the momentum!</p>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="section-header">
+        <h2 class="section-title">Trend</h2>
+        <div class="period-toggle-group">
+          <button class="period-toggle">Week</button>
+          <button class="period-toggle active">Month</button>
+          <button class="period-toggle">Year</button>
+        </div>
+      </div>
+
+      <div class="line-chart-container">
+        <div class="chart-y-axis">
+          <span>100</span>
+          <span>75</span>
+          <span>50</span>
+          <span>25</span>
+          <span>0</span>
+        </div>
+        
+        <svg class="line-chart" viewBox="0 0 320 160" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="area-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#3b82f6" />
+              <stop offset="100%" style="stop-color:#93c5fd" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Area under line -->
+          <path class="chart-area" d="M 0 140 L 0 100 L 26.67 90 L 53.33 85 L 80 95 L 106.67 80 L 133.33 70 L 160 65 L 186.67 60 L 213.33 50 L 240 45 L 266.67 40 L 293.33 35 L 320 32 L 320 160 Z" />
+          
+          <!-- Line -->
+          <path class="chart-line" d="M 0 100 L 26.67 90 L 53.33 85 L 80 95 L 106.67 80 L 133.33 70 L 160 65 L 186.67 60 L 213.33 50 L 240 45 L 266.67 40 L 293.33 35 L 320 32" />
+          
+          <!-- Dots -->
+          <circle class="chart-dot" cx="0" cy="100" r="3" />
+          <circle class="chart-dot" cx="26.67" cy="90" r="3" />
+          <circle class="chart-dot" cx="53.33" cy="85" r="3" />
+          <circle class="chart-dot" cx="80" cy="95" r="3" />
+          <circle class="chart-dot" cx="106.67" cy="80" r="3" />
+          <circle class="chart-dot" cx="133.33" cy="70" r="3" />
+          <circle class="chart-dot" cx="160" cy="65" r="3" />
+          <circle class="chart-dot" cx="186.67" cy="60" r="3" />
+          <circle class="chart-dot" cx="213.33" cy="50" r="3" />
+          <circle class="chart-dot" cx="240" cy="45" r="3" />
+          <circle class="chart-dot" cx="266.67" cy="40" r="3" />
+          <circle class="chart-dot" cx="293.33" cy="35" r="3" />
+          <circle class="chart-dot" cx="320" cy="32" r="3" />
+        </svg>
+
+        <div class="chart-x-labels">
+          <span>Nov 1</span>
+          <span>Nov 8</span>
+          <span>Nov 15</span>
+          <span>Nov 22</span>
+          <span>Nov 30</span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Current</div>
+          <div class="stat-value">75</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Peak</div>
+          <div class="stat-value">82</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Change</div>
+          <div class="stat-value positive">+8</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Components Section -->
+    <div class="components-section">
+      <div class="section-header">
+        <h2 class="section-title">Score Breakdown</h2>
+      </div>
+      <p class="components-subtitle">Your HSS is calculated from these factors</p>
+
+      <div class="component-list">
+        <!-- Consistency -->
+        <div class="component-card">
+          <div class="component-header">
+            <span class="component-name">Consistency</span>
+            <span class="component-score">85/100</span>
+          </div>
+          <div class="component-bar-container">
+            <div class="component-bar" style="width: 85%;"></div>
+          </div>
+          <p class="component-description">
+            Completing your habit regularly without long gaps
+          </p>
+        </div>
+
+        <!-- Streak -->
+        <div class="component-card">
+          <div class="component-header">
+            <span class="component-name">Streak Strength</span>
+            <span class="component-score">78/100</span>
+          </div>
+          <div class="component-bar-container">
+            <div class="component-bar" style="width: 78%;"></div>
+          </div>
+          <p class="component-description">
+            Maintaining continuous momentum without breaking your streak
+          </p>
+        </div>
+
+        <!-- Completion Rate -->
+        <div class="component-card">
+          <div class="component-header">
+            <span class="component-name">Completion Rate</span>
+            <span class="component-score">92/100</span>
+          </div>
+          <div class="component-bar-container">
+            <div class="component-bar" style="width: 92%;"></div>
+          </div>
+          <p class="component-description">
+            Hitting your target frequency each week
+          </p>
+        </div>
+
+        <!-- Longevity -->
+        <div class="component-card">
+          <div class="component-header">
+            <span class="component-name">Longevity</span>
+            <span class="component-score">65/100</span>
+          </div>
+          <div class="component-bar-container">
+            <div class="component-bar" style="width: 65%;"></div>
+          </div>
+          <p class="component-description">
+            How long you've maintained this habit overall
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="tips-section">
+      <div class="section-header">
+        <h2 class="section-title">How to Improve</h2>
+      </div>
+
+      <div class="tip-card">
+        <div class="tip-header">
+          <div class="tip-icon">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <div class="tip-title">Build longer streaks</div>
+        </div>
+        <p class="tip-text">
+          Your longest streak is 12 days. Try to extend it to 21 days to strengthen the habit formation.
+        </p>
+      </div>
+
+      <div class="tip-card">
+        <div class="tip-header">
+          <div class="tip-icon">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="tip-title">Maintain consistency</div>
+        </div>
+        <p class="tip-text">
+          You're doing great! Keep logging at the same time each day to build stronger neural pathways.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-container">
+  <button class="fab-button" aria-label="Talk to Flux">
+    <svg class="fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.5a8.38 8.38 0 0 0 .9 3.8 8.5 8.5 0 0 0 7.6 4.7 8.38 8.38 0 0 0 3.8-.9L21 21l-1.9-5.7a8.38 8.38 0 0 0 .9-3.8 8.5 8.5 0 0 0-4.7-7.6 8.38 8.38 0 0 0-3.8-.9h-.5a8.48 8.48 0 0 0-8 8v.5z"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-container">
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      <span class="nav-label">Portfolio</span>
+    </button>
+
+    <button class="nav-item active">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span class="nav-label">Indices</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="nav-label">Activity</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+      <span class="nav-label">Account</span>
+    </button>
+  </div>
+</nav>
+
+</body>
+</html>

@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux 2.0 - Complete App Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 390px;
+            height: 844px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            color: #6b7280;
+            border-radius: 8px;
+        }
+        
+        .icon-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 20px;
+            z-index: 20;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 24px;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Content Styles */
+        .content {
+            padding-bottom: 100px;
+        }
+        
+        .section {
+            padding: 24px 16px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+        
+        /* Portfolio Value */
+        .portfolio-value {
+            font-size: 36px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .change-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #10b981;
+            margin-bottom: 12px;
+        }
+        
+        .pending-line {
+            font-size: 13px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+        
+        .card-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        /* Button Styles */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .stat-item {
+            padding: 24px 16px;
+            text-align: center;
+            border-right: 1px solid #e5e7eb;
+        }
+        
+        .stat-item:last-child {
+            border-right: none;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        /* Index Card */
+        .index-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .index-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .index-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .index-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .index-change {
+            font-size: 13px;
+            color: #10b981;
+            margin-top: 4px;
+        }
+        
+        .percentile-badge {
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        /* Onboarding Styles */
+        .onboarding-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            text-align: center;
+            min-height: 100%;
+            background: linear-gradient(135deg, #eff6ff 0%, white 100%);
+        }
+        
+        .onboarding-logo {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+        
+        .onboarding-tagline {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 12px;
+        }
+        
+        .onboarding-subtitle {
+            font-size: 15px;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e5e7eb;
+        }
+        
+        .step-dot.active {
+            background: #3b82f6;
+        }
+        
+        .feature-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .feature-item {
+            text-align: center;
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: #eff6ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: #3b82f6;
+        }
+        
+        .feature-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .feature-desc {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        
+        /* Input Styles */
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            color: #111827;
+        }
+        
+        .text-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        /* Menu Items */
+        .menu-items {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item:hover {
+            background: #f9fafb;
+        }
+        
+        .menu-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+        
+        .menu-content {
+            flex: 1;
+        }
+        
+        .menu-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+        
+        .menu-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        
+        .badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 15;
+            border: none;
+            color: white;
+        }
+        
+        /* Navigation Instructions */
+        .nav-instructions {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        @media (max-width: 420px) {
+            .phone-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .nav-instructions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-instructions">Click elements to navigate • Bottom nav to switch tabs</div>
+    
+    <div class="phone-container">
+        <!-- Onboarding: Welcome -->
+        <div class="screen active" id="onboarding-welcome">
+            <div class="onboarding-screen">
+                <div class="onboarding-logo">Flux</div>
+                <div class="onboarding-tagline">Progress Pays</div>
+                <div class="onboarding-subtitle">Turn your habits into real wealth</div>
+                
+                <div style="margin-top: auto; width: 100%;">
+                    <button class="btn-primary" onclick="showScreen('onboarding-how-it-works')">Get Started</button>
+                    <button class="btn-secondary" onclick="showScreen('portfolio')" style="margin-top: 12px;">Skip to Demo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding: How It Works -->
+        <div class="screen" id="onboarding-how-it-works">
+            <div class="onboarding-screen">
+                <div class="step-indicator">
+                    <div class="step-dot"></div>
+                    <div class="step-dot active"></div>
+                    <div class="step-dot"></div>
+                </div>
+                
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 32px;">How It Works</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="28" height="28" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="feature-title">Set Financial Rates</div>
+                        <div class="feature-desc">Assign dollar amounts to your habits</div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="28" height="28" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="feature-title">Log Your Activity</div>
+                        <div class="feature-desc">Track completions and resistance</div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <svg width="28" height="28" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                            </svg>
+                        </div>
+                        <div class="feature-title">Earn Real Money</div>
+                        <div class="feature-desc">Weekly transfers to your account</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: auto; width: 100%;">
+                    <button class="btn-primary" onclick="showScreen('onboarding-profile')">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding: Profile Setup -->
+        <div class="screen" id="onboarding-profile">
+            <div class="onboarding-screen">
+                <div class="step-indicator">
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot active"></div>
+                </div>
+                
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 32px;">Create Your Profile</h2>
+                
+                <div style="width: 100%;">
+                    <div class="input-group">
+                        <label class="input-label">What should we call you?</label>
+                        <input type="text" class="text-input" placeholder="Your name" value="Ryan">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Email (optional)</label>
+                        <input type="email" class="text-input" placeholder="email@example.com">
+                    </div>
+                </div>
+                
+                <div style="margin-top: auto; width: 100%;">
+                    <button class="btn-primary" onclick="showScreen('portfolio')">Start Building Wealth</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Screen -->
+        <div class="screen" id="portfolio">
+            <div class="header">
+                <div class="logo">Flux</div>
+                <button class="icon-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="content">
+                <div class="section">
+                    <div class="portfolio-value">$1,247.50</div>
+                    <div class="change-line">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />
+                        </svg>
+                        <span>+$43.25 today</span>
+                    </div>
+                    <div class="pending-line">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                        </svg>
+                        <span><strong>$127.50 pending</strong> • transfers Friday</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 16px; border-bottom: 1px solid #e5e7eb; padding: 0 16px; margin-bottom: 24px;">
+                    <button style="padding: 12px 4px; font-size: 14px; font-weight: 500; color: #3b82f6; background: none; border: none; position: relative; cursor: pointer;">
+                        Positions
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);"></div>
+                    </button>
+                    <button style="padding: 12px 4px; font-size: 14px; font-weight: 500; color: #6b7280; background: none; border: none; cursor: pointer;" onclick="showScreen('indices')">
+                        Indices
+                    </button>
+                </div>
+                
+                <div class="section">
+                    <div class="card" onclick="showScreen('habit-detail')">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Morning Cardio</div>
+                                <div class="card-subtitle">Build habit</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px; color: #10b981;">
+                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #d1fae5; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <span style="font-size: 14px; font-weight: 500;">Done</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 12px; font-weight: 500; color: #10b981;">✓ Complete</div>
+                                <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #f59e0b; font-weight: 500; margin-top: 4px;">
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+                                    </svg>
+                                    45 days
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Resist DoorDash</div>
+                                <div class="card-subtitle">Break habit</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px; color: #f59e0b;">
+                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <span style="font-size: 14px; font-weight: 500;">Resisted</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 12px; font-weight: 500; color: #10b981;">✓ Complete</div>
+                                <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #f59e0b; font-weight: 500; margin-top: 4px;">
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+                                    </svg>
+                                    28 days
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Evening Meditation</div>
+                                <div class="card-subtitle">Build habit</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="font-size: 28px; font-weight: 600; color: #d1d5db;">—</div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 12px; color: #6b7280;">Not logged today</div>
+                                <div style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: #f59e0b; font-weight: 500; margin-top: 4px;">
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
+                                    </svg>
+                                    12 days
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="fab">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Behavioral Indices Screen -->
+        <div class="screen" id="indices">
+            <div class="header">
+                <div class="header-left">
+                    <button class="back-btn" onclick="showScreen('portfolio')">← Back</button>
+                </div>
+                <div class="header-title">Behavioral Indices</div>
+                <button class="icon-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="content">
+                <div class="section">
+                    <div style="background: #eff6ff; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center;">
+                        <div style="font-size: 13px; color: #2563eb; font-weight: 500; margin-bottom: 4px;">THE BLOOMBERG OF HABITS</div>
+                        <div style="font-size: 14px; color: #1e40af; line-height: 1.5;">Track your performance against behavioral indices built from thousands of Flux users</div>
+                    </div>
+                    
+                    <div class="index-card">
+                        <div class="index-header">
+                            <div class="index-name">EXERCISE INDEX</div>
+                            <div class="index-change">+2.1%</div>
+                        </div>
+                        <div class="index-value">71.3%</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">423 participants</div>
+                        <div class="percentile-badge">You: 84th percentile ↑</div>
+                    </div>
+                    
+                    <div class="index-card">
+                        <div class="index-header">
+                            <div class="index-name">PRODUCTIVITY INDEX</div>
+                            <div class="index-change">+0.3%</div>
+                        </div>
+                        <div class="index-value">68.7%</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">347 participants</div>
+                        <div class="percentile-badge">You: 62nd percentile →</div>
+                    </div>
+                    
+                    <div class="index-card">
+                        <div class="index-header">
+                            <div class="index-name">FINANCIAL INDEX</div>
+                            <div style="font-size: 13px; color: #ef4444;">-1.8%</div>
+                        </div>
+                        <div class="index-value">65.2%</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">289 participants</div>
+                        <div class="percentile-badge">You: 91st percentile ↑</div>
+                    </div>
+                    
+                    <div class="index-card">
+                        <div class="index-header">
+                            <div class="index-name">RECOVERY INDEX</div>
+                            <div class="index-change">+1.5%</div>
+                        </div>
+                        <div class="index-value">63.4%</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">198 participants</div>
+                        <div class="percentile-badge">You: 78th percentile ↑</div>
+                    </div>
+                    
+                    <div class="index-card">
+                        <div class="index-header">
+                            <div class="index-name">NUTRITION INDEX</div>
+                            <div class="index-change">+0.8%</div>
+                        </div>
+                        <div class="index-value">59.1%</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">312 participants</div>
+                        <div style="background: #f3f4f6; color: #6b7280; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; margin-top: 8px;">Not tracking yet</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habit Detail Screen -->
+        <div class="screen" id="habit-detail">
+            <div class="header">
+                <div class="header-left">
+                    <button class="back-btn" onclick="showScreen('portfolio')">← Back</button>
+                </div>
+                <div class="header-title">Position Details</div>
+                <button class="icon-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="content">
+                <div class="section" style="background: linear-gradient(180deg, #eff6ff 0%, white 100%);">
+                    <h2 style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">Morning Cardio</h2>
+                    <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;">
+                        <div style="font-size: 32px; font-weight: 600; background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$1,247.50</div>
+                        <span style="font-size: 14px; color: #6b7280;">lifetime earnings</span>
+                    </div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #d1fae5; color: #065f46; border-radius: 12px; font-size: 13px; font-weight: 500; margin-top: 8px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Completed today</span>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 16px 12px; margin-bottom: 16px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 2px;">Total Earnings</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #2563eb;">$1,247.50</div>
+                            <div style="font-size: 10px; color: #9ca3af; margin-top: 2px; font-weight: 500;">Last 30 days</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 20px 12px 32px; min-height: 220px; margin-bottom: 16px;">
+                        <div style="text-align: center; color: #9ca3af; padding-top: 80px;">
+                            [Interactive Chart]
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">45</div>
+                        <div class="stat-label">Current</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">52</div>
+                        <div class="stat-label">Longest</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">7/7</div>
+                        <div class="stat-label">This week</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div class="section-title" style="margin-bottom: 0;">HSS Score</div>
+                        <div style="font-size: 13px; color: #6b7280;">84th percentile</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <div style="font-size: 36px; font-weight: 700; color: #111827;">87.3</div>
+                        <div style="font-size: 13px; color: #10b981; font-weight: 600;">+2.13 ↑ (+2.8%)</div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+                            <span style="color: #6b7280;">Scheduled Completion</span>
+                            <span style="font-weight: 600;">27/30 ★★★★☆</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+                            <span style="color: #6b7280;">Momentum</span>
+                            <span style="font-weight: 600;">18/20 ★★★★★</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+                            <span style="color: #6b7280;">Legacy Bonus</span>
+                            <span style="font-weight: 600;">8/15 ★★★★☆</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px;">
+                            <span style="color: #6b7280;">Consistency</span>
+                            <span style="font-weight: 600;">4/5 ★★★★☆</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                            <span style="color: #6b7280;">Streak</span>
+                            <span style="font-weight: 600;">4/5 ★★★★☆</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed Screen -->
+        <div class="screen" id="activity">
+            <div class="header">
+                <div class="logo">Activity Feed</div>
+                <button class="icon-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="content">
+                <div style="padding: 16px; font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Today</div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0;">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 2px;">Morning Cardio</div>
+                            <div style="font-size: 12px; color: #6b7280;">30 minutes • Today at 7:15 AM</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #10b981;">+$1.50</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #f59e0b; flex-shrink: 0;">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 2px;">Resist DoorDash</div>
+                            <div style="font-size: 12px; color: #6b7280;">Resisted • Today at 12:30 PM</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #10b981;">+$29.50</div>
+                    </div>
+                </div>
+                
+                <div style="padding: 16px; font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Yesterday</div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0;">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 2px;">Morning Cardio</div>
+                            <div style="font-size: 12px; color: #6b7280;">45 minutes • Yesterday at 7:00 AM</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #10b981;">+$2.25</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0;">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 2px;">Evening Meditation</div>
+                            <div style="font-size: 12px; color: #6b7280;">15 minutes • Yesterday at 9:30 PM</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #10b981;">+$0.75</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Screen -->
+        <div class="screen" id="account">
+            <div class="header">
+                <div class="logo">Account</div>
+                <button class="icon-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="content">
+                <div style="background: linear-gradient(180deg, #eff6ff 0%, white 100%); padding: 32px 16px; text-align: center;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; font-weight: 700; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                        R
+                    </div>
+                    <div style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 4px;">Ryan</div>
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">ryan@example.com</div>
+                    <button class="btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; width: auto; padding: 8px 20px;" onclick="showScreen('settings')">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        <span>Edit Profile</span>
+                    </button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Active Positions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">$1,247.50</div>
+                        <div class="stat-label">Total Earned</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">45</div>
+                        <div class="stat-label">Day Streak</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Account</div>
+                    <div class="menu-items">
+                        <div class="menu-item" onclick="showScreen('bank-connection')">
+                            <div class="menu-icon">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                                    <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Bank Connection</div>
+                                <div class="menu-subtitle">Chase (...4523)</div>
+                            </div>
+                            <div class="badge">Connected</div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <div class="menu-item" onclick="showScreen('transactions')">
+                            <div class="menu-icon">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Transaction History</div>
+                                <div class="menu-subtitle">View all transfers</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">App</div>
+                    <div class="menu-items">
+                        <div class="menu-item" onclick="showScreen('settings')">
+                            <div class="menu-icon">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Settings</div>
+                                <div class="menu-subtitle">Preferences and notifications</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <div class="menu-item">
+                            <div class="menu-icon">
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="menu-content">
+                                <div class="menu-title">Help & Support</div>
+                                <div class="menu-subtitle">FAQ, contact us</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; padding: 24px 16px; color: #9ca3af; font-size: 13px;">
+                    Flux v2.0.0 • Made with intention
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div class="screen" id="settings">
+            <div class="header">
+                <div class="header-left">
+                    <button class="back-btn" onclick="showScreen('account')">← Back</button>
+                </div>
+                <div class="header-title">Settings</div>
+            </div>
+            
+            <div class="content">
+                <div class="section">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Notifications</div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Daily Reminders</div>
+                                <div class="menu-subtitle">Get reminded to log habits</div>
+                            </div>
+                            <div style="width: 44px; height: 24px; background: #3b82f6; border-radius: 12px; position: relative; flex-shrink: 0;">
+                                <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Transfer Notifications</div>
+                                <div class="menu-subtitle">Alert when transfer completes</div>
+                            </div>
+                            <div style="width: 44px; height: 24px; background: #3b82f6; border-radius: 12px; position: relative; flex-shrink: 0;">
+                                <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Preferences</div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Transfer Schedule</div>
+                                <div class="menu-subtitle">Weekly - Friday 11:59 PM</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Theme</div>
+                                <div class="menu-subtitle">Light</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div style="font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Data & Privacy</div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Export Data</div>
+                                <div class="menu-subtitle">Download your data</div>
+                            </div>
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="color: #d1d5db;">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <div class="menu-title">Data Sharing Consent</div>
+                                <div class="menu-subtitle">Contribute to behavioral indices</div>
+                            </div>
+                            <div style="width: 44px; height: 24px; background: #3b82f6; border-radius: 12px; position: relative; flex-shrink: 0;">
+                                <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bank Connection Screen -->
+        <div class="screen" id="bank-connection">
+            <div class="header">
+                <div class="header-left">
+                    <button class="back-btn" onclick="showScreen('account')">← Back</button>
+                </div>
+                <div class="header-title">Bank Connection</div>
+            </div>
+            
+            <div class="content">
+                <div class="section">
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="font-size: 16px; font-weight: 600; color: #166534; margin-bottom: 2px;">Bank Connected</div>
+                                <div style="font-size: 13px; color: #166534;">Chase (...4523)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-title">How It Works</div>
+                    <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0; font-weight: 700;">1</div>
+                            <div>
+                                <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px;">Secure Connection</div>
+                                <div style="font-size: 13px; color: #6b7280; line-height: 1.5;">We use Plaid to securely connect to your bank. We never see your login credentials.</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0; font-weight: 700;">2</div>
+                            <div>
+                                <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px;">Weekly Transfers</div>
+                                <div style="font-size: 13px; color: #6b7280; line-height: 1.5;">Every Friday at 11:59 PM, your pending earnings automatically transfer to your linked account.</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; flex-shrink: 0; font-weight: 700;">3</div>
+                            <div>
+                                <div style="font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px;">Real Money</div>
+                                <div style="font-size: 13px; color: #6b7280; line-height: 1.5;">This is actual money - not points or fake currency. Build real wealth through habits.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-secondary">Change Bank Account</button>
+                    <button class="btn-secondary" style="margin-top: 12px; color: #ef4444; border-color: #fecaca;">Disconnect Bank</button>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction History Screen -->
+        <div class="screen" id="transactions">
+            <div class="header">
+                <div class="header-left">
+                    <button class="back-btn" onclick="showScreen('account')">← Back</button>
+                </div>
+                <div class="header-title">Transaction History</div>
+            </div>
+            
+            <div class="content">
+                <div style="padding: 16px; font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">This Week</div>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px;">Weekly Transfer</div>
+                            <div style="font-size: 13px; color: #6b7280;">Friday, Nov 8 • 11:59 PM</div>
+                        </div>
+                        <div style="font-size: 20px; font-weight: 700; color: #10b981;">+$127.50</div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 13px; color: #6b7280;">Status</span>
+                            <span style="font-size: 13px; font-weight: 500; color: #10b981;">✓ Completed</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-size: 13px; color: #6b7280;">To</span>
+                            <span style="font-size: 13px; font-weight: 500;">Chase (...4523)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding: 16px; font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;">Last Week</div>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px;">Weekly Transfer</div>
+                            <div style="font-size: 13px; color: #6b7280;">Friday, Nov 1 • 11:59 PM</div>
+                        </div>
+                        <div style="font-size: 20px; font-weight: 700; color: #10b981;">+$143.75</div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 13px; color: #6b7280;">Status</span>
+                            <span style="font-size: 13px; font-weight: 500; color: #10b981;">✓ Completed</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-size: 13px; color: #6b7280;">To</span>
+                            <span style="font-size: 13px; font-weight: 500;">Chase (...4523)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px;">Weekly Transfer</div>
+                            <div style="font-size: 13px; color: #6b7280;">Friday, Oct 25 • 11:59 PM</div>
+                        </div>
+                        <div style="font-size: 20px; font-weight: 700; color: #10b981;">+$156.00</div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 13px; color: #6b7280;">Status</span>
+                            <span style="font-size: 13px; font-weight: 500; color: #10b981;">✓ Completed</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-size: 13px; color: #6b7280;">To</span>
+                            <span style="font-size: 13px; font-weight: 500;">Chase (...4523)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showScreen('portfolio')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    <span>Portfolio</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('activity')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Activity</span>
+                </div>
+                <div class="nav-item" onclick="showScreen('account')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Account</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            document.getElementById(screenId).classList.add('active');
+            
+            // Scroll to top of new screen
+            document.getElementById(screenId).scrollTop = 0;
+        }
+    </script>
+</body>
+</html>

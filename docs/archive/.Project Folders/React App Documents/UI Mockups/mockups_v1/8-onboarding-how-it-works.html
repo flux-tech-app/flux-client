@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - How It Works</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+      padding: 24px;
+      padding-bottom: 120px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-top: 24px;
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    .step {
+      display: flex;
+      gap: 16px;
+    }
+
+    .step-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .step-icon.blue {
+      background: #eff6ff;
+    }
+
+    .step-icon.green {
+      background: #f0fdf4;
+    }
+
+    .step-icon.purple {
+      background: #faf5ff;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .step-description {
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .example-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .example-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .example-habit {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .habit-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #111827;
+    }
+
+    .habit-rate {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .habit-earning {
+      font-size: 16px;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 12px 0;
+    }
+
+    .key-point {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+
+    .key-point-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .key-point-text {
+      font-size: 14px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+
+    .bottom-actions {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      padding-bottom: 32px;
+    }
+
+    .continue-button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+      margin-bottom: 12px;
+    }
+
+    .skip-button {
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .dot.inactive {
+      background: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">How Flux Works</div>
+      <div class="subtitle">Three simple steps to build better habits</div>
+    </div>
+
+    <div class="steps">
+      <!-- Step 1 -->
+      <div class="step">
+        <div class="step-icon blue">
+          <svg style="width: 24px; height: 24px; color: #2563eb;" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="step-content">
+          <div class="step-title">1. Create Your Positions</div>
+          <div class="step-description">
+            Set up habits you want to build (like exercise) or break (like ordering takeout). Choose how much each action is worth.
+          </div>
+          <div class="example-card">
+            <div class="example-label">EXAMPLE</div>
+            <div class="example-habit">
+              <div>
+                <div class="habit-name">
+                  <svg style="width: 14px; height: 14px; color: #10b981; display: inline; vertical-align: middle; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  Morning Cardio
+                </div>
+                <div class="habit-rate">$0.05 per minute</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="example-habit">
+              <div>
+                <div class="habit-name">
+                  <svg style="width: 14px; height: 14px; color: #f59e0b; display: inline; vertical-align: middle; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd" />
+                  </svg>
+                  Resist Doordash
+                </div>
+                <div class="habit-rate">$1.00 base + savings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step">
+        <div class="step-icon green">
+          <svg style="width: 24px; height: 24px; color: #10b981;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="step-content">
+          <div class="step-title">2. Track Your Behavior</div>
+          <div class="step-description">
+            Log when you complete a positive habit or resist a negative one. Takes 5 seconds.
+          </div>
+          <div class="example-card">
+            <div class="example-label">TODAY'S ACTIVITY</div>
+            <div class="example-habit">
+              <div class="habit-name">30 min cardio</div>
+              <div class="habit-earning">+$1.50</div>
+            </div>
+            <div class="divider"></div>
+            <div class="example-habit">
+              <div class="habit-name">Resisted Doordash</div>
+              <div class="habit-earning">+$29.00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step">
+        <div class="step-icon purple">
+          <svg style="width: 24px; height: 24px; color: #9333ea;" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="step-content">
+          <div class="step-title">3. Grow Your Portfolio</div>
+          <div class="step-description">
+            Your earnings accumulate throughout the week. We transfer real money to your savings account every Sunday.
+          </div>
+          <div class="example-card">
+            <div class="example-label">THIS WEEK</div>
+            <div class="example-habit">
+              <div class="habit-name">Total Earned</div>
+              <div class="habit-earning">$42.50</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-point">
+      <div class="key-point-title">
+        <svg style="width: 20px; height: 20px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        </svg>
+        <span>Keep it sustainable</span>
+      </div>
+      <div class="key-point-text">
+        Start with small amounts ($5-10/week). The goal is consistent behavior change, not big payouts. Small rewards compound over time.
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-actions">
+    <button class="continue-button">Continue</button>
+    <button class="skip-button">Skip Tutorial</button>
+    <div class="dots">
+      <div class="dot inactive"></div>
+      <div class="dot"></div>
+      <div class="dot inactive"></div>
+    </div>
+  </div>
+</body>
+</html>

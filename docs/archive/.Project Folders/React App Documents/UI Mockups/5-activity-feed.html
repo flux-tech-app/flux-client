@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Activity Feed</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .activity-page {
+      min-height: 100vh;
+      background: white;
+      padding-bottom: 80px;
+    }
+
+    .activity-container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* App Header */
+    .activity-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .filter-button {
+      padding: 8px 12px;
+      background: none;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .filter-button:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    /* Date Tabs */
+    .date-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .date-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .date-tab {
+      padding: 8px 16px;
+      background: none;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .date-tab.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border-color: transparent;
+    }
+
+    .date-tab:hover:not(.active) {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+      padding: 16px;
+    }
+
+    .date-section {
+      margin-bottom: 24px;
+    }
+
+    .date-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Activity Card */
+    .activity-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .activity-card:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .activity-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .activity-info {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .activity-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .activity-time {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .activity-badge {
+      padding: 2px 8px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .activity-badge.build {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .activity-badge.resist {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .activity-amount {
+      font-size: 18px;
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    .activity-amount.negative {
+      color: #ef4444;
+    }
+
+    .activity-description {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    /* AI Insight Card */
+    .ai-insight-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+    }
+
+    .ai-insight-card .activity-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flux-mini-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.5px;
+    }
+
+    .flux-mini-icon {
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      color: #3b82f6;
+    }
+
+    .ai-insight-card .activity-description {
+      color: #1e3a8a;
+    }
+
+    /* FAB */
+    .fab-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      z-index: 50;
+    }
+
+    .fab-button {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+    }
+
+    .fab-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+    }
+
+    .fab-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+
+    .bottom-nav-container {
+      max-width: 768px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Icons */
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="activity-page">
+  <div class="activity-container">
+    <!-- Header -->
+    <div class="activity-header">
+      <div class="header-content">
+        <h1 class="page-title">Activity</h1>
+        <button class="filter-button">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+          </svg>
+          Filter
+        </button>
+      </div>
+      
+      <!-- Date Tabs -->
+      <div class="date-tabs">
+        <button class="date-tab active">Today</button>
+        <button class="date-tab">Yesterday</button>
+        <button class="date-tab">This Week</button>
+        <button class="date-tab">Last Week</button>
+        <button class="date-tab">This Month</button>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="activity-feed">
+      <!-- Today Section -->
+      <div class="date-section">
+        <div class="date-header">Today • Nov 14</div>
+        <div class="activity-list">
+          
+          <!-- Workout Logged -->
+          <div class="activity-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">Morning Workout</div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    7:45 AM
+                  </div>
+                  <span class="activity-badge build">Build</span>
+                </div>
+              </div>
+              <div class="activity-amount">+$15.00</div>
+            </div>
+            <div class="activity-description">
+              Completed 45 min session • Streak: 5 days
+            </div>
+          </div>
+
+          <!-- AI Insight -->
+          <div class="activity-card ai-insight-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">
+                  <span class="flux-mini-badge">
+                    <span class="flux-mini-icon">F</span>
+                    FLUX
+                  </span>
+                  Insight shared
+                </div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    6:30 AM
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="activity-description">
+              You're on a 5-day streak with morning workouts! This is your longest streak this month. Keep it up!
+            </div>
+          </div>
+
+          <!-- Reading Logged -->
+          <div class="activity-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">Read 30 Minutes</div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    9:15 PM
+                  </div>
+                  <span class="activity-badge build">Build</span>
+                </div>
+              </div>
+              <div class="activity-amount">+$5.00</div>
+            </div>
+            <div class="activity-description">
+              Completed 35 min session • Streak: 21 days
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yesterday Section -->
+      <div class="date-section">
+        <div class="date-header">Yesterday • Nov 13</div>
+        <div class="activity-list">
+          
+          <!-- Workout -->
+          <div class="activity-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">Morning Workout</div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    7:30 AM
+                  </div>
+                  <span class="activity-badge build">Build</span>
+                </div>
+              </div>
+              <div class="activity-amount">+$15.00</div>
+            </div>
+            <div class="activity-description">
+              Completed 50 min session • Streak: 4 days
+            </div>
+          </div>
+
+          <!-- No Social Media -->
+          <div class="activity-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">No Social Media</div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    11:59 PM
+                  </div>
+                  <span class="activity-badge resist">Resist</span>
+                </div>
+              </div>
+              <div class="activity-amount">+$5.00</div>
+            </div>
+            <div class="activity-description">
+              Full day completed • Streak: 6 days
+            </div>
+          </div>
+
+          <!-- Reading -->
+          <div class="activity-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">Read 30 Minutes</div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    9:30 PM
+                  </div>
+                  <span class="activity-badge build">Build</span>
+                </div>
+              </div>
+              <div class="activity-amount">+$5.00</div>
+            </div>
+            <div class="activity-description">
+              Completed 42 min session • Streak: 20 days
+            </div>
+          </div>
+
+          <!-- AI Conversation -->
+          <div class="activity-card ai-insight-card">
+            <div class="activity-header-row">
+              <div class="activity-info">
+                <div class="activity-title">
+                  <span class="flux-mini-badge">
+                    <span class="flux-mini-icon">F</span>
+                    FLUX
+                  </span>
+                  Chat session
+                </div>
+                <div class="activity-meta">
+                  <div class="activity-time">
+                    <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    3:45 PM
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="activity-description">
+              You asked about adding an evening routine. Flux suggested starting with meditation.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-container">
+  <button class="fab-button" aria-label="Talk to Flux">
+    <svg class="fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.5a8.38 8.38 0 0 0 .9 3.8 8.5 8.5 0 0 0 7.6 4.7 8.38 8.38 0 0 0 3.8-.9L21 21l-1.9-5.7a8.38 8.38 0 0 0 .9-3.8 8.5 8.5 0 0 0-4.7-7.6 8.38 8.38 0 0 0-3.8-.9h-.5a8.48 8.48 0 0 0-8 8v.5z"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-container">
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      <span class="nav-label">Portfolio</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span class="nav-label">Indices</span>
+    </button>
+
+    <button class="nav-item active">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="nav-label">Activity</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+      <span class="nav-label">Account</span>
+    </button>
+  </div>
+</nav>
+
+</body>
+</html>

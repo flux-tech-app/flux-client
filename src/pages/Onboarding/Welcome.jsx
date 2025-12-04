@@ -1,7 +1,10 @@
-import React from 'react';
 import './Onboarding.css';
 
-function Welcome({ onContinue, onSkip }) {
+/**
+ * Welcome Screen - Step 1
+ * Professional introduction to Flux with elegant "F" avatar
+ */
+export default function Welcome({ onContinue, onSkip }) {
   return (
     <div className="onboarding-screen">
       <div className="onboarding-content">
@@ -11,32 +14,13 @@ function Welcome({ onContinue, onSkip }) {
             Meet <span className="gradient-text">Flux</span>
           </h1>
           <p className="welcome-subtitle">
-            Your AI behavior coach that turns habits into savings
+            Your behavioral investment platform that turns habits into savings
           </p>
         </div>
 
         <div className="feature-list">
           <div className="feature-item">
-            <div className="feature-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            </div>
-            <div className="feature-content">
-              <div className="feature-title">Natural conversation</div>
-              <div className="feature-description">
-                Just talk to Flux like you would a coach. No complex forms or confusing menus.
-              </div>
-            </div>
-          </div>
-
-          <div className="feature-item">
-            <div className="feature-icon">
+            <div className="feature-icon green">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path 
                   strokeLinecap="round" 
@@ -49,26 +33,45 @@ function Welcome({ onContinue, onSkip }) {
             <div className="feature-content">
               <div className="feature-title">Real money accountability</div>
               <div className="feature-description">
-                Transfer your own money between checking and savings based on habit completion.
+                Transfer your own money to savings when you complete habits. It's your money—just moving it smarter.
               </div>
             </div>
           </div>
 
           <div className="feature-item">
-            <div className="feature-icon">
+            <div className="feature-icon blue">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
                   strokeWidth="2" 
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
             </div>
             <div className="feature-content">
-              <div className="feature-title">Personalized insights</div>
+              <div className="feature-title">Pattern recognition, not schedules</div>
               <div className="feature-description">
-                Flux learns your patterns and offers smart suggestions to help you succeed.
+                Log habits when you complete them. No streaks to break—Flux learns your natural patterns.
+              </div>
+            </div>
+          </div>
+
+          <div className="feature-item">
+            <div className="feature-icon purple">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="2" 
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                />
+              </svg>
+            </div>
+            <div className="feature-content">
+              <div className="feature-title">Watch your wealth grow</div>
+              <div className="feature-description">
+                Every logged habit adds to your portfolio. See your savings grow as your habits improve.
               </div>
             </div>
           </div>
@@ -77,7 +80,7 @@ function Welcome({ onContinue, onSkip }) {
 
       <div className="onboarding-footer">
         <button className="primary-button" onClick={onContinue}>
-          Continue
+          Get Started
         </button>
         <button className="skip-button" onClick={onSkip}>
           Skip intro
@@ -86,5 +89,3 @@ function Welcome({ onContinue, onSkip }) {
     </div>
   );
 }
-
-export default Welcome;

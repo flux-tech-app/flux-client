@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Connect Your Bank</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .onboarding-container {
+      max-width: 768px;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    /* Progress Indicator */
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      padding: 20px 16px;
+    }
+
+    .progress-dot {
+      flex: 1;
+      height: 3px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+
+    .progress-dot.active {
+      background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+    }
+
+    /* Content Area */
+    .onboarding-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 24px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .bank-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .bank-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #3b82f6;
+    }
+
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    /* Security Features */
+    .security-features {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+
+    .security-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 16px;
+    }
+
+    .security-title svg {
+      width: 18px;
+      height: 18px;
+      color: #10b981;
+    }
+
+    .security-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .security-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .security-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #d1fae5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .security-check svg {
+      width: 12px;
+      height: 12px;
+      color: #10b981;
+    }
+
+    .security-text {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    /* Info Box */
+    .info-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .info-icon {
+      width: 20px;
+      height: 20px;
+      color: #f59e0b;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .info-text {
+      font-size: 14px;
+      color: #92400e;
+      line-height: 1.5;
+    }
+
+    .info-text strong {
+      color: #78350f;
+    }
+
+    /* Powered By Plaid */
+    .plaid-badge {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .plaid-text {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .plaid-logo {
+      display: inline-block;
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* Bottom Actions */
+    .onboarding-footer {
+      padding: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .primary-button {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .primary-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    .primary-button:active {
+      transform: translateY(0);
+    }
+
+    .secondary-button {
+      width: 100%;
+      padding: 14px;
+      background: none;
+      color: #6b7280;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .secondary-button:hover {
+      color: #3b82f6;
+    }
+
+    /* Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="onboarding-container">
+  <!-- Progress Bar -->
+  <div class="progress-bar">
+    <div class="progress-dot active"></div>
+    <div class="progress-dot active"></div>
+    <div class="progress-dot active"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="onboarding-content">
+    <div class="section-header">
+      <div class="bank-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+      </div>
+      <h1 class="section-title">Connect your bank</h1>
+      <p class="section-subtitle">Link your checking and savings accounts to enable automatic transfers when you complete habits.</p>
+    </div>
+
+    <!-- Security Features -->
+    <div class="security-features">
+      <div class="security-title">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Bank-level security
+      </div>
+      <div class="security-list">
+        <div class="security-item">
+          <div class="security-check">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="security-text">256-bit encryption protects all your financial data</div>
+        </div>
+        <div class="security-item">
+          <div class="security-check">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="security-text">We never see or store your banking credentials</div>
+        </div>
+        <div class="security-item">
+          <div class="security-check">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="security-text">Read-only access to verify accounts and balances</div>
+        </div>
+        <div class="security-item">
+          <div class="security-check">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="security-text">You maintain full control over all transfers</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <svg class="info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div class="info-text">
+        <strong>Important:</strong> Real money transfers are what make Flux work. Without this connection, you won't be able to earn by completing habits.
+      </div>
+    </div>
+
+    <!-- Powered By Plaid -->
+    <div class="plaid-badge">
+      <div class="plaid-text">Powered by</div>
+      <div class="plaid-logo">
+        <svg style="width: 60px; height: 16px; display: inline-block;" viewBox="0 0 180 50">
+          <text x="0" y="35" font-family="Arial" font-size="30" font-weight="bold" fill="#111827">Plaid</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="onboarding-footer">
+    <div class="button-group">
+      <button class="primary-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Connect Bank Securely
+      </button>
+      <button class="secondary-button">I'll do this later</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

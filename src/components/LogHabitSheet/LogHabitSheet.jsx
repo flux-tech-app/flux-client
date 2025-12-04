@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useHabits } from '../../context/HabitContext';
+import { RATE_TYPES } from '../../utils/HABIT_LIBRARY';
 import './LogHabitSheet.css';
 
 /**
- * Log Habit Sheet - shows list of today's habits for quick logging
- * Used when user taps "Log" from FAB
+ * Log Habit Sheet
+ * Shows list of user's habits for quick logging
  */
 export default function LogHabitSheet({ onClose, onLogComplete }) {
-  const { getTodayHabits, isHabitLoggedOnDate, addLog } = useHabits();
+  const { habits, isHabitLoggedOnDate, addLog } = useHabits();
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [logValue, setLogValue] = useState('');
   const [isLogging, setIsLogging] = useState(false);
 
-  const todayHabits = getTodayHabits();
   const today = new Date();
 
   const handleHabitSelect = (habit) => {
     setSelectedHabit(habit);
     // Set default value based on rate type
-    if (habit.rateType === 'per_unit') {
+    if (habit.rateType !== RATE_TYPES.BINARY) {
       setLogValue('1');
     } else {
       setLogValue('');
@@ -33,10 +33,9 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
     
     const logData = {
       habitId: selectedHabit.id,
-      amount: selectedHabit.rateType === 'per_unit' 
+      units: selectedHabit.rateType !== RATE_TYPES.BINARY 
         ? parseFloat(logValue) || 1 
         : 1,
-      date: today.toISOString()
     };
 
     const log = addLog(logData);
@@ -51,21 +50,30 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
 
   const handleValueChange = (delta) => {
     const current = parseFloat(logValue) || 0;
-    const newValue = Math.max(0, current + delta);
+    // Use appropriate step based on habit type
+    let step = 1;
+    if (selectedHabit.unit === 'step') {
+      step = 1000;
+    } else if (selectedHabit.unit === 'minute') {
+      step = 5;
+    }
+    const newValue = Math.max(0, current + (delta * step));
     setLogValue(newValue.toString());
   };
 
   // Calculate earnings preview
   const getEarningsPreview = () => {
     if (!selectedHabit) return 0;
-    if (selectedHabit.rateType === 'per_unit') {
-      return selectedHabit.rate * (parseFloat(logValue) || 0);
+    if (selectedHabit.rateType === RATE_TYPES.BINARY) {
+      return selectedHabit.rate;
     }
-    return selectedHabit.rate;
+    return selectedHabit.rate * (parseFloat(logValue) || 0);
   };
 
   // If a habit is selected, show logging modal
   if (selectedHabit) {
+    const isBinary = selectedHabit.rateType === RATE_TYPES.BINARY;
+    
     return (
       <div className="log-habit-sheet">
         <div className="log-modal">
@@ -85,10 +93,10 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
           </div>
 
           {/* Unit-based habits get a number input */}
-          {selectedHabit.rateType === 'per_unit' ? (
+          {!isBinary ? (
             <div className="log-input-section">
               <label className="log-input-label">
-                How many {selectedHabit.unit}s?
+                How many {selectedHabit.unitPlural}?
               </label>
               <div className="log-stepper">
                 <button 
@@ -106,7 +114,7 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
                   value={logValue}
                   onChange={(e) => setLogValue(e.target.value)}
                   min="0"
-                  step="0.5"
+                  step={selectedHabit.unit === 'step' ? 1000 : 1}
                 />
                 <button 
                   className="stepper-button"
@@ -138,12 +146,12 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
           <button 
             className="log-confirm-button"
             onClick={handleLog}
-            disabled={isLogging || (selectedHabit.rateType === 'per_unit' && !parseFloat(logValue))}
+            disabled={isLogging || (!isBinary && !parseFloat(logValue))}
           >
             {isLogging ? (
               <span className="logging-spinner" />
             ) : (
-              selectedHabit.rateType === 'per_unit' ? 'Log Activity' : 'Yes, I did it!'
+              isBinary ? 'Yes, I did it!' : 'Log Activity'
             )}
           </button>
         </div>
@@ -151,20 +159,31 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
     );
   }
 
-  // Default: show list of today's habits
+  // Default: show list of habits
   return (
     <div className="log-habit-sheet">
       <h2 className="log-sheet-title">Log Activity</h2>
       <p className="log-sheet-subtitle">
-        {todayHabits.length > 0 
+        {habits.length > 0 
           ? 'Select a habit to log'
-          : 'No habits scheduled for today'
+          : 'Add habits to start logging'
         }
       </p>
 
       <div className="habits-log-list">
-        {todayHabits.map((habit, index) => {
+        {habits.map((habit, index) => {
           const isLogged = isHabitLoggedOnDate(habit.id, today);
+          
+          // Format rate display
+          let rateDisplay;
+          if (habit.rate < 0.01) {
+            rateDisplay = `$${habit.rate.toFixed(4)}/${habit.unit}`;
+          } else {
+            rateDisplay = `$${habit.rate.toFixed(2)}`;
+            if (habit.rateType !== RATE_TYPES.BINARY) {
+              rateDisplay += `/${habit.unit}`;
+            }
+          }
           
           return (
             <motion.button
@@ -195,10 +214,7 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
                   </span>
                 ) : (
                   <>
-                    <span className="habit-log-rate">
-                      ${habit.rate.toFixed(2)}
-                      {habit.rateType === 'per_unit' ? `/${habit.unit}` : ''}
-                    </span>
+                    <span className="habit-log-rate">{rateDisplay}</span>
                     <svg className="chevron" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
@@ -210,9 +226,9 @@ export default function LogHabitSheet({ onClose, onLogComplete }) {
         })}
       </div>
 
-      {todayHabits.length === 0 && (
+      {habits.length === 0 && (
         <div className="empty-habits">
-          <p>Create a habit to start earning!</p>
+          <p>Add habits to start earning!</p>
         </div>
       )}
     </div>

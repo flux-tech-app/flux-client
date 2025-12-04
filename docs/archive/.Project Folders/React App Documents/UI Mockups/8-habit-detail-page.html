@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Habit Detail</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .habit-detail-page {
+      min-height: 100vh;
+      background: white;
+      padding-bottom: 100px;
+    }
+
+    .habit-detail-container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .habit-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .back-button:hover {
+      background: #f3f4f6;
+    }
+
+    .header-title {
+      flex: 1;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .menu-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .menu-button:hover {
+      background: #f3f4f6;
+    }
+
+    /* Hero Section */
+    .habit-hero {
+      padding: 24px 16px;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .habit-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .habit-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .habit-type-badge {
+      padding: 4px 12px;
+      background: #d1fae5;
+      color: #065f46;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .habit-type-badge.resist {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .habit-frequency {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .stat-value.earnings {
+      color: #10b981;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 24px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .time-filter {
+      display: flex;
+      gap: 4px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: white;
+      color: #3b82f6;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Simple Chart */
+    .chart-container {
+      height: 180px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: linear-gradient(180deg, #3b82f6 0%, #60a5fa 100%);
+      border-radius: 4px 4px 0 0;
+      min-height: 20px;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .chart-bar:hover {
+      opacity: 0.8;
+    }
+
+    /* Activity History */
+    .activity-history {
+      padding: 24px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 10px;
+    }
+
+    .history-date {
+      width: 48px;
+      text-align: center;
+    }
+
+    .history-day {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1;
+    }
+
+    .history-month {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .history-info {
+      flex: 1;
+    }
+
+    .history-status {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .history-time {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .history-amount {
+      font-size: 16px;
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    .history-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #d1fae5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #10b981;
+    }
+
+    /* Settings Section */
+    .settings-section {
+      padding: 24px 16px;
+    }
+
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .setting-item:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .setting-value {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .setting-arrow {
+      width: 20px;
+      height: 20px;
+      color: #d1d5db;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .primary-action-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .primary-action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    .secondary-action-btn {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      color: #6b7280;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .secondary-action-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .danger-action-btn {
+      width: 100%;
+      padding: 14px;
+      background: white;
+      color: #dc2626;
+      border: 1px solid #fee2e2;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .danger-action-btn:hover {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    /* FAB */
+    .fab-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 50;
+    }
+
+    .fab-button {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+    }
+
+    .fab-button:hover {
+      transform: scale(1.1);
+    }
+
+    .fab-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="habit-detail-page">
+  <div class="habit-detail-container">
+    <!-- Header -->
+    <div class="habit-header">
+      <button class="back-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-title">Habit Details</div>
+      <button class="menu-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="habit-hero">
+      <h1 class="habit-title">Morning Workout</h1>
+      <div class="habit-meta">
+        <span class="habit-type-badge">Build</span>
+        <span class="habit-frequency">5 times per week</span>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">12</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value earnings">$450</div>
+          <div class="stat-label">Total Earned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">92%</div>
+          <div class="stat-label">Success Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="section-header">
+        <h2 class="section-title">Performance</h2>
+        <div class="time-filter">
+          <button class="filter-btn">Week</button>
+          <button class="filter-btn active">Month</button>
+          <button class="filter-btn">Year</button>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-bar" style="height: 85%;"></div>
+        <div class="chart-bar" style="height: 92%;"></div>
+        <div class="chart-bar" style="height: 78%;"></div>
+        <div class="chart-bar" style="height: 95%;"></div>
+        <div class="chart-bar" style="height: 88%;"></div>
+        <div class="chart-bar" style="height: 100%;"></div>
+        <div class="chart-bar" style="height: 82%;"></div>
+        <div class="chart-bar" style="height: 90%;"></div>
+        <div class="chart-bar" style="height: 87%;"></div>
+        <div class="chart-bar" style="height: 94%;"></div>
+        <div class="chart-bar" style="height: 89%;"></div>
+        <div class="chart-bar" style="height: 96%;"></div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-history">
+      <h2 class="section-title">Recent Activity</h2>
+      
+      <div class="history-list">
+        <div class="history-item">
+          <div class="history-date">
+            <div class="history-day">14</div>
+            <div class="history-month">Nov</div>
+          </div>
+          <div class="history-icon">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="history-info">
+            <div class="history-status">Completed</div>
+            <div class="history-time">45 min session at 7:45 AM</div>
+          </div>
+          <div class="history-amount">+$15</div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-date">
+            <div class="history-day">13</div>
+            <div class="history-month">Nov</div>
+          </div>
+          <div class="history-icon">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="history-info">
+            <div class="history-status">Completed</div>
+            <div class="history-time">50 min session at 7:30 AM</div>
+          </div>
+          <div class="history-amount">+$15</div>
+        </div>
+
+        <div class="history-item">
+          <div class="history-date">
+            <div class="history-day">12</div>
+            <div class="history-month">Nov</div>
+          </div>
+          <div class="history-icon">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div class="history-info">
+            <div class="history-status">Completed</div>
+            <div class="history-time">42 min session at 8:00 AM</div>
+          </div>
+          <div class="history-amount">+$15</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-section">
+      <h2 class="section-title">Habit Settings</h2>
+      
+      <div class="settings-list">
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Transfer Amount</div>
+            <div class="setting-value">$15.00 per completion</div>
+          </div>
+          <svg class="setting-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Target Frequency</div>
+            <div class="setting-value">5 times per week</div>
+          </div>
+          <svg class="setting-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">Reminders</div>
+            <div class="setting-value">Weekdays at 7:00 AM</div>
+          </div>
+          <svg class="setting-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="primary-action-btn">Chat with Flux about this habit</button>
+      <button class="secondary-action-btn">Pause Habit</button>
+      <button class="danger-action-btn">Delete Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<div class="fab-container">
+  <button class="fab-button" aria-label="Talk to Flux">
+    <svg class="fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11.5a8.38 8.38 0 0 0 .9 3.8 8.5 8.5 0 0 0 7.6 4.7 8.38 8.38 0 0 0 3.8-.9L21 21l-1.9-5.7a8.38 8.38 0 0 0 .9-3.8 8.5 8.5 0 0 0-4.7-7.6 8.38 8.38 0 0 0-3.8-.9h-.5a8.48 8.48 0 0 0-8 8v.5z"/>
+    </svg>
+  </button>
+</div>
+
+</body>
+</html>

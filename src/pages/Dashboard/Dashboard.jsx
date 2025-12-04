@@ -4,18 +4,8 @@ import { useHabits } from '../../context/HabitContext'
 import Navigation from '../../components/Navigation'
 import './Dashboard.css'
 
-// Category color mapping - matches 4-category system
-const CATEGORY_COLORS = {
-  fitness: { color: '#4ade80', name: 'Fitness' },
-  nutrition: { color: '#fb923c', name: 'Nutrition' },
-  spending: { color: '#a855f7', name: 'Spending' },
-  growth: { color: '#60a5fa', name: 'Growth' },
-  default: { color: '#94a3b8', name: 'Other' }
-}
-
-const getCategoryInfo = (category) => {
-  return CATEGORY_COLORS[category] || CATEGORY_COLORS.default
-}
+// Default star color for MVT (no categories)
+const DEFAULT_STAR_COLOR = '#60a5fa'
 
 // Deterministic position generator based on habit ID
 const getStarPosition = (habitId, index, total) => {
@@ -40,36 +30,66 @@ const getStarPosition = (habitId, index, total) => {
   }
 }
 
-// Calculate HHS for a habit
-const calculateHHS = (habit, logs) => {
-  if (habit.currentHHS && habit.currentHHS > 0) {
-    return habit.currentHHS
-  }
-  
+/**
+ * Calculate Flux Score for a habit (simplified for MVT)
+ * Based on logging activity and patterns, not schedules
+ */
+const calculateFluxScore = (habit, logs) => {
   const habitLogs = logs.filter(l => l.habitId === habit.id)
   
-  if (habitLogs.length === 0) return 25
-  
-  const recentDays = 7
+  // Need at least 1 log
+  if (habitLogs.length === 0) return 20
+
   const now = new Date()
-  const recentLogs = habitLogs.filter(log => {
-    const logDate = new Date(log.timestamp)
-    const daysDiff = (now - logDate) / (1000 * 60 * 60 * 24)
-    return daysDiff <= recentDays
-  })
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
   
-  const consistencyScore = Math.min(100, (recentLogs.length / recentDays) * 100)
-  const streakBonus = Math.min(20, (habit.currentStreak || 0) * 2)
-  const hhs = Math.round(consistencyScore * 0.7 + streakBonus + 10)
-  
-  return Math.min(100, Math.max(0, hhs))
+  // Recent logs (last 30 days)
+  const recentLogs = habitLogs.filter(log => 
+    new Date(log.timestamp) >= thirtyDaysAgo
+  )
+
+  // Frequency score (40%) - logs in last 30 days, expected ~15 for active habit
+  const frequencyScore = Math.min(100, (recentLogs.length / 15) * 100)
+
+  // Recency score (30%) - exponential decay based on days since last log
+  const sortedLogs = [...habitLogs].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  )
+  const lastLogDate = new Date(sortedLogs[0].timestamp)
+  const daysSinceLog = (now - lastLogDate) / (1000 * 60 * 60 * 24)
+  const recencyScore = Math.max(0, 100 * Math.exp(-daysSinceLog / 4))
+
+  // Trend score (20%) - recent activity vs previous period
+  const recentCount = habitLogs.filter(log => 
+    new Date(log.timestamp) >= twoWeeksAgo
+  ).length
+
+  let trendScore = 50
+  if (recentCount >= 5) trendScore = 80
+  else if (recentCount >= 3) trendScore = 65
+  else if (recentCount >= 1) trendScore = 40
+  else trendScore = 20
+
+  // Maturity score (10%) - total logs accumulated
+  const maturityScore = Math.min(100, (habitLogs.length / 20) * 100)
+
+  // Calculate final score
+  const score = Math.round(
+    (frequencyScore * 0.40) +
+    (recencyScore * 0.30) +
+    (trendScore * 0.20) +
+    (maturityScore * 0.10)
+  )
+
+  return Math.min(100, Math.max(0, score))
 }
 
-// Get star brightness class based on HHS
-const getStarBrightness = (hhs) => {
-  if (hhs >= 85) return 'blazing'
-  if (hhs >= 70) return 'bright'
-  if (hhs >= 50) return 'growing'
+// Get star brightness class based on Flux Score
+const getStarBrightness = (score) => {
+  if (score >= 85) return 'blazing'
+  if (score >= 70) return 'bright'
+  if (score >= 50) return 'growing'
   return 'dim'
 }
 
@@ -105,6 +125,45 @@ const useAnimatedCounter = (targetValue, duration = 1500) => {
   return displayValue
 }
 
+// Calculate current streak for a habit based on logs
+const calculateHabitStreak = (habitId, logs) => {
+  const habitLogs = logs.filter(l => l.habitId === habitId)
+  if (habitLogs.length === 0) return 0
+
+  const sortedLogs = [...habitLogs].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  )
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today.getTime() - 86400000)
+
+  const lastLogDate = new Date(sortedLogs[0].timestamp)
+  lastLogDate.setHours(0, 0, 0, 0)
+
+  // Only count streak if logged today or yesterday
+  if (lastLogDate < yesterday) return 0
+
+  // Get unique days with logs
+  const logDays = new Set(
+    sortedLogs.map(log => {
+      const d = new Date(log.timestamp)
+      d.setHours(0, 0, 0, 0)
+      return d.getTime()
+    })
+  )
+
+  let streak = 0
+  let checkDate = new Date(lastLogDate)
+
+  while (logDays.has(checkDate.getTime())) {
+    streak++
+    checkDate.setDate(checkDate.getDate() - 1)
+  }
+
+  return streak
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { habits, logs, user, getTotalEarnings, getWeekEarnings } = useHabits()
@@ -119,27 +178,27 @@ export default function Dashboard() {
     return 'Good evening'
   }
   
-  // Filter active habits
+  // All habits (no isActive filter needed in MVT - all are active)
   const activeHabits = useMemo(() => {
-    return habits.filter(h => h.isActive !== false)
+    return habits
   }, [habits])
   
   // Calculate stats for each habit
   const habitStats = useMemo(() => {
     return activeHabits.map((habit, index) => {
-      const hhs = calculateHHS(habit, logs)
+      const fluxScore = calculateFluxScore(habit, logs)
       const habitLogs = logs.filter(l => l.habitId === habit.id)
       const totalEarned = habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0)
       const position = getStarPosition(habit.id, index, activeHabits.length)
-      const categoryInfo = getCategoryInfo(habit.category)
+      const streak = calculateHabitStreak(habit.id, logs)
       
       return {
         ...habit,
-        hhs,
+        fluxScore,
         totalEarned,
         position,
-        brightness: getStarBrightness(hhs),
-        categoryInfo
+        brightness: getStarBrightness(fluxScore),
+        streak
       }
     })
   }, [activeHabits, logs])
@@ -148,8 +207,8 @@ export default function Dashboard() {
   const stats = useMemo(() => {
     const totalEarnings = getTotalEarnings()
     const weekEarnings = getWeekEarnings()
-    const avgHHS = habitStats.length > 0
-      ? Math.round(habitStats.reduce((sum, h) => sum + h.hhs, 0) / habitStats.length)
+    const avgScore = habitStats.length > 0
+      ? Math.round(habitStats.reduce((sum, h) => sum + h.fluxScore, 0) / habitStats.length)
       : 0
     
     // Days since first habit
@@ -167,16 +226,16 @@ export default function Dashboard() {
     
     // Best performing habit
     const topHabit = habitStats.length > 0
-      ? habitStats.reduce((best, h) => h.hhs > best.hhs ? h : best, habitStats[0])
+      ? habitStats.reduce((best, h) => h.fluxScore > best.fluxScore ? h : best, habitStats[0])
       : null
     
-    // Longest streak across all habits
-    const longestStreak = habits.reduce((max, h) => Math.max(max, h.bestStreak || 0), 0)
+    // Longest habit streak
+    const longestStreak = habitStats.reduce((max, h) => Math.max(max, h.streak || 0), 0)
     
-    // Peak HHS ever achieved
-    const peakHHS = habits.reduce((max, h) => Math.max(max, h.currentHHS || 0), avgHHS)
+    // Peak score
+    const peakScore = habitStats.reduce((max, h) => Math.max(max, h.fluxScore), avgScore)
     
-    // Best week earnings (simplified - use current week as proxy)
+    // Best week earnings (use current as baseline for MVT)
     const bestWeekEarnings = weekEarnings
     
     // Calculate week over week change
@@ -200,12 +259,12 @@ export default function Dashboard() {
       totalEarnings,
       weekEarnings,
       weekChange,
-      avgHHS,
+      avgScore,
       habitCount: activeHabits.length,
       daysSinceStart,
       overallStreak,
       longestStreak,
-      peakHHS,
+      peakScore,
       bestWeekEarnings,
       topHabit
     }
@@ -249,19 +308,6 @@ export default function Dashboard() {
   
   // Animated portfolio value
   const animatedPortfolioValue = useAnimatedCounter(stats.totalEarnings)
-  
-  // Get unique categories for legend
-  const categories = useMemo(() => {
-    const seen = new Set()
-    return habitStats
-      .filter(h => {
-        const key = h.categoryInfo.name
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
-      })
-      .map(h => h.categoryInfo)
-  }, [habitStats])
   
   // Generate background stars on mount
   useEffect(() => {
@@ -321,8 +367,8 @@ export default function Dashboard() {
     if (stats.habitCount >= 3) {
       earned.push({ id: 'diversified', name: 'Diversified', icon: '📊', desc: '3+ habits' })
     }
-    if (stats.avgHHS >= 80) {
-      earned.push({ id: 'performer', name: 'High Performer', icon: '🏆', desc: '80+ avg HHS' })
+    if (stats.avgScore >= 80) {
+      earned.push({ id: 'performer', name: 'High Performer', icon: '🏆', desc: '80+ avg score' })
     }
     if (stats.habitCount >= 1) {
       earned.push({ id: 'first', name: 'First Star', icon: '✨', desc: 'Created first habit' })
@@ -376,11 +422,11 @@ export default function Dashboard() {
             {habitStats.map((habit) => (
               <div
                 key={habit.id}
-                className={`star ${habit.brightness} ${habit.category}`}
+                className={`star ${habit.brightness}`}
                 style={{
                   left: `${habit.position.x}%`,
                   top: `${habit.position.y}%`,
-                  '--star-color': habit.categoryInfo.color
+                  '--star-color': DEFAULT_STAR_COLOR
                 }}
                 onClick={() => handleStarClick(habit)}
                 onMouseEnter={() => setActiveTooltip(habit.id)}
@@ -392,13 +438,13 @@ export default function Dashboard() {
                 {/* Tooltip */}
                 <div className={`star-tooltip ${activeTooltip === habit.id ? 'visible' : ''}`}>
                   <div className="tooltip-name">{habit.name}</div>
-                  <div className="tooltip-category" style={{ color: habit.categoryInfo.color }}>
-                    {habit.categoryInfo.name}
+                  <div className="tooltip-category" style={{ color: DEFAULT_STAR_COLOR }}>
+                    ${habit.ticker}
                   </div>
                   <div className="tooltip-stats">
                     <div className="tooltip-stat">
-                      <div className="tooltip-stat-value">{habit.hhs}</div>
-                      <div className="tooltip-stat-label">HHS</div>
+                      <div className="tooltip-stat-value">{habit.fluxScore}</div>
+                      <div className="tooltip-stat-label">Score</div>
                     </div>
                     <div className="tooltip-stat">
                       <div className="tooltip-stat-value">${habit.totalEarned.toFixed(0)}</div>
@@ -432,20 +478,6 @@ export default function Dashboard() {
         {/* Light Mode Content - Trophy Case */}
         <div className="content-section">
           
-          {/* Legend */}
-          {categories.length > 0 && (
-            <div className="legend-card">
-              <div className="legend-items">
-                {categories.map((cat, i) => (
-                  <div key={i} className="legend-item">
-                    <div className="legend-dot" style={{ background: cat.color }}></div>
-                    <span>{cat.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
           {/* Personal Records */}
           {stats.habitCount > 0 && (
             <div className="records-card">
@@ -458,8 +490,8 @@ export default function Dashboard() {
                 </div>
                 <div className="record-item">
                   <div className="record-icon">📈</div>
-                  <div className="record-value">{stats.peakHHS}</div>
-                  <div className="record-label">Peak HHS</div>
+                  <div className="record-value">{stats.peakScore}</div>
+                  <div className="record-label">Peak Score</div>
                 </div>
                 <div className="record-item">
                   <div className="record-icon">💰</div>
@@ -503,7 +535,7 @@ export default function Dashboard() {
                 <div className="performer-name">{stats.topHabit.name}</div>
               </div>
               <div className="performer-stats">
-                <div className="performer-hhs">{stats.topHabit.hhs} HHS</div>
+                <div className="performer-hhs">{stats.topHabit.fluxScore} Score</div>
                 <div className="performer-earned">${stats.topHabit.totalEarned.toFixed(2)}</div>
               </div>
             </div>
@@ -520,8 +552,8 @@ export default function Dashboard() {
                 <div className="summary-stat-label">Days Invested</div>
               </div>
               <div className="summary-stat">
-                <div className="summary-stat-value">{stats.avgHHS}</div>
-                <div className="summary-stat-label">Avg HHS</div>
+                <div className="summary-stat-value">{stats.avgScore}</div>
+                <div className="summary-stat-label">Avg Score</div>
               </div>
               <div className="summary-stat">
                 <div className="summary-stat-value">{logs.length}</div>

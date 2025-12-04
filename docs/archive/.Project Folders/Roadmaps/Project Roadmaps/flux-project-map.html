@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flux 2.0 Project Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2E5BFF 0%, #5B8DEE 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 16px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab.active {
+            color: #2E5BFF;
+            border-bottom-color: #2E5BFF;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Architecture View */
+        .architecture-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .layer {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .layer-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2E5BFF;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .layer-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .item {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 4px solid #2E5BFF;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+
+        .item-desc {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        /* Journey Map */
+        .journey-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .journey-step {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E5BFF 0%, #5B8DEE 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            color: #6c757d;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .step-screens {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .screen-tag {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #2E5BFF;
+            border: 1px solid #2E5BFF;
+        }
+
+        /* Feature Map */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-category {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .category-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2E5BFF;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-item {
+            padding: 10px 0;
+            color: #212529;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .feature-item::before {
+            content: "✓";
+            color: #28a745;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .feature-item.upcoming::before {
+            content: "○";
+            color: #6c757d;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            position: relative;
+            padding: 20px 0 20px 40px;
+            margin-top: 20px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #28a745, #2E5BFF, #ffc107, #6c757d);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 30px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -30px;
+            top: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .timeline-dot.complete {
+            background: #28a745;
+        }
+
+        .timeline-dot.current {
+            background: #2E5BFF;
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-dot.upcoming {
+            background: #ffc107;
+        }
+
+        .timeline-dot.future {
+            background: #6c757d;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid;
+        }
+
+        .timeline-content.complete {
+            border-left-color: #28a745;
+        }
+
+        .timeline-content.current {
+            border-left-color: #2E5BFF;
+        }
+
+        .timeline-content.upcoming {
+            border-left-color: #ffc107;
+        }
+
+        .timeline-content.future {
+            border-left-color: #6c757d;
+        }
+
+        .timeline-phase {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .timeline-desc {
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .timeline-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .timeline-tag {
+            background: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #495057;
+        }
+
+        /* Data Flow */
+        .dataflow-container {
+            margin-top: 20px;
+        }
+
+        .flow-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .flow-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2E5BFF;
+            margin-bottom: 15px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 2px solid #2E5BFF;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            color: #2E5BFF;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-current {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-upcoming {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .layer-items {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .flow-diagram {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Flux 2.0 Project Map</h1>
+            <p>Comprehensive visualization of architecture, features, and roadmap</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showView('architecture')">System Architecture</button>
+            <button class="tab" onclick="showView('journey')">User Journey</button>
+            <button class="tab" onclick="showView('features')">Feature Map</button>
+            <button class="tab" onclick="showView('hss')">HSS System</button>
+            <button class="tab" onclick="showView('indices')">Behavioral Indices</button>
+            <button class="tab" onclick="showView('integrations')">AI & Integrations</button>
+            <button class="tab" onclick="showView('timeline')">Development Timeline</button>
+            <button class="tab" onclick="showView('dataflow')">Data Flow</button>
+        </div>
+
+        <div class="content">
+            <!-- SYSTEM ARCHITECTURE -->
+            <div id="architecture" class="view active">
+                <h2 style="margin-bottom: 20px; color: #212529;">System Architecture</h2>
+                
+                <div class="architecture-grid">
+                    <div class="layer">
+                        <div class="layer-title">
+                            <span>📱</span> Pages (User Interface)
+                        </div>
+                        <div class="layer-items">
+                            <div class="item">
+                                <div class="item-name">Portfolio</div>
+                                <div class="item-desc">Main dashboard with balance, chart, habit cards</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Add Habit</div>
+                                <div class="item-desc">Create new build/break habits with rates</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Log Activity</div>
+                                <div class="item-desc">Record completions and resistances</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Habit Detail</div>
+                                <div class="item-desc">Individual habit stats, chart, edit options</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Activity Feed</div>
+                                <div class="item-desc">Timeline of all logged actions</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Account</div>
+                                <div class="item-desc">User profile and settings</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layer">
+                        <div class="layer-title">
+                            <span>🧩</span> Components (Reusable UI)
+                        </div>
+                        <div class="layer-items">
+                            <div class="item">
+                                <div class="item-name">Navigation</div>
+                                <div class="item-desc">Bottom tab bar with 3 main sections</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">FAB (+ Button)</div>
+                                <div class="item-desc">Floating action button for quick actions</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Bottom Sheet</div>
+                                <div class="item-desc">Modal for data display and interactions</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Habit Card</div>
+                                <div class="item-desc">Portfolio display of individual habits</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layer">
+                        <div class="layer-title">
+                            <span>🔄</span> State Management
+                        </div>
+                        <div class="layer-items">
+                            <div class="item">
+                                <div class="item-name">HabitContext</div>
+                                <div class="item-desc">React Context - single source of truth for all habit data</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">localStorage</div>
+                                <div class="item-desc">Browser persistence - syncs with HabitContext</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layer">
+                        <div class="layer-title">
+                            <span>🛠️</span> Utilities
+                        </div>
+                        <div class="layer-items">
+                            <div class="item">
+                                <div class="item-name">calculations.js</div>
+                                <div class="item-desc">Balance, earnings, streak calculations</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">formatters.js</div>
+                                <div class="item-desc">Currency, date, number formatting</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">DATA_MODELS.js</div>
+                                <div class="item-desc">Type definitions and data structures</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layer">
+                        <div class="layer-title">
+                            <span>⚙️</span> Core Infrastructure
+                        </div>
+                        <div class="layer-items">
+                            <div class="item">
+                                <div class="item-name">React Router</div>
+                                <div class="item-desc">Client-side navigation</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">Vite</div>
+                                <div class="item-desc">Build tool and dev server</div>
+                            </div>
+                            <div class="item">
+                                <div class="item-name">CSS Variables</div>
+                                <div class="item-desc">Design system with blue gradient theme</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USER JOURNEY -->
+            <div id="journey" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">User Journey Map</h2>
+                
+                <div class="journey-container">
+                    <div class="journey-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">First Visit</div>
+                            <div class="step-desc">User lands on Portfolio page with empty state. Sees the investment metaphor: "Your behavioral portfolio." Gets oriented to the core concept of earning money for habits.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">Portfolio (Empty)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="journey-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Create First Habit</div>
+                            <div class="step-desc">Clicks FAB → "Add Position". Chooses Build (earn for doing) or Break (earn for resisting). Sets habit name, rate per action, and adds to portfolio.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">FAB Bottom Sheet</span>
+                                <span class="screen-tag">Add Habit Form</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="journey-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Log First Activity</div>
+                            <div class="step-desc">Completes a habit action. Clicks FAB → "Log Activity". Selects habit, sees earnings preview, confirms. Watches balance update with animation.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">FAB Bottom Sheet</span>
+                                <span class="screen-tag">Log Activity</span>
+                                <span class="screen-tag">Portfolio (Updated)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="journey-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Track Progress</div>
+                            <div class="step-desc">Views portfolio regularly. Sees balance grow, checks individual habit cards, taps chart to see performance breakdowns in bottom sheet modal.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">Portfolio</span>
+                                <span class="screen-tag">Chart Bottom Sheet</span>
+                                <span class="screen-tag">Activity Feed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="journey-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <div class="step-title">Habit Management</div>
+                            <div class="step-desc">Taps habit card to view details. Edits name, rate, or notes inline. Archives habits that are no longer relevant. Views historical performance chart.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">Habit Detail</span>
+                                <span class="screen-tag">Edit Mode</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="journey-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <div class="step-title">Weekly Cycle</div>
+                            <div class="step-desc">Friday arrives - pending balance transfers to confirmed portfolio. Sees week-over-week growth. Builds streaks and momentum.</div>
+                            <div class="step-screens">
+                                <span class="screen-tag">Portfolio (Transfer)</span>
+                                <span class="screen-tag">Activity History</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FEATURE MAP -->
+            <div id="features" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">Feature Map</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-category">
+                        <div class="category-header">✅ Core Features (Complete)</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">Portfolio dashboard with balance display</li>
+                            <li class="feature-item">Performance chart (7d, 30d, All time)</li>
+                            <li class="feature-item">Build/Break habit creation</li>
+                            <li class="feature-item">Activity logging system</li>
+                            <li class="feature-item">Pending vs confirmed balance</li>
+                            <li class="feature-item">Habit cards with mini charts</li>
+                            <li class="feature-item">Bottom navigation (3 tabs)</li>
+                            <li class="feature-item">FAB with action menu</li>
+                            <li class="feature-item">localStorage persistence</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">📊 Analytics (Complete)</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">Balance over time chart</li>
+                            <li class="feature-item">Chart interaction (tap for breakdown)</li>
+                            <li class="feature-item">Per-habit sparkline charts</li>
+                            <li class="feature-item">Activity feed timeline</li>
+                            <li class="feature-item">Individual habit detail charts</li>
+                            <li class="feature-item">Earnings calculations</li>
+                            <li class="feature-item">Streak tracking</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">✏️ Habit Management (Complete)</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">Inline editing (name, rate, notes)</li>
+                            <li class="feature-item">Archive/delete habits</li>
+                            <li class="feature-item">Habit detail page</li>
+                            <li class="feature-item">Custom rate setting</li>
+                            <li class="feature-item">Shield icon for break habits</li>
+                            <li class="feature-item">Sequential animations</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🔮 Coming Soon</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Scheduling system (daily, weekdays, custom)</li>
+                            <li class="feature-item upcoming">Completion rate calculations</li>
+                            <li class="feature-item upcoming">Trend arrows (improving/declining)</li>
+                            <li class="feature-item upcoming">Portfolio health score</li>
+                            <li class="feature-item upcoming">Gaming prevention</li>
+                            <li class="feature-item upcoming">Behavioral indices</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🏦 Future Vision</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Backend + authentication</li>
+                            <li class="feature-item upcoming">Multi-device sync</li>
+                            <li class="feature-item upcoming">HSS (Habit Strength Score) system</li>
+                            <li class="feature-item upcoming">5-component scoring algorithm</li>
+                            <li class="feature-item upcoming">Auto-generated insights and alerts</li>
+                            <li class="feature-item upcoming">Behavioral indices (EXRC, NUTR, PROD, RCVR, SAVE, SOCP)</li>
+                            <li class="feature-item upcoming">User percentile rankings</li>
+                            <li class="feature-item upcoming">Data licensing platform</li>
+                            <li class="feature-item upcoming">Gaming prevention system</li>
+                            <li class="feature-item upcoming">Bank integration (Plaid)</li>
+                            <li class="feature-item upcoming">Real money transfers (Stripe)</li>
+                            <li class="feature-item upcoming">Health device integrations (Oura, Whoop, Apple Health)</li>
+                            <li class="feature-item upcoming">AI change partner personas</li>
+                            <li class="feature-item upcoming">External routing (Coinbase, Schwab, Marcus)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🤖 AI & Intelligence</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Pattern recognition & trend analysis</li>
+                            <li class="feature-item upcoming">Behavioral predictions</li>
+                            <li class="feature-item upcoming">Personalized recommendations</li>
+                            <li class="feature-item upcoming">Smart milestone notifications</li>
+                            <li class="feature-item upcoming">Context-aware prompts</li>
+                            <li class="feature-item upcoming">Transaction analysis (spending patterns)</li>
+                            <li class="feature-item upcoming">4 distinct personas (Coach, Friend, Advisor, Guide)</li>
+                            <li class="feature-item upcoming">Adaptive language & theming</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🎨 Design System</div>
+                        <ul class="feature-list">
+                            <li class="feature-item">Blue gradient theme</li>
+                            <li class="feature-item">Mobile-first responsive</li>
+                            <li class="feature-item">Bloomberg Terminal aesthetic</li>
+                            <li class="feature-item">CSS variable system</li>
+                            <li class="feature-item">Minimal, professional styling</li>
+                            <li class="feature-item">Investment portfolio metaphor</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HSS SYSTEM -->
+            <div id="hss" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">Habit Strength Score (HSS) System</h2>
+                <p style="color: #6c757d; margin-bottom: 30px; line-height: 1.6;">
+                    The HSS is a sophisticated algorithm that measures habit quality on a 0-100 scale. It's designed to be earned over time, rewarding consistency, momentum, and long-term achievement rather than short-term bursts.
+                </p>
+                
+                <div class="feature-grid">
+                    <div class="feature-category">
+                        <div class="category-header">🎯 Core Algorithm (5 Components)</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>Scheduled Completion (50%)</strong> - Are you hitting your commitments? The foundation of habit strength.</li>
+                            <li class="feature-item"><strong>Momentum (25%)</strong> - Are you improving or declining? Rewards upward trajectory.</li>
+                            <li class="feature-item"><strong>Legacy Bonus (15%)</strong> - Long-term achievement. Takes 6+ months to max out.</li>
+                            <li class="feature-item"><strong>Consistency (5%)</strong> - Reliable patterns over time. Measures variability.</li>
+                            <li class="feature-item"><strong>Active Streak (5%)</strong> - Your current unbroken run. Maxes at 30 days.</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">📊 Score Distribution</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>90-100: Elite</strong> (Top 5%) - 6+ months of excellence</li>
+                            <li class="feature-item"><strong>80-89: Excellent</strong> (Top 20%) - Very strong habit</li>
+                            <li class="feature-item"><strong>70-79: Good</strong> (Top 40%) - Solid and reliable</li>
+                            <li class="feature-item"><strong>60-69: Developing</strong> (Middle 30%) - Making progress</li>
+                            <li class="feature-item"><strong>50-59: Struggling</strong> (Bottom 20%) - Inconsistent</li>
+                            <li class="feature-item"><strong>&lt;50: Crisis</strong> (Bottom 10%) - Needs intervention</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🧠 Intelligence Layer</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Auto-generated insights ("Your 'Morning Run' HSS dropped 8 points this week")</li>
+                            <li class="feature-item upcoming">Decline detection and proactive alerts</li>
+                            <li class="feature-item upcoming">Milestone notifications ("3 days from maxing streak bonus")</li>
+                            <li class="feature-item upcoming">Pattern recognition (weekly, seasonal trends)</li>
+                            <li class="feature-item upcoming">Personalized recommendations</li>
+                            <li class="feature-item upcoming">Historical HSS tracking and charts</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🔧 Technical Features</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Real-time recalculation on new logs</li>
+                            <li class="feature-item upcoming">Historical recalculation for schedule changes</li>
+                            <li class="feature-item upcoming">Threshold system for non-flat habits (reps, duration)</li>
+                            <li class="feature-item upcoming">Grace period handling (2 per month)</li>
+                            <li class="feature-item upcoming">Streak break recovery (15% hit, not catastrophic)</li>
+                            <li class="feature-item upcoming">HSS impact preview before logging</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">📱 UI/UX Updates</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">HSS prominently displayed on habit cards</li>
+                            <li class="feature-item upcoming">Weekly change indicator (+2.8%, ▲)</li>
+                            <li class="feature-item upcoming">Tap card → see 5-component breakdown</li>
+                            <li class="feature-item upcoming">HSS-based habit rankings in portfolio</li>
+                            <li class="feature-item upcoming">"Needs attention" section for declining habits</li>
+                            <li class="feature-item upcoming">Portfolio health summary (aggregate HSS)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">⚠️ Design Philosophy</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming">Positive framing - focus on improvement, not punishment</li>
+                            <li class="feature-item upcoming">Recovery mechanics - streak breaks aren't catastrophic</li>
+                            <li class="feature-item upcoming">Long-term rewards - elite scores take months to achieve</li>
+                            <li class="feature-item upcoming">Transparent calculation - users understand why scores change</li>
+                            <li class="feature-item upcoming">Progressive disclosure - simple at first, depth when needed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                    <h3 style="color: #856404; margin-bottom: 10px;">⏰ Implementation Timeline</h3>
+                    <p style="color: #856404; line-height: 1.6; margin: 0;">
+                        <strong>Status:</strong> Phase 4 (Months 4-5) - Only build after Phase 3 validation shows users want deeper insights. This is a sophisticated system that requires 4-6 weeks of focused development and should only be implemented if POC testing proves users are highly engaged with basic habit health metrics.
+                    </p>
+                </div>
+            </div>
+
+            <!-- BEHAVIORAL INDICES -->
+            <div id="indices" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">Behavioral Indices - The Core Vision</h2>
+                <p style="color: #6c757d; margin-bottom: 30px; line-height: 1.6;">
+                    <strong>Strategic Positioning:</strong> Flux isn't building prediction markets—it's building the S&P 500 of personal behavior. The authoritative source of behavioral indices that others can use to build trading platforms, corporate wellness tools, or insurance products.
+                </p>
+
+                <div class="feature-grid">
+                    <div class="feature-category">
+                        <div class="category-header">📈 What Are Behavioral Indices?</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>Definition:</strong> Aggregated success rates for habit categories over time periods</li>
+                            <li class="feature-item"><strong>Example:</strong> EXERCISE Index = 69.6% (16 completions / 23 scheduled days across all users)</li>
+                            <li class="feature-item"><strong>User Percentiles:</strong> Compare your performance to everyone else in the category</li>
+                            <li class="feature-item"><strong>Weekly Updates:</strong> Indices recalculated every week, showing trends</li>
+                            <li class="feature-item"><strong>Data Quality:</strong> Financial incentives = higher quality than free apps</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🏷️ Core Categories</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>EXERCISE (EXRC)</strong> - Physical fitness, workouts, sports</li>
+                            <li class="feature-item"><strong>NUTRITION (NUTR)</strong> - Healthy eating, meal prep, hydration</li>
+                            <li class="feature-item"><strong>PRODUCTIVITY (PROD)</strong> - Work focus, deep work, task completion</li>
+                            <li class="feature-item"><strong>RECOVERY (RCVR)</strong> - Sleep, meditation, rest, stress management</li>
+                            <li class="feature-item"><strong>FINANCIAL (SAVE)</strong> - Savings, budgeting, avoiding impulse purchases</li>
+                            <li class="feature-item"><strong>SOCIAL (SOCP)</strong> - Relationships, communication, connection</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">💰 Revenue Model: Data Licensing</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>Tier 1 (Free):</strong> Current week indices, attribution required</li>
+                            <li class="feature-item"><strong>Tier 2 ($500/mo):</strong> Historical data, subcategories, commercial use</li>
+                            <li class="feature-item"><strong>Tier 3 (Enterprise):</strong> Custom queries, API access, real-time data</li>
+                            <li class="feature-item"><strong>Target:</strong> 20 partners @ $500 = $10k/month by Month 18</li>
+                            <li class="feature-item"><strong>Similar to:</strong> Strava Metro ($20k-$100k per city), MyFitnessPal ($475M acquisition)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🎯 What Makes This Work</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>Financial Incentives:</strong> Real money = higher data quality vs free apps</li>
+                            <li class="feature-item"><strong>Scheduling System:</strong> Can't calculate success rates without knowing scheduled days</li>
+                            <li class="feature-item"><strong>Category Taxonomy:</strong> Standardized classification from day 1</li>
+                            <li class="feature-item"><strong>Gaming Prevention:</strong> Multi-layer defense with reputation scoring</li>
+                            <li class="feature-item"><strong>Statistical Significance:</strong> Requires 100+ users per category minimum</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🛡️ Gaming Prevention Strategy</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Pattern Detection:</strong> Identify impossible consistency (98%+ for months)</li>
+                            <li class="feature-item upcoming"><strong>Reputation Scoring:</strong> New users weighted less until proven reliable</li>
+                            <li class="feature-item upcoming"><strong>Shadow Banning:</strong> Exclude suspicious accounts without notification</li>
+                            <li class="feature-item upcoming"><strong>Device Integration:</strong> Oura/Whoop data adds verification layer</li>
+                            <li class="feature-item upcoming"><strong>Bonus Day Exclusion:</strong> Logging on unscheduled days doesn't count toward indices</li>
+                            <li class="feature-item upcoming"><strong>Transparency:</strong> Publish detection methods, share monthly quality reports</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">📊 Use Cases for Licensed Data</div>
+                        <ul class="feature-list">
+                            <li class="feature-item"><strong>Prediction Markets:</strong> Build trading platforms on top of Flux indices</li>
+                            <li class="feature-item"><strong>Corporate Wellness:</strong> Benchmark employee programs against population</li>
+                            <li class="feature-item"><strong>Insurance Products:</strong> Risk assessment based on behavioral data</li>
+                            <li class="feature-item"><strong>Public Health:</strong> Monitor population-level behavioral trends</li>
+                            <li class="feature-item"><strong>Research:</strong> Academic studies on habit formation (free with citation)</li>
+                            <li class="feature-item"><strong>Media:</strong> Monthly behavioral reports showing societal trends</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; padding: 20px; background: #d1ecf1; border-left: 4px solid #0c5460; border-radius: 8px;">
+                    <h3 style="color: #0c5460; margin-bottom: 10px;">🎯 Strategic Pivot</h3>
+                    <p style="color: #0c5460; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>From:</strong> Building prediction markets on behavioral data
+                    </p>
+                    <p style="color: #0c5460; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>To:</strong> Building the authoritative source of behavioral indices that others can use
+                    </p>
+                    <p style="color: #0c5460; line-height: 1.6; margin: 0;">
+                        <strong>Why:</strong> Cleaner product scope, multiple revenue streams, defensible moat. Comparable to being the S&P 500, not a trading platform—let others build on top of our data.
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                    <h3 style="color: #856404; margin-bottom: 10px;">⏰ Implementation Timeline</h3>
+                    <p style="color: #856404; line-height: 1.6; margin: 0;">
+                        <strong>Phase 4:</strong> Launch basic indices dashboard (Weeks 17-24)<br>
+                        <strong>Phase 5:</strong> Build to 500+ users, establish data authority (Weeks 25-36)<br>
+                        <strong>Phase 7:</strong> Public API, data licensing model, academic partnerships (Months 13-18)
+                    </p>
+                </div>
+            </div>
+
+            <!-- AI & INTEGRATIONS -->
+            <div id="integrations" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">AI Features & External Integrations</h2>
+                <p style="color: #6c757d; margin-bottom: 30px; line-height: 1.6;">
+                    Flux integrates with external services and uses AI to provide smart insights, automate tracking, and connect to financial systems. These integrations transform Flux from a manual tracker into an intelligent behavioral assistant.
+                </p>
+                
+                <div class="feature-grid">
+                    <div class="feature-category">
+                        <div class="category-header">🤖 AI & Intelligence Layer</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Auto-Generated Insights:</strong> AI analyzes patterns and generates personalized observations ("Your cardio HSS is up 12% this week")</li>
+                            <li class="feature-item upcoming"><strong>Decline Detection:</strong> Proactive alerts when habits show declining patterns before you notice</li>
+                            <li class="feature-item upcoming"><strong>Pattern Recognition:</strong> Identify weekly cycles, seasonal trends, correlation between habits</li>
+                            <li class="feature-item upcoming"><strong>Personalized Recommendations:</strong> Suggest optimal scheduling, rate adjustments, new habits based on history</li>
+                            <li class="feature-item upcoming"><strong>Smart Milestone Notifications:</strong> "3 days from maxing your streak bonus" - context-aware alerts</li>
+                            <li class="feature-item upcoming"><strong>Behavioral Predictions:</strong> "Based on your patterns, you're 82% likely to complete morning run tomorrow"</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🏦 Financial Integrations</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Plaid (Banking):</strong> Connect bank accounts for transaction monitoring and smart check-ins</li>
+                            <li class="feature-item upcoming"><strong>Transaction Analysis:</strong> Detect spending patterns, identify resist opportunities ("You spent $43 on DoorDash this week")</li>
+                            <li class="feature-item upcoming"><strong>Context-Aware Prompts:</strong> "Just spent at Starbucks - log a resist or mark as treat?"</li>
+                            <li class="feature-item upcoming"><strong>Stripe (Payouts):</strong> Real money transfers from virtual balance to bank account</li>
+                            <li class="feature-item upcoming"><strong>Monthly Redemption:</strong> Automated payout windows with 1099 tax handling</li>
+                            <li class="feature-item upcoming"><strong>Historical Spending:</strong> Show how much you've saved by resisting bad habits over time</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">⌚ Health Device Integrations</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Oura Ring:</strong> Sleep tracking, readiness scores, activity detection</li>
+                            <li class="feature-item upcoming"><strong>Whoop:</strong> Strain, recovery, sleep data for automatic logging</li>
+                            <li class="feature-item upcoming"><strong>Apple Health:</strong> Steps, workouts, heart rate, sleep from iPhone/Apple Watch</li>
+                            <li class="feature-item upcoming"><strong>Google Fit:</strong> Android device integration for activity tracking</li>
+                            <li class="feature-item upcoming"><strong>Fitbit API:</strong> Steps, active minutes, sleep stages</li>
+                            <li class="feature-item upcoming"><strong>Auto-Detection:</strong> Exercise detected from heart rate, sleep tracked automatically</li>
+                            <li class="feature-item upcoming"><strong>Manual Override:</strong> Always allow manual logging to maintain control</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">💰 External Routing Integrations</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Coinbase:</strong> Route earnings to crypto investments automatically</li>
+                            <li class="feature-item upcoming"><strong>Charles Schwab:</strong> Send earnings to stock investment account</li>
+                            <li class="feature-item upcoming"><strong>Marcus by Goldman Sachs:</strong> High-yield savings account deposits</li>
+                            <li class="feature-item upcoming"><strong>Charity: Water:</strong> Donate earnings to charitable causes</li>
+                            <li class="feature-item upcoming"><strong>Custom Rules:</strong> "Send 'Skip Starbucks' → Coinbase, 'Morning Cardio' → Schwab"</li>
+                            <li class="feature-item upcoming"><strong>Revenue Share:</strong> Affiliate commissions from platform partners ($25-100 per referral)</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🔔 Smart Notifications</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Context-Aware Timing:</strong> Prompt at optimal times based on your patterns</li>
+                            <li class="feature-item upcoming"><strong>Transaction Alerts:</strong> "Just detected $8 at Starbucks - was this planned?"</li>
+                            <li class="feature-item upcoming"><strong>Weekly Recaps:</strong> Sunday summary of performance, HSS changes, earnings</li>
+                            <li class="feature-item upcoming"><strong>Milestone Celebrations:</strong> "30-day streak! You've earned $247 on this habit"</li>
+                            <li class="feature-item upcoming"><strong>Decline Warnings:</strong> "Your meditation habit is trending down - need support?"</li>
+                            <li class="feature-item upcoming"><strong>User Controls:</strong> Fine-tune frequency, timing, which notifications you receive</li>
+                        </ul>
+                    </div>
+
+                    <div class="feature-category">
+                        <div class="category-header">🤝 AI Change Partner Personas</div>
+                        <ul class="feature-list">
+                            <li class="feature-item upcoming"><strong>Tough Love Coach:</strong> Direct, achievement-focused, pushes you hard</li>
+                            <li class="feature-item upcoming"><strong>Supportive Friend:</strong> Warm, empathetic, celebrates small wins</li>
+                            <li class="feature-item upcoming"><strong>Financial Advisor:</strong> Data-driven, ROI-focused, investment metaphors</li>
+                            <li class="feature-item upcoming"><strong>Wellness Guide:</strong> Health-first, gentle, holistic approach</li>
+                            <li class="feature-item upcoming"><strong>Adaptive Language:</strong> Notifications and insights match your chosen persona</li>
+                            <li class="feature-item upcoming"><strong>Visual Theming:</strong> UI adjusts to match persona aesthetic</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <h3 style="color: #212529; margin-bottom: 20px;">Integration Timeline & Dependencies</h3>
+                    
+                    <div class="flow-section">
+                        <div class="flow-title">Phase 5: Smart Assistance (Months 5-7)</div>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li>Plaid integration for bank connections</li>
+                            <li>Transaction pattern detection</li>
+                            <li>Context-aware prompts</li>
+                            <li>Weekly recap system</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Phase 6: Real Money (Months 7-9)</div>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li>Stripe integration for payouts</li>
+                            <li>Real money tracking</li>
+                            <li>Withdrawal flow</li>
+                            <li>1099 tax handling</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Phase 7: Health Devices (Months 9-11)</div>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li>Oura Ring integration</li>
+                            <li>Whoop integration</li>
+                            <li>Apple Health / Google Fit</li>
+                            <li>Auto-detection algorithms</li>
+                            <li>3-4 weeks per integration</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Phase 9: Change Partner Personas (Months 15-18)</div>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li>AI persona system</li>
+                            <li>Onboarding questionnaire</li>
+                            <li>Adaptive language in notifications</li>
+                            <li>Tailored insights and recommendations</li>
+                        </ul>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Phase 10: External Routing (Months 18-24)</div>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li>Coinbase, Schwab, Marcus integrations</li>
+                            <li>Custom routing rules</li>
+                            <li>Affiliate revenue model</li>
+                            <li>6-8 weeks per integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
+                    <h3 style="color: #155724; margin-bottom: 10px;">💡 Strategic Value</h3>
+                    <p style="color: #155724; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>Health Device Integration:</strong> Adds verification layer for gaming prevention - makes behavioral indices more trustworthy
+                    </p>
+                    <p style="color: #155724; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>Plaid Integration:</strong> Enables "resist" habit verification and context-aware prompts for spending patterns
+                    </p>
+                    <p style="color: #155724; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>External Routing:</strong> Multiple revenue streams through affiliate partnerships ($25-100 per referral)
+                    </p>
+                    <p style="color: #155724; line-height: 1.6; margin: 0;">
+                        <strong>AI Personas:</strong> Personalization increases engagement and retention without changing core product
+                    </p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 20px; background: #f8d7da; border-left: 4px solid #dc3545; border-radius: 8px;">
+                    <h3 style="color: #721c24; margin-bottom: 10px;">⚠️ Important Notes</h3>
+                    <p style="color: #721c24; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>Cost Implications:</strong> Plaid costs $10-30/month initially, scales to $500/month at 10k users
+                    </p>
+                    <p style="color: #721c24; line-height: 1.6; margin-bottom: 10px;">
+                        <strong>Privacy Considerations:</strong> All integrations require explicit user consent and clear data usage policies
+                    </p>
+                    <p style="color: #721c24; line-height: 1.6; margin: 0;">
+                        <strong>Implementation Order:</strong> Only build after POC validation - these are enhancement features, not core value
+                    </p>
+                </div>
+            </div>
+
+            <!-- DEVELOPMENT TIMELINE -->
+            <div id="timeline" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">Development Timeline</h2>
+                
+                <div class="timeline-container">
+                    <div class="timeline-line"></div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot complete"></div>
+                        <div class="timeline-content complete">
+                            <div class="timeline-phase">Phase 1 - Complete</div>
+                            <div class="timeline-title">Initial Build <span class="status-badge status-complete">✓ Done</span></div>
+                            <div class="timeline-desc">Built core React app with Vite, established folder structure, implemented portfolio view with basic balance display.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">React + Vite Setup</span>
+                                <span class="timeline-tag">Portfolio View</span>
+                                <span class="timeline-tag">Basic UI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot complete"></div>
+                        <div class="timeline-content complete">
+                            <div class="timeline-phase">Phase 2 - Complete</div>
+                            <div class="timeline-title">Habit Creation & Logging <span class="status-badge status-complete">✓ Done</span></div>
+                            <div class="timeline-desc">Implemented habit creation flow, activity logging, HabitContext state management, and localStorage persistence.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Build/Break Habits</span>
+                                <span class="timeline-tag">Activity Logging</span>
+                                <span class="timeline-tag">State Management</span>
+                                <span class="timeline-tag">Data Persistence</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot complete"></div>
+                        <div class="timeline-content complete">
+                            <div class="timeline-phase">Phase 3 - Complete</div>
+                            <div class="timeline-title">Polish & Refinement <span class="status-badge status-complete">✓ Done</span></div>
+                            <div class="timeline-desc">Added charts, pending balance system, inline editing, bottom sheet modals, and refined visual design with animations.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Performance Charts</span>
+                                <span class="timeline-tag">Pending Balance</span>
+                                <span class="timeline-tag">Inline Editing</span>
+                                <span class="timeline-tag">Bottom Sheets</span>
+                                <span class="timeline-tag">Animations</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot current"></div>
+                        <div class="timeline-content current">
+                            <div class="timeline-phase">Phase 4 - In Planning</div>
+                            <div class="timeline-title">Scheduling System <span class="status-badge status-current">📍 Next</span></div>
+                            <div class="timeline-desc">Implement habit scheduling (daily, weekdays, custom days, X times per week) as mandatory infrastructure for behavioral indices.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Schedule Selector</span>
+                                <span class="timeline-tag">Completion Rates</span>
+                                <span class="timeline-tag">Success Tracking</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot upcoming"></div>
+                        <div class="timeline-content upcoming">
+                            <div class="timeline-phase">Phase 5 - Upcoming</div>
+                            <div class="timeline-title">Analytics Dashboard <span class="status-badge status-upcoming">⏳ Soon</span></div>
+                            <div class="timeline-desc">Build behavioral pattern detection, gaming prevention, and advanced analytics to support data quality for indices.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Pattern Detection</span>
+                                <span class="timeline-tag">Gaming Prevention</span>
+                                <span class="timeline-tag">Analytics Dashboard</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot upcoming"></div>
+                        <div class="timeline-content upcoming">
+                            <div class="timeline-phase">Phase 6 - Upcoming</div>
+                            <div class="timeline-title">Backend & Authentication <span class="status-badge status-upcoming">⏳ Soon</span></div>
+                            <div class="timeline-desc">Move from localStorage to cloud database (Supabase), add user authentication, enable multi-device sync. Database schema designed for indices from day 1.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Cloud Database</span>
+                                <span class="timeline-tag">User Auth</span>
+                                <span class="timeline-tag">Multi-Device Sync</span>
+                                <span class="timeline-tag">Indices-Ready Schema</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 7 - Future (Months 4-5)</div>
+                            <div class="timeline-title">🎯 HSS System - Advanced Intelligence</div>
+                            <div class="timeline-desc">Build sophisticated Habit Strength Score algorithm with 5 components: scheduled completion (50%), momentum (25%), legacy bonus (15%), consistency (5%), streak (5%). Includes intelligence layer with auto-generated insights and decline detection.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">HSS Algorithm</span>
+                                <span class="timeline-tag">Score Components</span>
+                                <span class="timeline-tag">Intelligence Layer</span>
+                                <span class="timeline-tag">Insights Engine</span>
+                                <span class="timeline-tag">Portfolio Rankings</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 8 - Future (Months 5-9)</div>
+                            <div class="timeline-title">📈 Behavioral Indices - Core Vision</div>
+                            <div class="timeline-desc">Launch category-level indices (EXRC, NUTR, PROD, RCVR, SAVE, SOCP) aggregated from user data. User percentile rankings, weekly trend visualization. Position as "Bloomberg Terminal for habits."</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">6 Category Indices</span>
+                                <span class="timeline-tag">Percentile Rankings</span>
+                                <span class="timeline-tag">Trend Visualization</span>
+                                <span class="timeline-tag">Data Quality Controls</span>
+                                <span class="timeline-tag">Gaming Prevention</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 9 - Future (Months 9-12)</div>
+                            <div class="timeline-title">💰 Data Licensing Platform</div>
+                            <div class="timeline-desc">Public API for behavioral indices. Three-tier licensing model ($0 → $500/mo → Enterprise). Academic partnerships for research. Media strategy with monthly behavioral reports. Goal: become authoritative data source.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Public API</span>
+                                <span class="timeline-tag">Data Licensing</span>
+                                <span class="timeline-tag">Academic Partnerships</span>
+                                <span class="timeline-tag">Media Reports</span>
+                                <span class="timeline-tag">Revenue Model</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 10 - Future</div>
+                            <div class="timeline-title">Bank Integration & Real Money</div>
+                            <div class="timeline-desc">Integrate Plaid for bank connections, implement real money transfers, build withdrawal flow.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Plaid Integration</span>
+                                <span class="timeline-tag">Real Transfers</span>
+                                <span class="timeline-tag">Compliance</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 11 - Future (Months 9-11)</div>
+                            <div class="timeline-title">🏥 Health Device Integrations</div>
+                            <div class="timeline-desc">Auto-tracking from Oura Ring, Whoop, Apple Health, Google Fit, and Fitbit. Exercise detection from heart rate, automatic sleep logging. Adds verification layer for gaming prevention.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Oura Ring</span>
+                                <span class="timeline-tag">Whoop</span>
+                                <span class="timeline-tag">Apple Health</span>
+                                <span class="timeline-tag">Google Fit</span>
+                                <span class="timeline-tag">Auto-Detection</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 12 - Future (Months 15-18)</div>
+                            <div class="timeline-title">🤖 AI Change Partner Personas</div>
+                            <div class="timeline-desc">Personalized advisor systems with different tones: Tough Love Coach, Supportive Friend, Financial Advisor, or Wellness Guide. Adaptive language in notifications and tailored insights.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">4 Personas</span>
+                                <span class="timeline-tag">Adaptive Language</span>
+                                <span class="timeline-tag">Custom Insights</span>
+                                <span class="timeline-tag">Visual Theming</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot future"></div>
+                        <div class="timeline-content future">
+                            <div class="timeline-phase">Phase 13 - Future (Months 18-24)</div>
+                            <div class="timeline-title">💰 External Routing</div>
+                            <div class="timeline-desc">Route earnings to external accounts: Coinbase (crypto), Schwab (stocks), Marcus (savings), Charity: Water (donations). Custom routing rules per habit. Affiliate revenue model.</div>
+                            <div class="timeline-features">
+                                <span class="timeline-tag">Coinbase</span>
+                                <span class="timeline-tag">Schwab</span>
+                                <span class="timeline-tag">Marcus</span>
+                                <span class="timeline-tag">Custom Rules</span>
+                                <span class="timeline-tag">Affiliate Revenue</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATA FLOW -->
+            <div id="dataflow" class="view">
+                <h2 style="margin-bottom: 20px; color: #212529;">Data Flow Architecture</h2>
+                
+                <div class="dataflow-container">
+                    <div class="flow-section">
+                        <div class="flow-title">Habit Creation Flow</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">User Input<br/>(Add Habit Form)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">HabitContext<br/>(addHabit)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">localStorage<br/>(persist)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">UI Update<br/>(Portfolio)</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Activity Logging Flow</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">User Action<br/>(Log Activity)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Calculations<br/>(earnings, streak)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">HabitContext<br/>(logActivity)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">localStorage<br/>(persist)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">UI Update<br/>(balance, charts)</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">State Synchronization</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">HabitContext<br/>(Single Source)</div>
+                            <div class="flow-arrow">↔</div>
+                            <div class="flow-box">localStorage<br/>(Persistence)</div>
+                        </div>
+                        <p style="margin-top: 15px; color: #6c757d; font-size: 14px;">
+                            All habit data flows through HabitContext. No duplicate data sources. localStorage syncs on every state change.
+                        </p>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Page Access Pattern</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">Portfolio<br/>(reads habits)</div>
+                            <div class="flow-arrow">↓</div>
+                            <div class="flow-box">HabitContext<br/>(provides data)</div>
+                            <div class="flow-arrow">↑</div>
+                            <div class="flow-box">Habit Detail<br/>(updates habit)</div>
+                        </div>
+                        <p style="margin-top: 15px; color: #6c757d; font-size: 14px;">
+                            Every page reads from and writes to HabitContext. Changes immediately reflect across all pages.
+                        </p>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Balance Calculation Chain</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">Activity Log<br/>(timestamp)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Check Date<br/>(pending vs confirmed)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Calculate Earnings<br/>(habit.rate × count)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Update Balances<br/>(pending + confirmed)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Display<br/>(Portfolio)</div>
+                        </div>
+                    </div>
+
+                    <div class="flow-section">
+                        <div class="flow-title">Weekly Transfer Process</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">Friday<br/>(trigger)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Pending Balance<br/>$X.XX</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Transfer<br/>(pending → confirmed)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Portfolio Balance<br/>$Y.YY</div>
+                        </div>
+                        <p style="margin-top: 15px; color: #6c757d; font-size: 14px;">
+                            Pending balance accumulates during the week. Every Friday, it transfers to confirmed portfolio balance.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected view
+            document.getElementById(viewName).classList.add('active');
+            
+            // Activate selected tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,24 +1,79 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useHabits } from '../../context/HabitContext';
 import Welcome from './Welcome';
 import HowItWorks from './HowItWorks';
+import SelectHabits from './SelectHabits';
+import SetRates from './SetRates';
+import Ready from './Ready';
 import './Onboarding.css';
 
-function Onboarding({ onComplete }) {
+/**
+ * Onboarding Flow - 5 Steps
+ * 
+ * 1. Welcome - Meet Flux introduction
+ * 2. How It Works - Visual money flow explanation
+ * 3. Select Habits - Browse and select from library
+ * 4. Set Rates - Customize rates for selected habits
+ * 5. Ready - Summary and launch
+ */
+export default function Onboarding({ onComplete }) {
+  const { addHabits } = useHabits();
   const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = 2;
+  
+  // Track selected habits and their rates
+  const [selectedHabits, setSelectedHabits] = useState([]);
+  const [habitRates, setHabitRates] = useState({});
 
-  const handleContinue = () => {
+  const totalSteps = 5;
+
+  const handleNext = () => {
     if (currentStep < totalSteps - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete();
+      setCurrentStep(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleSkip = () => {
+    onComplete();
+  };
+
+  // Step 3: Select habits
+  const handleHabitToggle = (libraryId) => {
+    setSelectedHabits(prev => {
+      if (prev.includes(libraryId)) {
+        return prev.filter(id => id !== libraryId);
+      } else {
+        return [...prev, libraryId];
+      }
+    });
+  };
+
+  // Step 4: Set rates
+  const handleRateChange = (libraryId, rate) => {
+    setHabitRates(prev => ({
+      ...prev,
+      [libraryId]: rate
+    }));
+  };
+
+  // Final step: Create habits and complete
+  const handleComplete = () => {
+    // Build habit configs
+    const habitConfigs = selectedHabits.map(libraryId => ({
+      libraryId,
+      rate: habitRates[libraryId] // undefined will use default
+    }));
+
+    // Add all habits
+    addHabits(habitConfigs);
+    
+    // Complete onboarding
+    onComplete();
   };
 
   return (
@@ -33,22 +88,48 @@ function Onboarding({ onComplete }) {
         ))}
       </div>
 
-      {/* Screens */}
+      {/* Step Content */}
       {currentStep === 0 && (
         <Welcome 
-          onContinue={handleContinue} 
-          onSkip={onComplete}
+          onContinue={handleNext} 
+          onSkip={handleSkip}
         />
       )}
       
       {currentStep === 1 && (
         <HowItWorks 
-          onContinue={onComplete}
+          onContinue={handleNext}
+          onBack={handleBack}
+        />
+      )}
+      
+      {currentStep === 2 && (
+        <SelectHabits 
+          selectedHabits={selectedHabits}
+          onToggle={handleHabitToggle}
+          onContinue={handleNext}
+          onBack={handleBack}
+        />
+      )}
+      
+      {currentStep === 3 && (
+        <SetRates 
+          selectedHabits={selectedHabits}
+          habitRates={habitRates}
+          onRateChange={handleRateChange}
+          onContinue={handleNext}
+          onBack={handleBack}
+        />
+      )}
+      
+      {currentStep === 4 && (
+        <Ready 
+          selectedHabits={selectedHabits}
+          habitRates={habitRates}
+          onComplete={handleComplete}
           onBack={handleBack}
         />
       )}
     </div>
   );
 }
-
-export default Onboarding;

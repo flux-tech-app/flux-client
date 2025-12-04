@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Habit Strength Score</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding-bottom: 80px;
+    }
+
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2563eb;
+    }
+
+    .header-title {
+      flex: 1;
+      font-size: 17px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .info-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .info-button:hover {
+      background: #f3f4f6;
+    }
+
+    /* Hero Section with Gradient */
+    .hero {
+      padding: 32px 16px;
+      background: linear-gradient(180deg, #f3f4f6 0%, white 100%);
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .habit-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 24px;
+    }
+
+    /* HSS Circle Display */
+    .hss-circle-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .hss-circle {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+
+    .hss-circle svg {
+      transform: rotate(-90deg);
+    }
+
+    .hss-circle-bg {
+      fill: none;
+      stroke: #e5e7eb;
+      stroke-width: 12;
+    }
+
+    .hss-circle-progress {
+      fill: none;
+      stroke: url(#gradient);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 565.48;
+      stroke-dashoffset: 141.37; /* 75% = 565.48 * 0.25 */
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .hss-score-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .hss-score-value {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .hss-score-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .score-tier {
+      display: inline-block;
+      padding: 8px 16px;
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .score-description {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 24px 16px;
+      border-bottom: 8px solid #f5f5f5;
+    }
+
+    .chart-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .period-toggle {
+      padding: 6px 14px;
+      border: 1px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .period-toggle:hover {
+      border-color: #d1d5db;
+    }
+
+    .period-toggle.active {
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      color: white;
+      border-color: transparent;
+    }
+
+    .line-chart-container {
+      position: relative;
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px 16px 16px 40px;
+      margin-bottom: 16px;
+    }
+
+    .line-chart {
+      width: 100%;
+      height: 180px;
+    }
+
+    .chart-y-labels {
+      position: absolute;
+      left: 4px;
+      top: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 180px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .y-label {
+      line-height: 1;
+    }
+
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding-left: 40px;
+      font-size: 11px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .chart-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .chart-stat {
+      text-align: center;
+    }
+
+    .chart-stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .chart-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .chart-stat-value.positive {
+      color: #10b981;
+    }
+
+    .chart-stat-value.negative {
+      color: #ef4444;
+    }
+
+    /* Components Section */
+    .components-section {
+      padding: 24px 16px;
+      border-bottom: 8px solid #f5f5f5;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .section-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    /* Component Card */
+    .component-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .component-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .component-info {
+      flex: 1;
+    }
+
+    .component-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .component-weight {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .component-score {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Progress Bar */
+    .progress-bar-container {
+      height: 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      border-radius: 4px;
+      transition: width 0.8s ease;
+    }
+
+    .component-detail {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    /* Distribution Section */
+    .distribution-section {
+      padding: 24px 16px;
+      border-bottom: 8px solid #f5f5f5;
+    }
+
+    .distribution-bars {
+      margin-top: 20px;
+    }
+
+    .distribution-item {
+      margin-bottom: 20px;
+    }
+
+    .distribution-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .distribution-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tier-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .tier-elite { background: #fef3c7; color: #92400e; }
+    .tier-excellent { background: #dbeafe; color: #1e40af; }
+    .tier-good { background: #d1fae5; color: #065f46; }
+    .tier-developing { background: #e0e7ff; color: #3730a3; }
+    .tier-struggling { background: #fee2e2; color: #991b1b; }
+    .tier-crisis { background: #fecaca; color: #7f1d1d; }
+
+    .tier-range {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .distribution-bar {
+      height: 32px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .distribution-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a78bfa 0%, #93c5fd 100%);
+      transition: width 0.8s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 12px;
+    }
+
+    .distribution-percentage {
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .your-position {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    /* Stats Grid */
+    .stats-section {
+      padding: 24px 16px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 24px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: #2563eb;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <button class="back-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-title">Habit Strength Score</div>
+      <button class="info-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12" y2="8"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="habit-name">Morning Run</div>
+      
+      <!-- HSS Circle -->
+      <div class="hss-circle-container">
+        <div class="hss-circle">
+          <svg width="200" height="200">
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <circle class="hss-circle-bg" cx="100" cy="100" r="90"/>
+            <circle class="hss-circle-progress" cx="100" cy="100" r="90"/>
+          </svg>
+          <div class="hss-score-display">
+            <div class="hss-score-value">75.3</div>
+            <div class="hss-score-label">HSS Score</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-tier">Good</div>
+      <div class="score-description">
+        Solid and reliable habit strength
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="section-title">Score History</div>
+      <div class="section-subtitle">Track your habit strength over time</div>
+
+      <!-- Time Period Toggles -->
+      <div class="chart-controls">
+        <button class="period-toggle active">7D</button>
+        <button class="period-toggle">1M</button>
+        <button class="period-toggle">3M</button>
+        <button class="period-toggle">6M</button>
+        <button class="period-toggle">1Y</button>
+        <button class="period-toggle">All</button>
+      </div>
+
+      <!-- Line Chart -->
+      <div class="line-chart-container">
+        <svg class="line-chart" viewBox="0 0 350 180" preserveAspectRatio="none">
+          <!-- Grid lines -->
+          <line x1="0" y1="36" x2="350" y2="36" stroke="#f3f4f6" stroke-width="1"/>
+          <line x1="0" y1="72" x2="350" y2="72" stroke="#f3f4f6" stroke-width="1"/>
+          <line x1="0" y1="108" x2="350" y2="108" stroke="#f3f4f6" stroke-width="1"/>
+          <line x1="0" y1="144" x2="350" y2="144" stroke="#f3f4f6" stroke-width="1"/>
+          
+          <!-- Gradient definition -->
+          <defs>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.2" />
+              <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:0.05" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Area fill -->
+          <path d="M 0 144 L 0 126 L 50 117 L 100 99 L 150 90 L 200 81 L 250 63 L 300 54 L 350 45 L 350 180 L 0 180 Z" 
+                fill="url(#areaGradient)"/>
+          
+          <!-- Line path -->
+          <path d="M 0 126 L 50 117 L 100 99 L 150 90 L 200 81 L 250 63 L 300 54 L 350 45" 
+                fill="none" 
+                stroke="url(#lineGradient)" 
+                stroke-width="3" 
+                stroke-linecap="round"
+                stroke-linejoin="round"/>
+          
+          <!-- Data points -->
+          <circle cx="0" cy="126" r="4" fill="#a78bfa"/>
+          <circle cx="50" cy="117" r="4" fill="#9f8ff9"/>
+          <circle cx="100" cy="99" r="4" fill="#9a9df7"/>
+          <circle cx="150" cy="90" r="4" fill="#96acf6"/>
+          <circle cx="200" cy="81" r="4" fill="#94b8f5"/>
+          <circle cx="250" cy="63" r="4" fill="#93c1fe"/>
+          <circle cx="300" cy="54" r="4" fill="#93c8fd"/>
+          <circle cx="350" cy="45" r="5" fill="#93c5fd" stroke="white" stroke-width="2"/>
+        </svg>
+
+        <!-- Y-axis labels -->
+        <div class="chart-y-labels">
+          <span class="y-label">100</span>
+          <span class="y-label">75</span>
+          <span class="y-label">50</span>
+          <span class="y-label">25</span>
+          <span class="y-label">0</span>
+        </div>
+
+        <!-- X-axis labels -->
+        <div class="chart-x-labels">
+          <span class="x-label">Mon</span>
+          <span class="x-label">Tue</span>
+          <span class="x-label">Wed</span>
+          <span class="x-label">Thu</span>
+          <span class="x-label">Fri</span>
+          <span class="x-label">Sat</span>
+          <span class="x-label">Sun</span>
+        </div>
+      </div>
+
+      <!-- Chart Stats -->
+      <div class="chart-stats">
+        <div class="chart-stat">
+          <div class="chart-stat-label">Current</div>
+          <div class="chart-stat-value">75.3</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">7-Day Change</div>
+          <div class="chart-stat-value positive">+8.5</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">7-Day Avg</div>
+          <div class="chart-stat-value">72.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Components Breakdown -->
+    <div class="components-section">
+      <div class="section-title">Score Components</div>
+      <div class="section-subtitle">Your HSS is calculated from 5 factors</div>
+
+      <!-- Scheduled Completion -->
+      <div class="component-card">
+        <div class="component-header">
+          <div class="component-info">
+            <div class="component-name">Scheduled Completion</div>
+            <div class="component-weight">50% weight</div>
+          </div>
+          <div class="component-score">42.5</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: 85%"></div>
+        </div>
+        <div class="component-detail">
+          Hitting your commitments. 17/20 scheduled days this month (85%)
+        </div>
+      </div>
+
+      <!-- Momentum -->
+      <div class="component-card">
+        <div class="component-header">
+          <div class="component-info">
+            <div class="component-name">Momentum</div>
+            <div class="component-weight">25% weight</div>
+          </div>
+          <div class="component-score">18.8</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: 75%"></div>
+        </div>
+        <div class="component-detail">
+          Improving trajectory. Up 12% from last month
+        </div>
+      </div>
+
+      <!-- Legacy Bonus -->
+      <div class="component-card">
+        <div class="component-header">
+          <div class="component-info">
+            <div class="component-name">Legacy Bonus</div>
+            <div class="component-weight">15% weight</div>
+          </div>
+          <div class="component-score">9.0</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: 60%"></div>
+        </div>
+        <div class="component-detail">
+          Long-term achievement. 87 days active (targets 180+ for max)
+        </div>
+      </div>
+
+      <!-- Consistency -->
+      <div class="component-card">
+        <div class="component-header">
+          <div class="component-info">
+            <div class="component-name">Consistency</div>
+            <div class="component-weight">5% weight</div>
+          </div>
+          <div class="component-score">3.5</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: 70%"></div>
+        </div>
+        <div class="component-detail">
+          Reliable patterns. Low variability in daily completion times
+        </div>
+      </div>
+
+      <!-- Active Streak -->
+      <div class="component-card">
+        <div class="component-header">
+          <div class="component-info">
+            <div class="component-name">Active Streak</div>
+            <div class="component-weight">5% weight</div>
+          </div>
+          <div class="component-score">1.5</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: 30%"></div>
+        </div>
+        <div class="component-detail">
+          Current unbroken run. 9 days active (maxes at 30 days)
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Distribution -->
+    <div class="distribution-section">
+      <div class="section-title">Score Distribution</div>
+      <div class="section-subtitle">Where you stand among Flux users</div>
+
+      <div class="distribution-bars">
+        <!-- Elite -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-elite">Elite</span>
+              <span class="tier-range">90-100</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 5%">
+              <span class="distribution-percentage">5%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Excellent -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-excellent">Excellent</span>
+              <span class="tier-range">80-89</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 15%">
+              <span class="distribution-percentage">15%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Good -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-good">Good</span>
+              <span class="tier-range">70-79</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 20%">
+              <span class="distribution-percentage">20%</span>
+            </div>
+            <span class="your-position">YOU</span>
+          </div>
+        </div>
+
+        <!-- Developing -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-developing">Developing</span>
+              <span class="tier-range">60-69</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 30%">
+              <span class="distribution-percentage">30%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Struggling -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-struggling">Struggling</span>
+              <span class="tier-range">50-59</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 20%">
+              <span class="distribution-percentage">20%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crisis -->
+        <div class="distribution-item">
+          <div class="distribution-header">
+            <div class="distribution-label">
+              <span class="tier-badge tier-crisis">Crisis</span>
+              <span class="tier-range">&lt;50</span>
+            </div>
+          </div>
+          <div class="distribution-bar">
+            <div class="distribution-bar-fill" style="width: 10%">
+              <span class="distribution-percentage">10%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Stats -->
+    <div class="stats-section">
+      <div class="section-title">Performance Stats</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">87</div>
+          <div class="stat-label">Days Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">9</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">45</div>
+          <div class="stat-label">Longest Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">94.3</div>
+          <div class="stat-label">All-Time High</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+      <button class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span class="nav-label">Portfolio</span>
+      </button>
+      <button class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span class="nav-label">Activity</span>
+      </button>
+      <button class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="20" x2="12" y2="10"/>
+          <line x1="18" y1="20" x2="18" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="16"/>
+        </svg>
+        <span class="nav-label">Indices</span>
+      </button>
+      <button class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="nav-label">Account</span>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,335 @@
+# FLUX - PROJECT MISSION & VISION
+
+**Tagline:** *Progress Pays*
+
+---
+
+## EXECUTIVE SUMMARY
+
+Flux is a behavior change platform that rewards users with real money for positive decisions and building good habits. In a world designed to extract your money and attention, Flux helps you build wealth by becoming better.
+
+**What it is:** A behavior change tool with financial rewards  
+**What it isn't:** A fintech app with habit features bolted on
+
+---
+
+## THE PROBLEM
+
+**The Modern Attention & Spending Economy:**
+- Predatory apps (DoorDash, FanDuel, impulse spending platforms) are engineered to manipulate behavior
+- These platforms are designed to extract maximum money and attention from users
+- Traditional habit trackers use fake points and gamification that don't create lasting change
+- Budgeting apps create guilt and restriction without addressing root behaviors
+- People want to improve but lack tangible incentives for making hard choices
+
+**The Gap:**
+People need a tool that:
+- Provides real incentives for positive behavior
+- Protects them against exploitative platforms
+- Creates tangible progress they can see and feel
+- Helps them become better while building actual wealth
+
+---
+
+## THE SOLUTION
+
+Flux creates a simple, powerful cycle:
+
+1. **You make a positive decision**
+   - Resist DoorDash â†’ Earn $35
+   - Morning workout â†’ Earn $5
+   - Skip Starbucks â†’ Earn $8
+   - Cook at home instead of ordering â†’ Earn $15
+
+2. **Real money accumulates in your in-app savings account**
+   - Watch your balance grow as you build better habits
+   - Acorns-style experience
+   - Your progress has real financial value
+
+3. **Transfer or invest your earnings**
+   - Withdraw to your linked bank account
+   - **Future:** Route directly to Coinbase, investment accounts, or charities
+   - **Future:** Automate transfers per habit or category
+
+4. **Become your own best investment**
+   - You're not "saving money you would have spent"
+   - You're **paying yourself** for doing hard things
+   - You become your own investor - investing in your future self
+
+---
+
+## CORE PHILOSOPHY
+
+### The Psychology
+- **Real money creates real motivation** - Opportunity cost (missing out on earnings) + tangible progress
+- **Two-sided earning system** - Earn money for DOING good things (BUILD) and for NOT doing bad things (RESIST)
+- **Positive reinforcement only** - Celebrate wins, never punish failures. You only earn, never lose.
+- **Non-judgmental awareness** - No guilt or shame, just honest tracking
+- **User stays in control** - Confirmation required, not automated assumptions
+
+### The Mission
+Help people make better choices in a world designed to make them fail.
+
+### The Positioning
+**Against:** Apps that extract your money and attention  
+**For:** Your future self, your health, your wealth
+
+### Key Principles
+1. Behavior change first, finance second
+2. Real money rewards, not fake points
+3. Assistance and reminders, not automation without consent
+4. Non-judgmental, supportive tone
+5. User confirms every action - it's an accountability partner, not an autonomous agent
+
+---
+
+## HOW IT WORKS
+
+### Current State (POC)
+**Manual Habit Tracking:**
+- User creates "Building" habits (things to do) and "Breaking" habits (things to resist)
+- Variable rate system: flat amounts, per-minute, per-calorie, per-unit
+- Log completions, resistances, skips, or failures
+- Virtual balance tracking
+- Visual progress with charts and streaks
+
+### Near-Term Vision (Phases 2-5)
+**Smart Accountability Partnership:**
+
+**Phase 2-3: Backend + Bank Integration**
+- User accounts with cloud sync
+- Plaid integration for bank transaction monitoring
+- Pattern learning: "You usually order DoorDash 3x/week on Tue/Thu/Sat evenings"
+- Historical spending analysis
+
+**Phase 4: Smart Check-Ins**
+- Contextual prompts at key moments
+- "It's Thursday 7pm - your usual DoorDash time. Resisted today?"
+- Real-time transaction alerts: "$35 DoorDash detected - log this spend?"
+- Weekly recap: "You resisted DoorDash 4x this week - log these?"
+- Non-judgmental framing for spending detection
+
+**Phase 5: Health Device Integration**
+- Oura Ring, Whoop, Apple Health, Fitbit
+- Auto-detect workouts when heart rate data shows exercise
+- Auto-track sleep when sleep score meets threshold
+- Push notifications when habits auto-detected
+- Manual override for incorrect detections
+
+**Phase 6: Real Money Movement**
+- Stripe integration for in-app savings account
+- Plaid for bank linking and transfers
+- Automated weekly/monthly transfers
+- Balance holds until user decides to withdraw
+- Compliance with financial regulations
+
+### Long-Term Vision (Phases 7+)
+**Advanced Features:**
+
+**Personalized Change Partners**
+- Onboarding questionnaire to understand user personality and preferences
+- Multiple advisor personas with distinct tones and communication styles
+- Adaptive language and motivation approaches
+- Different visual themes and color schemes per persona
+- Tailored check-in messaging based on assigned partner
+- Examples:
+  - "Tough Love Coach" - Direct, no-nonsense, achievement-focused
+  - "Supportive Friend" - Warm, empathetic, understanding
+  - "Financial Advisor" - Data-driven, ROI-focused, analytical
+  - "Wellness Guide" - Health-first, holistic, gentle
+
+**External Routing Destinations**
+- Per-habit or per-category routing rules
+- "Send Skip Starbucks savings â†’ Coinbase automatically"
+- "Route Resisted FanDuel â†’ Charity: Water"
+- "Morning Cardio rewards â†’ Schwab Investment Account"
+- User configures automation preferences
+- Partnership opportunities with Coinbase, Schwab, etc.
+
+**Mobile Applications**
+- Native iOS and Android apps
+- Better push notifications
+- Native Apple Health integration
+- Biometric authentication
+- Faster, smoother experience
+- Background syncing
+
+---
+
+## TARGET USERS
+
+### Primary Audience
+- Ages 25-40
+- Want to improve habits but struggle with consistency
+- Frustrated by predatory spending apps
+- Motivated by tangible progress over fake gamification
+- Value their time and money
+- Tech-comfortable but not necessarily "finance people"
+
+### User Segments
+1. **Fitness Focused** - Want to build workout consistency, track activity
+2. **Financial Conscious** - Want to reduce wasteful spending, build savings
+3. **Habit Builders** - Want general life improvement, multiple behavior changes
+4. **Recovery Oriented** - Breaking addictive patterns (gambling, food delivery, etc.)
+
+---
+
+## COMPETITIVE POSITIONING
+
+### What Sets Flux Apart
+
+**vs. Traditional Habit Trackers (Habitica, Streaks, Fabulous):**
+- Real money rewards, not fake points or badges
+- Addresses financial dimension of behavior
+- Tangible value creation
+
+**vs. Fintech Apps (Digit, Qapital, Acorns):**
+- Behavior change first, not just automated savings rules
+- Active participation and conscious choice-making
+- Rewards positive decisions, not just rounds up transactions
+
+**vs. Budgeting Apps (YNAB, Mint, PocketGuard):**
+- Positive reinforcement, not restriction and guilt
+- Pays you for good choices rather than policing spending
+- Forward-looking motivation vs. backward-looking tracking
+
+**vs. Predatory Apps (DoorDash, FanDuel, etc.):**
+- Designed to help you, not extract from you
+- Transparent incentives aligned with your goals
+- Builds wealth instead of depleting it
+
+### The Unfair Advantage
+**Flux creates a new category:** Behavior change platform with real financial incentives.
+
+It doesn't directly compete with any existing category - it's the intersection of:
+- Habit tracking
+- Financial wellness
+- Behavioral psychology
+- Personal accountability
+
+---
+
+## SUCCESS METRICS
+
+### POC Validation (Family Testing)
+- 70%+ retention after 4 weeks
+- 5+ logs per user per week
+- 3+ habits per user
+- Positive qualitative feedback
+- Clear signal whether virtual money motivates or needs to be real
+
+### Product-Market Fit (Beta)
+- 50%+ weekly active users
+- $50+ average monthly earnings per active user
+- 30%+ paying conversion rate (free â†’ premium)
+- NPS score 40+
+- Users recruiting others organically
+
+### Scale Metrics
+- 10,000+ active users
+- 70%+ retention at 6 months
+- $15+ monthly ARPU (average revenue per user)
+- <$50 CAC (customer acquisition cost)
+- Positive unit economics
+
+---
+
+## MONETIZATION STRATEGY
+
+### Freemium Model
+
+**Free Tier:**
+- Manual habit tracking
+- Basic charts and visualization
+- Up to 3 habits
+- Virtual money tracking (no real transfers)
+- Email notifications only
+
+**Premium Tier ($9.99/month):**
+- Unlimited habits
+- Bank integration (transaction monitoring via Plaid)
+- Smart check-ins and pattern learning
+- Push notifications
+- In-app savings account with real money
+- Priority support
+
+**Pro Tier ($19.99/month):**
+- Everything in Premium
+- Health device integrations (Oura, Whoop, Apple Health, Fitbit)
+- Automated transfers to external accounts
+- Multiple destination routing (Coinbase, charities, investments)
+- Personalized Change Partner selection
+- Advanced analytics and insights
+- API access
+
+### Additional Revenue Streams
+
+**Transaction Fees (Optional):**
+- Small fee on transfers (0.5-1%)
+- Example: User transfers $100 â†’ Keep $0.50-1.00
+- Must be transparent and clearly disclosed
+- Alternative: Include in subscription instead of per-transaction
+
+**Affiliate Partnerships:**
+- Partner with Coinbase, Schwab, investment platforms
+- Earn commission when users open accounts via Flux
+- $25-100 per referral typical
+- Must maintain user trust - only partner with quality services
+
+**B2B/Corporate Wellness (Future):**
+- Employer-sponsored wellness programs
+- Group accounts with admin dashboards
+- Custom branding and integration
+- $5-15 per employee per month
+
+---
+
+## RISKS & MITIGATION
+
+### Technical Risks
+- **Bank API reliability:** Use Plaid's proven infrastructure, have fallback systems
+- **Pattern detection accuracy:** Start conservative, improve with ML over time
+- **False positive check-ins:** User confirmation required for all logging
+- **Security vulnerabilities:** Regular audits, pen testing, compliance with SOC 2
+
+### Business Risks
+- **Regulatory compliance:** Consult legal counsel, obtain necessary licenses
+- **User acquisition cost:** Focus on organic growth, referral programs
+- **Competition from big banks:** Move fast, build strong community
+- **Trust (handling money):** Transparency, clear ToS, secure infrastructure
+- **Notification opt-out rates:** Careful prompt frequency tuning
+
+### User Experience Risks
+- **Prompt frequency balance:** Start conservative, let users adjust preferences
+- **Pattern learning accuracy:** Require confirmation, not assumptions
+- **Onboarding complexity:** Progressive disclosure, simple first steps
+- **Bank linking hesitation:** Clear privacy policy, Plaid trust badges
+- **Virtual vs. real money:** POC testing will validate motivation levels
+
+---
+
+## IMMEDIATE NEXT STEPS
+
+See detailed roadmaps:
+- **[FLUX-POC-ROADMAP-v3.1.md](FLUX-POC-ROADMAP-v3_1-INDICES.md)** - 12 months to data authority
+- Indices strategy with "building it together" narrative
+- Full HHS (Habit Health Score) implementation plan
+
+**Current Focus:** Phase 1 - Polish existing React app for family testing
+- Professional UI/UX consistency
+- Add "Indices Coming Soon" placeholder
+- Founding member messaging
+- Better charts and visualization
+- Make it feel trustworthy and substantial
+
+---
+
+## THE NORTH STAR
+
+Every feature, every design decision, every line of code should ladder up to this:
+
+**"Progress Pays"**
+
+Make better choices. Track your progress. Get paid for it. Build wealth by becoming better.
+
+This is Flux.

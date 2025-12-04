@@ -7,12 +7,12 @@ import { getNextTransferDate } from '../../utils/calculations';
 import Navigation from '../../components/Navigation';
 import './Portfolio.css';
 
-// HHS to Star Rating mapping
-const getStarRating = (hhs) => {
-  if (hhs >= 90) return 5;
-  if (hhs >= 80) return 4;
-  if (hhs >= 70) return 3;
-  if (hhs >= 60) return 2;
+// Flux Score to Star Rating mapping
+const getStarRating = (fluxScore) => {
+  if (fluxScore >= 90) return 5;
+  if (fluxScore >= 75) return 4;
+  if (fluxScore >= 60) return 3;
+  if (fluxScore >= 40) return 2;
   return 1;
 };
 
@@ -66,58 +66,80 @@ export default function Portfolio() {
   const nextTransfer = getNextTransferDate();
   const pendingBalance = getPendingBalance();
 
-  // Calculate HHS for a habit (simplified for MVT)
-  const calculateHHS = (habit) => {
+  /**
+   * Calculate Flux Score for a habit (simplified for MVT)
+   * No schedules - based purely on logging activity and patterns
+   * 
+   * Components:
+   * - Frequency (35%): Logs in last 30 days / expected baseline
+   * - Consistency (25%): How evenly spread are logs
+   * - Recency (20%): Days since last log (exponential decay)
+   * - Trend (15%): Recent 2 weeks vs previous 2 weeks
+   * - Data Maturity (5%): Bonus for having more total logs
+   */
+  const calculateFluxScore = (habit) => {
     const habitLogs = getHabitLogs(habit.id);
     
+    // Need at least 1 log to score
     if (habitLogs.length === 0) return 0;
 
-    // Get last 30 days of data
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
     
+    // Get recent logs
     const recentLogs = habitLogs.filter(log => 
       new Date(log.timestamp) >= thirtyDaysAgo
     );
 
-    // Calculate completion rate (35%)
-    // For daily habits, expect ~30 entries; for specific days, calculate expected
-    const schedule = habit.schedule || { type: 'daily', days: [0,1,2,3,4,5,6] };
-    let expectedDays = 30;
+    // ========== FREQUENCY SCORE (35%) ==========
+    // For MVT without schedules, we use a reasonable baseline
+    // Assume ~15-20 logs in 30 days is "good" frequency for most habits
+    const expectedLogs = 15;
+    const frequencyScore = Math.min(100, (recentLogs.length / expectedLogs) * 100);
+
+    // ========== CONSISTENCY SCORE (25%) ==========
+    // Calculate variance in gaps between logs
+    let consistencyScore = 50; // Default to mid-range
     
-    if (schedule.type === 'specific_days' && schedule.days) {
-      // Count how many of the scheduled days fall in last 30 days
-      expectedDays = 0;
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        if (schedule.days.includes(date.getDay())) {
-          expectedDays++;
-        }
+    if (recentLogs.length >= 3) {
+      const sortedLogs = [...recentLogs].sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
+      
+      // Calculate gaps between consecutive logs
+      const gaps = [];
+      for (let i = 1; i < sortedLogs.length; i++) {
+        const gap = (new Date(sortedLogs[i].timestamp) - new Date(sortedLogs[i-1].timestamp)) 
+          / (1000 * 60 * 60 * 24); // Days
+        gaps.push(gap);
       }
-    } else if (schedule.type === 'weekdays') {
-      expectedDays = 22; // ~22 weekdays in 30 days
-    } else if (schedule.type === 'weekends') {
-      expectedDays = 8; // ~8 weekend days in 30 days
+      
+      if (gaps.length > 0) {
+        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - avgGap, 2), 0) / gaps.length;
+        const stdDev = Math.sqrt(variance);
+        
+        // Lower standard deviation = more consistent = higher score
+        // Score 100 if stdDev < 0.5, decreasing as variance increases
+        consistencyScore = Math.max(0, Math.min(100, 100 - (stdDev * 15)));
+      }
     }
 
-    const completionRate = expectedDays > 0 
-      ? Math.min(100, (recentLogs.length / expectedDays) * 100)
-      : 0;
+    // ========== RECENCY SCORE (20%) ==========
+    // Exponential decay based on days since last log
+    const sortedAll = [...habitLogs].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    const lastLogDate = new Date(sortedAll[0].timestamp);
+    const daysSinceLog = (now - lastLogDate) / (1000 * 60 * 60 * 24);
+    
+    // Score 100 if logged today, ~50 after 3 days, ~25 after 7 days
+    const recencyScore = Math.max(0, 100 * Math.exp(-daysSinceLog / 4));
 
-    // Calculate streak score (25%) - currentStreak / 12 weeks * 100
-    const streakScore = Math.min(100, ((habit.currentStreak || 0) / 12) * 100);
-
-    // Consistency score (25%) - simplified: based on how spread out the logs are
-    // For MVT, use completion rate as proxy
-    const consistencyScore = completionRate;
-
-    // Trend score (15%) - compare last 2 weeks vs previous 2 weeks
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
-
+    // ========== TREND SCORE (15%) ==========
+    // Compare last 2 weeks vs previous 2 weeks
     const recentTwoWeeks = habitLogs.filter(log => 
       new Date(log.timestamp) >= twoWeeksAgo
     ).length;
@@ -127,22 +149,32 @@ export default function Portfolio() {
       return logDate >= fourWeeksAgo && logDate < twoWeeksAgo;
     }).length;
 
-    let trendScore = 50; // neutral
-    if (recentTwoWeeks > previousTwoWeeks) {
-      trendScore = 75 + Math.min(25, (recentTwoWeeks - previousTwoWeeks) * 5);
-    } else if (recentTwoWeeks < previousTwoWeeks) {
-      trendScore = 25 - Math.min(25, (previousTwoWeeks - recentTwoWeeks) * 5);
+    let trendScore = 50; // Neutral baseline
+    if (previousTwoWeeks > 0) {
+      const changeRatio = recentTwoWeeks / previousTwoWeeks;
+      if (changeRatio > 1) {
+        trendScore = Math.min(100, 50 + (changeRatio - 1) * 50);
+      } else if (changeRatio < 1) {
+        trendScore = Math.max(0, 50 * changeRatio);
+      }
+    } else if (recentTwoWeeks > 0) {
+      trendScore = 75; // Some activity when there was none before
     }
 
-    // Calculate final HHS
-    const hhs = Math.round(
-      (completionRate * 0.35) +
-      (streakScore * 0.25) +
+    // ========== DATA MATURITY BONUS (5%) ==========
+    // Reward for having more total logs (max at 30+ logs)
+    const maturityScore = Math.min(100, (habitLogs.length / 30) * 100);
+
+    // ========== CALCULATE FINAL SCORE ==========
+    const fluxScore = Math.round(
+      (frequencyScore * 0.35) +
       (consistencyScore * 0.25) +
-      (trendScore * 0.15)
+      (recencyScore * 0.20) +
+      (trendScore * 0.15) +
+      (maturityScore * 0.05)
     );
 
-    return Math.min(100, Math.max(0, hhs));
+    return Math.min(100, Math.max(0, fluxScore));
   };
 
   // Determine trend direction
@@ -151,10 +183,9 @@ export default function Portfolio() {
     
     if (habitLogs.length < 4) return 'neutral';
 
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    const now = new Date();
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
 
     const recentCount = habitLogs.filter(log => 
       new Date(log.timestamp) >= twoWeeksAgo
@@ -179,10 +210,9 @@ export default function Portfolio() {
   // Get holdings data (active habits with stats)
   const getHoldingsData = () => {
     return habits
-      .filter(habit => habit.isActive !== false)
       .map(habit => ({
         ...habit,
-        hhs: calculateHHS(habit),
+        fluxScore: calculateFluxScore(habit),
         trend: getTrend(habit),
         totalEarned: getHabitTotalEarned(habit.id)
       }))
@@ -284,7 +314,7 @@ export default function Portfolio() {
 
             <div className="holdings-list">
               {holdings.map((holding, index) => {
-                const starRating = getStarRating(holding.hhs);
+                const starRating = getStarRating(holding.fluxScore);
                 
                 return (
                   <motion.div 
@@ -299,7 +329,7 @@ export default function Portfolio() {
                     <div className="holding-ticker">${holding.ticker}</div>
                     <div className="holding-metrics">
                       <StarRating rating={starRating} />
-                      <span className="holding-hhs">{holding.hhs}</span>
+                      <span className="holding-hhs">{holding.fluxScore}</span>
                       <TrendArrow trend={holding.trend} />
                     </div>
                     <div className="holding-earned">{formatCurrency(holding.totalEarned)}</div>

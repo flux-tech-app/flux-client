@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Home</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .home-page {
+      min-height: 100vh;
+      background: white;
+      padding-bottom: 80px;
+    }
+
+    .home-container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* App Header */
+    .home-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .header-content {
+      flex: 1;
+    }
+
+    .greeting {
+      font-size: 24px;
+      font-weight: 600;
+      background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+
+    .day-date {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .portfolio-balance {
+      font-size: 13px;
+      color: #111827;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .notification-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: all 0.2s;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .notification-button:hover {
+      background: #f3f4f6;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .notification-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Date Picker Section */
+    .date-picker-section {
+      background: white;
+      padding: 16px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .date-picker-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0 16px 4px;
+      scrollbar-width: none;
+      scroll-behavior: smooth;
+    }
+
+    .date-picker-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .date-square {
+      min-width: 44px;
+      height: 58px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f9fafb;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .date-square:hover {
+      background: #f3f4f6;
+    }
+
+    .date-square.active {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    }
+
+    .date-day {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    .date-square.active .date-day {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .date-number {
+      font-size: 17px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .date-square.active .date-number {
+      color: white;
+    }
+
+    .completion-dot {
+      position: absolute;
+      bottom: 5px;
+      width: 3px;
+      height: 3px;
+      background: #10b981;
+      border-radius: 50%;
+    }
+
+    .date-square.active .completion-dot {
+      background: white;
+    }
+
+    /* AI Insight Section */
+    .insight-section {
+      padding: 20px 16px;
+    }
+
+    .ai-insight-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .flux-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .flux-icon {
+      width: 12px;
+      height: 12px;
+    }
+
+    .insight-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #1e40af;
+    }
+
+    /* Category Cards Section */
+    .categories-section {
+      padding: 0 16px 24px;
+    }
+
+    .section-divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin-bottom: 20px;
+    }
+
+    .categories-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Category Card */
+    .category-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .category-card:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .category-header:hover {
+      background: #f9fafb;
+    }
+
+    .category-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .category-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .category-icon {
+      width: 18px;
+      height: 18px;
+      color: #6b7280;
+    }
+
+    .category-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .category-stats {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .category-earnings-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category-earnings {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .category-completed .category-earnings {
+      color: #10b981;
+    }
+
+    .expand-icon {
+      width: 20px;
+      height: 20px;
+      color: #9ca3af;
+      transition: transform 0.2s;
+    }
+
+    .category-card.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Category Breakdown */
+    .category-breakdown {
+      border-top: 1px solid #f3f4f6;
+      background: #fafafa;
+      padding: 12px 16px;
+      display: none;
+    }
+
+    .category-breakdown.visible {
+      display: block;
+    }
+
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 20px 1fr auto auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-check {
+      width: 14px;
+      height: 14px;
+      color: #10b981;
+    }
+
+    .breakdown-check.empty {
+      visibility: hidden;
+    }
+
+    .breakdown-name {
+      font-size: 14px;
+      color: #111827;
+      font-weight: 400;
+    }
+
+    .breakdown-log {
+      font-size: 13px;
+      color: #6b7280;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .breakdown-rate {
+      font-size: 13px;
+      color: #6b7280;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .breakdown-amount {
+      font-size: 14px;
+      color: #111827;
+      font-weight: 500;
+      text-align: right;
+      min-width: 60px;
+    }
+
+    /* Chat Button */
+    .chat-fab {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+      transition: all 0.2s;
+      z-index: 30;
+    }
+
+    .chat-fab:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    }
+
+    .chat-fab svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+
+    /* View Activity Link */
+    .view-activity-section {
+      padding: 0 16px 24px;
+      text-align: center;
+    }
+
+    .view-activity-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #3b82f6;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .view-activity-link:hover {
+      color: #2563eb;
+      gap: 8px;
+    }
+
+    .view-activity-link svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+    }
+
+    .bottom-nav-container {
+      max-width: 768px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="home-page">
+  <div class="home-container">
+    <!-- App Header -->
+    <div class="home-header">
+      <div class="header-top">
+        <div class="header-content">
+          <div class="greeting">Good morning, Ryan</div>
+        </div>
+        <button class="notification-button">
+          <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+          <div class="notification-badge"></div>
+        </button>
+      </div>
+      <div class="day-date">Saturday, November 16</div>
+      <div class="portfolio-balance">Portfolio: $1,247.50</div>
+    </div>
+
+    <!-- Date Picker Section -->
+    <div class="date-picker-section">
+      <div class="date-picker-scroll">
+        <div class="date-square completed">
+          <div class="date-day">Mon</div>
+          <div class="date-number">11</div>
+          <div class="completion-dot"></div>
+        </div>
+        <div class="date-square completed">
+          <div class="date-day">Tue</div>
+          <div class="date-number">12</div>
+          <div class="completion-dot"></div>
+        </div>
+        <div class="date-square completed">
+          <div class="date-day">Wed</div>
+          <div class="date-number">13</div>
+          <div class="completion-dot"></div>
+        </div>
+        <div class="date-square completed">
+          <div class="date-day">Thu</div>
+          <div class="date-number">14</div>
+          <div class="completion-dot"></div>
+        </div>
+        <div class="date-square">
+          <div class="date-day">Fri</div>
+          <div class="date-number">15</div>
+        </div>
+        <div class="date-square active completed">
+          <div class="date-day">Sat</div>
+          <div class="date-number">16</div>
+          <div class="completion-dot"></div>
+        </div>
+        <div class="date-square">
+          <div class="date-day">Sun</div>
+          <div class="date-number">17</div>
+        </div>
+        <div class="date-square">
+          <div class="date-day">Mon</div>
+          <div class="date-number">18</div>
+        </div>
+        <div class="date-square">
+          <div class="date-day">Tue</div>
+          <div class="date-number">19</div>
+        </div>
+        <div class="date-square">
+          <div class="date-day">Wed</div>
+          <div class="date-number">20</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insight Section -->
+    <div class="insight-section">
+      <div class="ai-insight-card">
+        <div class="flux-badge">
+          <svg class="flux-icon" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          FLUX INSIGHT
+        </div>
+        <div class="insight-text">
+          You're on a 5-day streak with morning workouts! This is your longest streak this month. Keep it up!
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories List -->
+    <div class="categories-section">
+      <div class="section-divider"></div>
+      <div class="categories-list">
+        
+        <!-- Fitness Category -->
+        <div class="category-card category-completed">
+          <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-info">
+              <div class="category-name-row">
+                <svg class="category-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <div class="category-name">Fitness</div>
+              </div>
+              <div class="category-stats">4 of 5 completed</div>
+            </div>
+            <div class="category-earnings-section">
+              <div class="category-earnings">$16.45</div>
+              <svg class="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Morning Cardio</span>
+              <span class="breakdown-log">32 min</span>
+              <span class="breakdown-rate">$0.10/min</span>
+              <span class="breakdown-amount">$3.20</span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Strength Training</span>
+              <span class="breakdown-log">45 min</span>
+              <span class="breakdown-rate">$0.15/min</span>
+              <span class="breakdown-amount">$6.75</span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Evening Walk</span>
+              <span class="breakdown-log">20 min</span>
+              <span class="breakdown-rate">$0.05/min</span>
+              <span class="breakdown-amount">$1.00</span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Push-ups</span>
+              <span class="breakdown-log">110 reps</span>
+              <span class="breakdown-rate">$0.05/rep</span>
+              <span class="breakdown-amount">$5.50</span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Yoga Session</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$0.12/min</span>
+              <span class="breakdown-amount"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wellness Category -->
+        <div class="category-card category-completed">
+          <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-info">
+              <div class="category-name-row">
+                <svg class="category-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <div class="category-name">Wellness</div>
+              </div>
+              <div class="category-stats">2 of 2 completed</div>
+            </div>
+            <div class="category-earnings-section">
+              <div class="category-earnings">$6.50</div>
+              <svg class="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Read 30 Minutes</span>
+              <span class="breakdown-log">35 min</span>
+              <span class="breakdown-rate">$0.10/min</span>
+              <span class="breakdown-amount">$3.50</span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Meditation</span>
+              <span class="breakdown-log">15 min</span>
+              <span class="breakdown-rate">$0.20/min</span>
+              <span class="breakdown-amount">$3.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Category -->
+        <div class="category-card category-completed">
+          <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-info">
+              <div class="category-name-row">
+                <svg class="category-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <div class="category-name">Social</div>
+              </div>
+              <div class="category-stats">1 of 1 completed</div>
+            </div>
+            <div class="category-earnings-section">
+              <div class="category-earnings">$5.00</div>
+              <svg class="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <div class="breakdown-row">
+              <svg class="breakdown-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">No Social Media</span>
+              <span class="breakdown-log">1 day</span>
+              <span class="breakdown-rate">$5.00/day</span>
+              <span class="breakdown-amount">$5.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Category -->
+        <div class="category-card">
+          <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-info">
+              <div class="category-name-row">
+                <svg class="category-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="category-name">Financial</div>
+              </div>
+              <div class="category-stats">0 of 2 completed</div>
+            </div>
+            <div class="category-earnings-section">
+              <div class="category-earnings">$14.00</div>
+              <svg class="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">No DoorDash</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$7.00/day</span>
+              <span class="breakdown-amount"></span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">No Impulse Purchases</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$7.00/day</span>
+              <span class="breakdown-amount"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nutrition Category -->
+        <div class="category-card">
+          <div class="category-header" onclick="toggleCategory(this)">
+            <div class="category-info">
+              <div class="category-name-row">
+                <svg class="category-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <div class="category-name">Nutrition</div>
+              </div>
+              <div class="category-stats">0 of 3 completed</div>
+            </div>
+            <div class="category-earnings-section">
+              <div class="category-earnings">$18.50</div>
+              <svg class="expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Meal Prep</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$8.00 each</span>
+              <span class="breakdown-amount"></span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">Drink 8 Glasses Water</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$5.50 each</span>
+              <span class="breakdown-amount"></span>
+            </div>
+            <div class="breakdown-row">
+              <svg class="breakdown-check empty" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="breakdown-name">No Alcohol</span>
+              <span class="breakdown-log"></span>
+              <span class="breakdown-rate">$5.00/day</span>
+              <span class="breakdown-amount"></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- View Activity -->
+    <div class="view-activity-section">
+      <a href="#" class="view-activity-link">
+        View All Activity
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Floating Chat Button -->
+<button class="chat-fab">
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+  </svg>
+</button>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-container">
+    <button class="nav-item active">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      <span class="nav-label">Home</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+      </svg>
+      <span class="nav-label">Portfolio</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <span class="nav-label">Indices</span>
+    </button>
+
+    <button class="nav-item">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+      <span class="nav-label">Account</span>
+    </button>
+  </div>
+</nav>
+
+<script>
+function toggleCategory(header) {
+  const card = header.closest('.category-card');
+  const breakdown = card.querySelector('.category-breakdown');
+  
+  // Toggle expanded state
+  card.classList.toggle('expanded');
+  breakdown.classList.toggle('visible');
+}
+</script>
+
+</body>
+</html>

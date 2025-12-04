@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Exercise Index</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding-bottom: 80px;
+    }
+
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* App Header */
+    .app-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2563eb;
+      border-radius: 8px;
+      transition: background 0.2s;
+      margin-left: -8px;
+    }
+
+    .back-button:hover {
+      background: #f3f4f6;
+    }
+
+    .back-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      flex: 1;
+    }
+
+    .share-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .share-button:hover {
+      background: #f3f4f6;
+    }
+
+    /* Index Value Section */
+    .index-value-section {
+      padding: 24px 16px 16px;
+      background: white;
+    }
+
+    .index-value-large {
+      font-size: 48px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .index-change-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .index-change-large.positive {
+      color: #10b981;
+    }
+
+    .index-change-large.negative {
+      color: #ef4444;
+    }
+
+    .change-arrow {
+      width: 16px;
+      height: 16px;
+    }
+
+    .period-label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    /* Chart Section */
+    .chart-section {
+      padding: 32px 0 24px;
+      background: white;
+    }
+
+    .chart-container {
+      width: 100%;
+      height: 280px;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke: #2563eb;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart-area {
+      fill: url(#gradient);
+      opacity: 0.05;
+    }
+
+    .chart-dot {
+      fill: white;
+      stroke: #2563eb;
+      stroke-width: 3;
+    }
+
+    /* Time Period Selector */
+    .time-period {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      margin: 0 16px 24px;
+      background: #f9fafb;
+      border-radius: 10px;
+    }
+
+    .period-button {
+      flex: 1;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .period-button.active {
+      background: white;
+      color: #111827;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 0 16px 24px;
+    }
+
+    .stat-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .stat-sublabel {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    /* Performance Comparison Section */
+    .comparison-section {
+      margin: 0 16px 24px;
+      padding: 20px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-radius: 12px;
+    }
+
+    .comparison-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .comparison-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .comparison-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .comparison-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .comparison-label {
+      font-size: 14px;
+      color: #1e40af;
+    }
+
+    .comparison-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e40af;
+    }
+
+    .comparison-bar-container {
+      height: 8px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+      position: relative;
+    }
+
+    .comparison-bar-fill {
+      height: 100%;
+      background: #2563eb;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .comparison-marker {
+      position: absolute;
+      top: -2px;
+      width: 2px;
+      height: 12px;
+      background: #1e40af;
+      border-radius: 1px;
+    }
+
+    .percentile-badge-large {
+      margin-top: 16px;
+      padding: 16px;
+      background: white;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .percentile-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .percentile-icon-large {
+      width: 40px;
+      height: 40px;
+      background: #2563eb;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .percentile-icon-large svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .percentile-text {
+      flex: 1;
+    }
+
+    .percentile-label-large {
+      font-size: 12px;
+      color: #1e40af;
+      margin-bottom: 4px;
+    }
+
+    .percentile-value-large {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e40af;
+    }
+
+    .percentile-badge-text {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Category Info Section */
+    .category-info {
+      padding: 0 16px 24px;
+    }
+
+    .info-header {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .info-text {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .subcategories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .subcategory-chip {
+      padding: 6px 12px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- App Header -->
+    <header class="app-header">
+      <button class="back-button">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <h1 class="page-title">Exercise Index</h1>
+      <button class="share-button">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Index Value Section -->
+    <div class="index-value-section">
+      <div class="index-value-large">68.2%</div>
+      <div class="index-change-large positive">
+        <svg class="change-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        </svg>
+        +2.4% (+1.6pp)
+      </div>
+      <div class="period-label">This week • 1,247 participants</div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+      <div class="chart-container">
+        <svg class="chart-svg" viewBox="0 0 360 280" preserveAspectRatio="none">
+          <!-- Define gradient -->
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Area under line -->
+          <path class="chart-area" d="M 20 200 L 70 175 L 120 160 L 170 180 L 220 165 L 270 150 L 320 130 L 340 120 L 340 280 L 20 280 Z"></path>
+          
+          <!-- Main line -->
+          <path class="chart-line" d="M 20 200 L 70 175 L 120 160 L 170 180 L 220 165 L 270 150 L 320 130 L 340 120"></path>
+          
+          <!-- Current value dot -->
+          <circle class="chart-dot" cx="340" cy="120" r="6"></circle>
+        </svg>
+      </div>
+
+      <!-- Time Period Selector -->
+      <div class="time-period">
+        <button class="period-button active">1W</button>
+        <button class="period-button">1M</button>
+        <button class="period-button">3M</button>
+        <button class="period-button">6M</button>
+        <button class="period-button">1Y</button>
+        <button class="period-button">All</button>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">High</div>
+        <div class="stat-value">70.8%</div>
+        <div class="stat-sublabel">Nov 8</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Low</div>
+        <div class="stat-value">64.3%</div>
+        <div class="stat-sublabel">Oct 29</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Difficulty</div>
+        <div class="stat-value">3.2</div>
+        <div class="stat-sublabel">Out of 5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Habits</div>
+        <div class="stat-value">2,891</div>
+        <div class="stat-sublabel">Being tracked</div>
+      </div>
+    </div>
+
+    <!-- Performance Comparison Section -->
+    <div class="comparison-section">
+      <div class="comparison-header">
+        <svg class="comparison-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="8.5" cy="7" r="4"></circle>
+          <polyline points="17 11 19 13 23 9"></polyline>
+        </svg>
+        Your Performance
+      </div>
+
+      <div class="comparison-row">
+        <span class="comparison-label">Your Success Rate</span>
+        <span class="comparison-value">82.5%</span>
+      </div>
+
+      <div class="comparison-bar-container">
+        <div class="comparison-bar-fill" style="width: 82.5%;"></div>
+        <div class="comparison-marker" style="left: 68.2%;"></div>
+      </div>
+
+      <div class="percentile-badge-large">
+        <div class="percentile-info">
+          <div class="percentile-icon-large">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"></path>
+            </svg>
+          </div>
+          <div class="percentile-text">
+            <div class="percentile-label-large">Your Percentile</div>
+            <div class="percentile-value-large">87th</div>
+          </div>
+        </div>
+        <div class="percentile-badge-text">Strong</div>
+      </div>
+    </div>
+
+    <!-- Category Info Section -->
+    <div class="category-info">
+      <div class="info-header">About Exercise Index</div>
+      <div class="info-text">
+        The Exercise Index tracks completion rates across all physical activity habits on Flux. This includes cardio, strength training, sports, and active recovery activities.
+      </div>
+      <div class="subcategories">
+        <span class="subcategory-chip">Cardio</span>
+        <span class="subcategory-chip">Strength</span>
+        <span class="subcategory-chip">Flexibility</span>
+        <span class="subcategory-chip">Sports</span>
+        <span class="subcategory-chip">Active Recovery</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Interactive demo functionality
+    const periodButtons = document.querySelectorAll('.period-button');
+    periodButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        periodButtons.forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+      });
+    });
+
+    const backButton = document.querySelector('.back-button');
+    backButton.addEventListener('click', () => {
+      console.log('Navigate back to indices list');
+    });
+
+    const shareButton = document.querySelector('.share-button');
+    shareButton.addEventListener('click', () => {
+      console.log('Share this index');
+    });
+  </script>
+</body>
+</html>

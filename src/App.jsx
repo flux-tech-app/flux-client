@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HabitProvider, useHabits } from './context/HabitContext';
-import { FluxChatProvider, useFluxChat } from './context/FluxChatContext';
 
 // Pages
 import Onboarding from './pages/Onboarding';
@@ -21,15 +20,18 @@ import FAB from './components/FAB';
 import BottomSheet from './components/BottomSheet';
 import AddHabitFlow from './components/AddHabitFlow';
 import LogHabitSheet from './components/LogHabitSheet';
-import FluxChat from './components/FluxChat';
 
-// Onboarding guard wrapper with route transitions
+/**
+ * Main App Routes
+ * - Onboarding guard for first-time users
+ * - FAB with Create and Log actions
+ * - Bottom sheets for quick actions
+ */
 function AppRoutes() {
-  const { user, updateUser, habits, addHabit } = useHabits();
-  const { isOpen: isChatOpen, openChat, closeChat } = useFluxChat();
+  const { user, updateUser, addHabit } = useHabits();
   const location = useLocation();
 
-  // Sheet states for FAB actions (excluding chat which uses FluxChatContext)
+  // Sheet states for FAB actions
   const [activeSheet, setActiveSheet] = useState(null); // 'create' | 'log' | null
 
   // Check if we should skip onboarding (for testing)
@@ -51,7 +53,6 @@ function AppRoutes() {
   }
 
   // Determine which pages should show the FAB
-  // Hide on pages that have their own input mechanisms (AddHabit, LogActivity)
   const hideFABPaths = ['/add', '/log'];
   const shouldHideFAB = hideFABPaths.some(path => location.pathname.startsWith(path));
 
@@ -62,10 +63,6 @@ function AppRoutes() {
 
   const handleLog = () => {
     setActiveSheet('log');
-  };
-
-  const handleAskFlux = () => {
-    openChat(); // Use FluxChatContext
   };
 
   const closeSheet = () => {
@@ -88,17 +85,17 @@ function AppRoutes() {
   return (
     <>
       <Routes location={location}>
-        {/* Bottom Nav Routes - NO transitions, instant navigation */}
+        {/* Bottom Nav Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
         <Route path="/account" element={<Account />} />
 
-        {/* Secondary Pages - Accessed via links from primary pages */}
+        {/* Secondary Pages */}
         <Route path="/activity" element={<Activity />} />
 
-        {/* Stacked Navigation Routes - NO PageTransition (native iOS-style) */}
+        {/* Stacked Navigation Routes */}
         <Route path="/add" element={<AddHabit />} />
         <Route path="/log/:habitId" element={<LogActivity />} />
         <Route path="/habit/:id" element={<HabitDetail />} />
@@ -108,12 +105,11 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* FAB - Shows on main pages */}
+      {/* FAB - Shows on main pages (2 actions: Create + Log) */}
       {!shouldHideFAB && (
         <FAB
           onCreateHabit={handleCreateHabit}
           onLog={handleLog}
-          onAskFlux={handleAskFlux}
         />
       )}
 
@@ -140,16 +136,6 @@ function AppRoutes() {
           onLogComplete={handleLogComplete}
         />
       </BottomSheet>
-
-      {/* Ask Flux Chat Bottom Sheet - Uses FluxChatContext */}
-      <BottomSheet
-        isOpen={isChatOpen}
-        onClose={closeChat}
-        title="Ask Flux"
-        height="full"
-      >
-        <FluxChat />
-      </BottomSheet>
     </>
   );
 }
@@ -158,9 +144,7 @@ export default function App() {
   return (
     <Router>
       <HabitProvider>
-        <FluxChatProvider>
-          <AppRoutes />
-        </FluxChatProvider>
+        <AppRoutes />
       </HabitProvider>
     </Router>
   );

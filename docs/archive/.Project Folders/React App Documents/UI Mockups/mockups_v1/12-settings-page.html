@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux - Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .back-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111827;
+      flex: 1;
+      text-align: center;
+      margin-right: 60px;
+    }
+
+    /* Settings Sections */
+    .settings-section {
+      padding: 24px 16px 8px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .settings-items {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .setting-icon.blue {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+
+    .setting-icon.green {
+      background: #f0fdf4;
+      color: #10b981;
+    }
+
+    .setting-icon.purple {
+      background: #faf5ff;
+      color: #9333ea;
+    }
+
+    .setting-icon.red {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .setting-icon.gray {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+
+    .setting-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .setting-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .setting-subtitle {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      width: 44px;
+      height: 24px;
+      background: #d1d5db;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch.on {
+      background: #10b981;
+    }
+
+    .toggle-knob {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.on .toggle-knob {
+      left: 22px;
+    }
+
+    /* Select Dropdown */
+    .setting-select {
+      padding: 6px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #111827;
+      cursor: pointer;
+    }
+
+    /* Chevron */
+    .chevron {
+      width: 20px;
+      height: 20px;
+      color: #d1d5db;
+      flex-shrink: 0;
+    }
+
+    /* Danger Zone */
+    .danger-zone {
+      margin-top: 32px;
+    }
+
+    .danger-item {
+      cursor: pointer;
+    }
+
+    .danger-item .setting-title {
+      color: #dc2626;
+    }
+
+    /* Info Card */
+    .info-card {
+      margin: 16px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .info-text {
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <button class="back-button">
+        <svg style="width: 20px; height: 20px;" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        <span>Back</span>
+      </button>
+      <div class="header-title">Settings</div>
+    </div>
+
+    <!-- Notifications Section -->
+    <div class="settings-section">
+      <div class="section-title">Notifications</div>
+      <div class="settings-items">
+        <div class="setting-item">
+          <div class="setting-icon blue">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Daily Reminders</div>
+            <div class="setting-subtitle">Log your habits at 8:00 PM</div>
+          </div>
+          <div class="toggle-switch on">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-icon blue">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Streak Alerts</div>
+            <div class="setting-subtitle">Get notified about streaks</div>
+          </div>
+          <div class="toggle-switch on">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-icon green">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Transfer Updates</div>
+            <div class="setting-subtitle">Notify when money transfers</div>
+          </div>
+          <div class="toggle-switch on">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer Settings -->
+    <div class="settings-section">
+      <div class="section-title">Transfer Schedule</div>
+      <div class="settings-items">
+        <div class="setting-item">
+          <div class="setting-icon green">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Transfer Day</div>
+            <div class="setting-subtitle">When to send weekly earnings</div>
+          </div>
+          <select class="setting-select">
+            <option selected>Sunday</option>
+            <option>Monday</option>
+            <option>Friday</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-icon green">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Transfer Time</div>
+            <div class="setting-subtitle">Time of day to transfer</div>
+          </div>
+          <select class="setting-select">
+            <option selected>11:59 PM</option>
+            <option>12:00 AM</option>
+            <option>9:00 AM</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-icon green">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Minimum Transfer</div>
+            <div class="setting-subtitle">Don't transfer if below this amount</div>
+          </div>
+          <select class="setting-select">
+            <option>$0</option>
+            <option selected>$5</option>
+            <option>$10</option>
+            <option>$20</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="settings-section">
+      <div class="section-title">Appearance</div>
+      <div class="settings-items">
+        <div class="setting-item">
+          <div class="setting-icon purple">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Dark Mode</div>
+            <div class="setting-subtitle">Use dark theme</div>
+          </div>
+          <div class="toggle-switch">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data & Privacy -->
+    <div class="settings-section">
+      <div class="section-title">Data & Privacy</div>
+      <div class="settings-items">
+        <div class="setting-item">
+          <div class="setting-icon gray">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Export Data</div>
+            <div class="setting-subtitle">Download all your data</div>
+          </div>
+          <svg class="chevron" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-icon gray">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Privacy Policy</div>
+            <div class="setting-subtitle">How we handle your data</div>
+          </div>
+          <svg class="chevron" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-text">
+        Your habit data is stored locally on your device. We don't share or sell your personal information.
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section danger-zone">
+      <div class="section-title">Danger Zone</div>
+      <div class="settings-items">
+        <div class="setting-item danger-item">
+          <div class="setting-icon red">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Clear All Data</div>
+            <div class="setting-subtitle">Delete all habits and logs</div>
+          </div>
+          <svg class="chevron" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+
+        <div class="setting-item danger-item">
+          <div class="setting-icon red">
+            <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="setting-content">
+            <div class="setting-title">Sign Out</div>
+            <div class="setting-subtitle">Sign out of your account</div>
+          </div>
+          <svg class="chevron" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

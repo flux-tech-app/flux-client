@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flux AI Chat - Bottom Sheet Mockup</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Background Portfolio Screen (dimmed) */
+    .portfolio-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 768px;
+      margin: 0 auto;
+      background: white;
+    }
+
+    .portfolio-background::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+    }
+
+    .portfolio-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1;
+    }
+
+    .app-logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .portfolio-value-section {
+      padding: 32px 16px;
+    }
+
+    .portfolio-value {
+      font-size: 36px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .portfolio-change {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #10b981;
+    }
+
+    .habits-preview {
+      padding: 0 16px;
+    }
+
+    .habit-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .habit-name {
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .habit-earnings {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    /* Bottom Sheet Container */
+    .bottom-sheet-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 768px;
+      height: 70vh;
+      background: white;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    /* Drag Handle */
+    .drag-handle-area {
+      padding: 12px 16px 8px;
+      display: flex;
+      justify-content: center;
+      cursor: grab;
+    }
+
+    .drag-handle {
+      width: 40px;
+      height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    /* Header */
+    .chat-header {
+      padding: 8px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .flux-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 16px;
+    }
+
+    .header-title {
+      flex: 1;
+    }
+
+    .header-title h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .header-title p {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .close-button {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .close-button:hover {
+      background: #f3f4f6;
+    }
+
+    .icon-button {
+      padding: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      border-radius: 8px;
+    }
+
+    /* Messages Area */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Suggested Actions */
+    .suggested-actions {
+      margin-bottom: 12px;
+    }
+
+    .suggested-actions-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .suggestions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .suggestion-chip {
+      padding: 10px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      line-height: 1.3;
+    }
+
+    .suggestion-chip:hover {
+      background: #f3f4f6;
+      border-color: #93c5fd;
+    }
+
+    /* Message Bubbles */
+    .message {
+      display: flex;
+      gap: 8px;
+      max-width: 85%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.flux-message {
+      align-self: flex-start;
+    }
+
+    .message.user-message {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .message-avatar.user-avatar {
+      background: #6b7280;
+    }
+
+    .message-content {
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .flux-message .message-content {
+      background: #f3f4f6;
+      color: #111827;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user-message .message-content {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+      padding: 0 14px;
+    }
+
+    /* Input Area */
+    .input-area {
+      border-top: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      background: white;
+    }
+
+    .input-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .message-input {
+      width: 100%;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 12px 44px 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      overflow-y: auto;
+    }
+
+    .message-input:focus {
+      border-color: #3b82f6;
+    }
+
+    .message-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .voice-button {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .voice-button:hover {
+      background: #f3f4f6;
+    }
+
+    .send-button {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      transition: transform 0.2s, opacity 0.2s;
+      flex-shrink: 0;
+    }
+
+    .send-button:hover {
+      transform: scale(1.05);
+    }
+
+    .send-button:active {
+      transform: scale(0.95);
+    }
+
+    .send-button.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Action Cards */
+    .action-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin: 4px 0;
+    }
+
+    .action-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .action-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+
+    .action-card-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    .action-card-body {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+      color: white;
+    }
+
+    .action-btn.secondary {
+      background: white;
+      color: #6b7280;
+      border: 1px solid #e5e7eb;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Scrollbar */
+    .messages-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb {
+      background: #e5e7eb;
+      border-radius: 3px;
+    }
+
+    .messages-area::-webkit-scrollbar-thumb:hover {
+      background: #d1d5db;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background Portfolio Screen (visible behind chat) -->
+<div class="portfolio-background">
+  <div class="portfolio-header">
+    <div class="app-logo">flux</div>
+    <button class="icon-button">
+      <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      </svg>
+    </button>
+  </div>
+  
+  <div class="portfolio-value-section">
+    <div class="portfolio-value">$2,847.50</div>
+    <div class="portfolio-change">
+      <span>↑</span>
+      <span>+$145.00 this week</span>
+    </div>
+  </div>
+
+  <div class="habits-preview">
+    <div class="habit-card">
+      <div class="habit-name">Morning Workout</div>
+      <div class="habit-earnings">+$50.00 this week</div>
+    </div>
+    <div class="habit-card">
+      <div class="habit-name">Read 30min</div>
+      <div class="habit-earnings">+$35.00 this week</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Sheet Chat Overlay -->
+<div class="bottom-sheet-overlay">
+  <div class="chat-container">
+    <!-- Drag Handle -->
+    <div class="drag-handle-area">
+      <div class="drag-handle"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="flux-avatar">F</div>
+      <div class="header-title">
+        <h1>Flux</h1>
+        <p>AI behavior coach</p>
+      </div>
+      <button class="close-button">
+        <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="messages-area">
+      <!-- Suggested Actions -->
+      <div class="suggested-actions">
+        <div class="suggested-actions-label">Quick actions</div>
+        <div class="suggestions-grid">
+          <div class="suggestion-chip">Log workout</div>
+          <div class="suggestion-chip">Add new habit</div>
+          <div class="suggestion-chip">Show progress</div>
+          <div class="suggestion-chip">Skip today</div>
+        </div>
+      </div>
+
+      <!-- Sample Conversation -->
+      <div class="message user-message">
+        <div class="message-avatar user-avatar">R</div>
+        <div class="message-content">
+          Just finished my workout
+        </div>
+      </div>
+
+      <div class="message flux-message">
+        <div class="message-avatar">F</div>
+        <div class="message-content">
+          Great work! I've logged your gym session. That's $15 earned and transferred to your savings.
+          <div class="action-card">
+            <div class="action-card-header">
+              <div class="action-icon">💪</div>
+              <div class="action-card-title">Gym Workout</div>
+            </div>
+            <div class="action-card-body">
+              <strong>Today:</strong> 1 of 5 sessions<br>
+              <strong>This week:</strong> $15 earned<br>
+              <strong>Streak:</strong> 3 days
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="message user-message">
+        <div class="message-avatar user-avatar">R</div>
+        <div class="message-content">
+          Nice! How am I doing overall?
+        </div>
+      </div>
+
+      <div class="message flux-message">
+        <div class="message-avatar">F</div>
+        <div class="message-content">
+          You're on fire this week! You've earned $145 across all habits and maintained a 3-day streak. Keep it up!
+        </div>
+      </div>
+    </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea 
+          class="message-input" 
+          placeholder="Message Flux..."
+          rows="1"
+        ></textarea>
+        <button class="voice-button">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+          </svg>
+        </button>
+      </div>
+      <button class="send-button">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+  // Auto-resize textarea
+  const textarea = document.querySelector('.message-input');
+  const sendButton = document.querySelector('.send-button');
+
+  textarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    
+    // Toggle send button state
+    if (this.value.trim()) {
+      sendButton.classList.remove('disabled');
+    } else {
+      sendButton.classList.add('disabled');
+    }
+  });
+
+  // Suggestion chips click
+  document.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      textarea.value = this.textContent;
+      textarea.focus();
+      sendButton.classList.remove('disabled');
+    });
+  });
+
+  // Send button click
+  sendButton.addEventListener('click', function() {
+    if (!this.classList.contains('disabled')) {
+      // Simulate sending (in real app, this would send to backend)
+      console.log('Sending:', textarea.value);
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      this.classList.add('disabled');
+    }
+  });
+
+  // Enter key to send
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendButton.classList.contains('disabled')) {
+        sendButton.click();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
