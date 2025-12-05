@@ -2,7 +2,7 @@
 
 **Key Product & Business Decisions**
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 4, 2025
 
 ---
 
@@ -106,22 +106,80 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 
 ---
 
-### Curated 15-Habit Library for MVT
-**Date:** December 2025  
-**Decision:** Users select from pre-defined library of 15 habits rather than creating custom habits.  
+### Log/Pass Dual-Action System
+**Date:** December 4, 2025  
+**Decision:** Replace "No X" habit framing with neutral behavior definitions + user-selected action (Log or Pass).  
 **Rationale:**
-- Ensures index data quality (consistent habit definitions)
-- Simplifies MVP scope significantly
-- Enables meaningful comparisons across users
-- Reduces edge cases and complexity
-- Faster onboarding (select vs. configure)
+- Behaviors stay neutral and descriptive (what the thing IS, not what you want to do about it)
+- The action carries the intent, not the habit definition
+- More intuitive: "I passed on takeout" vs "I logged my no-takeout habit"
+- Same behavior can potentially be tracked from both directions
+- Cleaner mental model for users
+- Enables distinct "Avoidance Indices" category for future development
+
+**User Flow:**
+1. Press FAB → Select "Log" or "Pass"
+2. Smart input with predictive autocomplete shows active behaviors
+3. Select behavior → Rate selection → Done
 
 **Alternatives Considered:**
-- Open custom creation - rejected for MVT (data quality concerns)
-- Larger library (30+) - rejected as unnecessary complexity for MVT
-- Smaller library (8-10) - rejected as too limiting
+- Keep "No X" framing - rejected as awkward and confusing
+- "Resist" terminology - rejected as too dramatic; "Pass" feels more casual and natural
 
-**Status:** Active (MVT only - custom habits may come later)
+**Status:** Active
+
+---
+
+### Expanded MVT Behavior Library (23 Behaviors)
+**Date:** December 4, 2025  
+**Decision:** Expand MVT library from 15 habits to 23 behaviors: 13 Log behaviors + 10 Pass (avoidance) behaviors.  
+**Rationale:**
+- Avoidance behaviors are underserved in market (most apps do this awkwardly)
+- Financial wellness audience specifically needs impulse control tracking (takeout, impulse purchases)
+- Pass behaviors use same stake mechanism as Log (consistent, simple)
+- Validates whether users engage with avoidance tracking before building scoring models
+
+**Log Behaviors (13):** Running, Gym Workout, Push Ups, Walking, Crunches, Review Budget, Cook at Home, Reading, Learning/Study, Meditation, Journaling, Give Compliment, Make Bed
+
+**Pass Behaviors (10):** Takeout, Alcohol, Doomscrolling, Smoking, Vaping, Impulse Purchases, Junk Food, Midnight Snacks, Gambling, Hitting Snooze
+
+**Alternatives Considered:**
+- Keep 15 habits (no avoidance) - rejected; avoidance is necessary differentiator
+- Larger library (30+) - rejected as unnecessary for MVT validation
+
+**Status:** Active (supersedes "Curated 15-Habit Library for MVT")
+
+---
+
+### Flux Score Deferred for Avoidance Behaviors
+**Date:** December 4, 2025  
+**Decision:** Avoidance (Pass) behaviors will NOT have Flux Scores in MVT. Only tracked logs + stakes.  
+**Rationale:**
+- Pattern recognition model breaks for avoidance:
+  - No natural frequency baseline (what's the baseline for "temptations"?)
+  - Frequency meaning is inverted (high pass logs = discipline or severe temptation?)
+  - Asymmetric data (logging wins, not opportunities)
+- Need real user data to understand how people actually use Pass functionality
+- MVT validates engagement; scoring can follow
+
+**What MVT Will Test:**
+- Does Log/Pass feel intuitive?
+- Do stakes help people avoid behaviors?
+- Do users actually log Pass actions?
+
+**Status:** Active (revisit post-MVT with user data)
+
+---
+
+### Custom Rate Functionality
+**Date:** December 4, 2025  
+**Decision:** Allow users to set custom rate type and amount both when adding behaviors AND when logging/passing.  
+**Rationale:**
+- When adding: Users can override preset defaults with their own baseline
+- When logging: Keep low/default/high suggestions, add "Custom" option for override
+- Flexibility for users who want control without forcing complexity on everyone
+
+**Status:** Active (MVT implementation)
 
 ---
 
@@ -307,11 +365,11 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 
 | Question | Context | Target Date |
 |----------|---------|-------------|
-| What are the specific 15 habits for MVT? | Need to define curated library | Before Phase 1 |
 | Minimum users per behavior for valid index? | Statistical validity threshold | Phase 6 |
 | Negative behavior deductions? | Deduct from pending for slips | Post-MVT review |
 | App integration priority? | Strava, Apple Health, etc. | Phase 5+ |
 | Founding member community platform? | Discord vs. in-app vs. email | Before beta |
+| Avoidance behavior scoring model? | How to calculate Flux Score for Pass behaviors | Post-MVT with user data |
 
 ---
 
@@ -325,6 +383,8 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 | HSS terminology | Pre-Dec 2025 | Flux Score | Dec 2025 |
 | Schedule enforcement | Pre-Dec 2025 | Pattern recognition | Dec 2025 |
 | Bloomberg positioning | Pre-Dec 2025 | Morningstar positioning | Dec 2025 |
+| 15-habit library | Dec 2025 | 23-behavior library with Log/Pass | Dec 4, 2025 |
+| "No X" habit framing | Pre-Dec 2025 | Log/Pass dual-action system | Dec 4, 2025 |
 
 ---
 

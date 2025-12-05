@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
+import BackButton from '../../components/BackButton';
 import './Activity.css';
 
 export default function Activity() {
   const navigate = useNavigate();
-  const { logs, habits, transfers, chatLogs, getHabitStats, updateLog, deleteLog } = useHabits();
+  const { logs, habits, transfers, getHabitStats, updateLog, deleteLog } = useHabits();
+  const chatLogs = []; // Placeholder for future chat feature
   const [viewMode, setViewMode] = useState('habits'); // 'habits' | 'transfers'
   const [selectedFilter, setSelectedFilter] = useState('today');
   const [expandedTransfers, setExpandedTransfers] = useState(new Set());
@@ -230,11 +232,7 @@ export default function Activity() {
     <div className="activity-page">
       {/* Header with Back Button */}
       <header className="activity-header">
-        <button className="back-button" onClick={() => navigate(-1)}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-        </button>
+        <BackButton />
         <h1 className="activity-title">Activity</h1>
         <div className="header-spacer"></div>
       </header>
@@ -246,7 +244,7 @@ export default function Activity() {
             className={`segment ${viewMode === 'habits' ? 'active' : ''}`}
             onClick={() => setViewMode('habits')}
           >
-            Habits
+            Logs
           </button>
           <button
             className={`segment ${viewMode === 'transfers' ? 'active' : ''}`}
@@ -331,15 +329,6 @@ export default function Activity() {
                                   </svg>
                                   {getTimeFromDate(activity.timestamp)}
                                 </span>
-                                {activity.currentStreak > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{activity.currentStreak} day streak</span>
-                                  </>
-                                )}
-                                <span className={`activity-badge ${activity.habitType}`}>
-                                  {activity.habitType}
-                                </span>
                               </div>
                               {activity.notes && (
                                 <div className="activity-notes">{activity.notes}</div>
@@ -359,15 +348,6 @@ export default function Activity() {
                                     </svg>
                                   </button>
                                 )}
-                                <button
-                                  className="activity-action-btn edit-btn"
-                                  onClick={() => openEditModal(activity)}
-                                  title="Edit"
-                                >
-                                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                  </svg>
-                                </button>
                                 <button
                                   className="activity-action-btn delete-btn"
                                   onClick={() => openDeleteConfirm(activity)}
@@ -530,107 +510,6 @@ export default function Activity() {
           </div>
         </div>
       )}
-
-      {editingLog && <EditLogModal log={editingLog} onSave={handleSaveEdit} onClose={closeEditModal} />}
-    </div>
-  );
-}
-
-// EditLogModal Component
-function EditLogModal({ log, onSave, onClose }) {
-  const [formData, setFormData] = useState({
-    value: log.value || 1,
-    duration: log.duration || 0,
-    notes: log.notes || '',
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="edit-modal-header">
-          <h3>Edit Activity</h3>
-          <button className="close-modal-btn" onClick={onClose}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        <form className="edit-modal-content" onSubmit={handleSubmit}>
-          <div className="edit-modal-habit-info">
-            <div className="edit-modal-habit-name">{log.habitName}</div>
-            <div className="edit-modal-habit-date">
-              {new Date(log.timestamp).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              })}
-            </div>
-          </div>
-
-          {log.habitRateType === 'duration' && (
-            <div className="form-group">
-              <label htmlFor="duration">Duration (minutes)</label>
-              <input
-                id="duration"
-                type="number"
-                min="1"
-                step="1"
-                value={formData.duration}
-                onChange={(e) => handleChange('duration', parseInt(e.target.value))}
-                required
-              />
-            </div>
-          )}
-
-          {(log.habitRateType === 'per-minute' || log.habitRateType === 'per-rep') && (
-            <div className="form-group">
-              <label htmlFor="value">
-                {log.habitRateType === 'per-minute' ? 'Minutes' : 'Reps'}
-              </label>
-              <input
-                id="value"
-                type="number"
-                min="1"
-                step="1"
-                value={formData.value}
-                onChange={(e) => handleChange('value', parseFloat(e.target.value))}
-                required
-              />
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="notes">Notes (optional)</label>
-            <textarea
-              id="notes"
-              rows="3"
-              value={formData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="Add notes about this activity..."
-            />
-          </div>
-
-          <div className="edit-modal-actions">
-            <button type="button" className="edit-btn cancel-btn" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="edit-btn save-btn">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

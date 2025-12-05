@@ -9,7 +9,7 @@ import './HabitDetail.css';
 export default function HabitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { habits, logs, deleteHabit, pauseHabit, resumeHabit } = useHabits();
+  const { habits, logs, deleteHabit } = useHabits();
   
   // Chart state
   const [chartType, setChartType] = useState('earnings');
@@ -343,19 +343,17 @@ export default function HabitDetail() {
 
   // Handle actions
   const handleEdit = () => {
-    navigate(`/add?edit=${habit.id}`);
+    setShowComingSoon(true);
+    setTimeout(() => setShowComingSoon(false), 2000);
   };
 
   const handlePause = () => {
-    if (habit.isActive === false) {
-      resumeHabit(habit.id);
-    } else {
-      setShowPauseConfirm(true);
-    }
+    setShowComingSoon(true);
+    setTimeout(() => setShowComingSoon(false), 2000);
   };
 
   const confirmPause = () => {
-    pauseHabit(habit.id);
+    // Pause functionality coming soon
     setShowPauseConfirm(false);
   };
 
@@ -796,7 +794,7 @@ export default function HabitDetail() {
             Edit Habit
           </button>
           <button className="action-btn pause" onClick={handlePause}>
-            {habit.isActive === false ? 'Resume Habit' : 'Pause Habit'}
+            Pause Habit
           </button>
           <button className="action-btn delete" onClick={handleDelete}>
             Delete Habit
@@ -852,7 +850,7 @@ export default function HabitDetail() {
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          <span>HSS Details Coming Soon</span>
+          <span>Coming Soon</span>
         </div>
       )}
 

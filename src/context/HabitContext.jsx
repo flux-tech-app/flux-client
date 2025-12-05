@@ -191,12 +191,14 @@ export function HabitProvider({ children }) {
       return null;
     }
 
-    // Calculate earnings
+    // Calculate earnings - use custom earnings if provided, otherwise calculate from rate
     let totalEarnings;
-    if (habit.rateType === RATE_TYPES.BINARY) {
-      totalEarnings = habit.rate;
+    if (logData.customEarnings !== undefined) {
+      totalEarnings = logData.customEarnings;
+    } else if (habit.rateType === RATE_TYPES.BINARY) {
+      totalEarnings = habit.rate || 0;
     } else {
-      totalEarnings = habit.rate * (logData.units || 1);
+      totalEarnings = (habit.rate || 0) * (logData.units || 1);
     }
 
     const newLog = {

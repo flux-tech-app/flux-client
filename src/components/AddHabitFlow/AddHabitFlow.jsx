@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHabits } from '../../context/HabitContext';
-import { HABIT_LIBRARY, getHabitById, formatRate, getRateLabel } from '../../utils/HABIT_LIBRARY';
+import { HABIT_LIBRARY, getHabitById, formatRate, getRateLabel, RATE_TYPES } from '../../utils/HABIT_LIBRARY';
+import HabitIcon from '../../utils/HabitIcons';
 import './AddHabitFlow.css';
 
 /**
  * Add Habit Flow (Post-Onboarding)
  * 
  * Step 1: Select from library (excluding already-added habits)
- * Step 2: Customize rate
+ * Step 2: Customize rate and rate type
  */
 export default function AddHabitFlow({ onComplete, onClose }) {
   const { isHabitAdded } = useHabits();
   const [step, setStep] = useState(1);
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [selectedRate, setSelectedRate] = useState(null);
+  const [customRate, setCustomRate] = useState('');
+  const [useCustomRate, setUseCustomRate] = useState(false);
   const [direction, setDirection] = useState(1);
 
   // Filter out already-added habits
@@ -39,6 +42,8 @@ export default function AddHabitFlow({ onComplete, onClose }) {
   const handleHabitSelect = (habit) => {
     setSelectedHabit(habit);
     setSelectedRate(habit.defaultRate);
+    setUseCustomRate(false);
+    setCustomRate('');
     setDirection(1);
     setStep(2);
   };
@@ -55,9 +60,11 @@ export default function AddHabitFlow({ onComplete, onClose }) {
   const handleConfirm = () => {
     if (!selectedHabit) return;
     
+    const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
+    
     onComplete?.({
       libraryId: selectedHabit.id,
-      rate: selectedRate
+      rate: rate
     });
   };
 
@@ -108,7 +115,11 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               <StepCustomize
                 habit={selectedHabit}
                 selectedRate={selectedRate}
+                customRate={customRate}
+                useCustomRate={useCustomRate}
                 onRateSelect={setSelectedRate}
+                onCustomRateChange={setCustomRate}
+                onUseCustomRateToggle={setUseCustomRate}
                 onBack={handleBack}
                 onConfirm={handleConfirm}
               />
@@ -152,7 +163,9 @@ function StepSelectHabit({ habits, onSelect }) {
             whileTap={{ scale: 0.98 }}
           >
             <div className="habit-option-left">
-              <span className="habit-option-icon">{habit.icon}</span>
+              <div className="habit-option-icon-container">
+                <HabitIcon habitId={habit.id} size={24} />
+              </div>
               <div className="habit-option-info">
                 <span className="habit-option-ticker">${habit.ticker}</span>
                 <span className="habit-option-name">{habit.name}</span>
@@ -168,6 +181,22 @@ function StepSelectHabit({ habits, onSelect }) {
             </div>
           </motion.button>
         ))}
+        
+        {/* Request Habit Option */}
+        <div className="request-habit-card">
+          <div className="request-habit-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <div className="request-habit-content">
+            <div className="request-habit-title">Request a Habit</div>
+            <div className="request-habit-subtitle">
+              Custom habits coming soon! We're starting with a curated library to ensure data quality.
+            </div>
+          </div>
+          <div className="coming-soon-badge">Coming Soon</div>
+        </div>
       </div>
     </div>
   );
@@ -178,29 +207,38 @@ function StepSelectHabit({ habits, onSelect }) {
  */
 function StepCustomize({ 
   habit, 
-  selectedRate, 
-  onRateSelect, 
+  selectedRate,
+  customRate,
+  useCustomRate,
+  onRateSelect,
+  onCustomRateChange,
+  onUseCustomRateToggle,
   onBack, 
   onConfirm 
 }) {
   // Rough weekly projection
   const getWeeklyEstimate = () => {
-    if (habit.rateType === 'BINARY') {
-      return selectedRate * 5; // 5 completions per week
-    } else if (habit.rateType === 'DURATION') {
-      return selectedRate * 30 * 5; // 30 min, 5 times
-    } else if (habit.rateType === 'DISTANCE') {
-      return selectedRate * 3 * 4; // 3 miles, 4 times
-    } else if (habit.rateType === 'COUNT') {
+    const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
+    
+    if (habit.rateType === RATE_TYPES.BINARY) {
+      return rate * 5; // 5 completions per week
+    } else if (habit.rateType === RATE_TYPES.DURATION) {
+      return rate * 30 * 5; // 30 min, 5 times
+    } else if (habit.rateType === RATE_TYPES.DISTANCE) {
+      return rate * 3 * 4; // 3 miles, 4 times
+    } else if (habit.rateType === RATE_TYPES.COUNT) {
       if (habit.unit === 'step') {
-        return selectedRate * 8000 * 5;
+        return rate * 8000 * 5;
       } else if (habit.unit === 'rep') {
-        return selectedRate * 20 * 5;
+        return rate * 20 * 5;
       }
-      return selectedRate * 3 * 5;
+      return rate * 3 * 5;
     }
     return 0;
   };
+
+  const effectiveRate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
+  const canConfirm = effectiveRate > 0;
 
   return (
     <div className="step-customize">
@@ -213,7 +251,9 @@ function StepCustomize({
 
       {/* Habit header */}
       <div className="customize-header">
-        <span className="customize-icon">{habit.icon}</span>
+        <div className="customize-icon-container">
+          <HabitIcon habitId={habit.id} size={36} />
+        </div>
         <div className="customize-title-group">
           <span className="customize-ticker">${habit.ticker}</span>
           <span className="customize-name">{habit.name}</span>
@@ -228,7 +268,7 @@ function StepCustomize({
         <h3 className="section-label">Set Your Rate</h3>
         <div className="rate-options">
           {habit.rateOptions.map((rate, index) => {
-            const isSelected = selectedRate === rate;
+            const isSelected = !useCustomRate && selectedRate === rate;
             const label = getRateLabel(index);
             
             // Format rate
@@ -243,7 +283,10 @@ function StepCustomize({
               <button
                 key={rate}
                 className={`rate-option ${isSelected ? 'selected' : ''}`}
-                onClick={() => onRateSelect(rate)}
+                onClick={() => {
+                  onRateSelect(rate);
+                  onUseCustomRateToggle(false);
+                }}
               >
                 <span className="rate-label">{label}</span>
                 <span className="rate-value">
@@ -252,6 +295,58 @@ function StepCustomize({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Custom Rate Option */}
+      <div className="customize-section">
+        <h3 className="section-label">Or Use Custom Rate</h3>
+        <div className="custom-rate-section">
+          <button
+            className={`custom-rate-toggle ${useCustomRate ? 'active' : ''}`}
+            onClick={() => {
+              onUseCustomRateToggle(!useCustomRate);
+              if (!useCustomRate) {
+                onCustomRateChange('');
+              }
+            }}
+          >
+            <span>{useCustomRate ? 'Using Custom Rate' : 'Use Custom Rate'}</span>
+            <svg 
+              className="toggle-icon" 
+              width="20" 
+              height="20" 
+              fill="currentColor" 
+              viewBox="0 0 20 20"
+            >
+              {useCustomRate ? (
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              ) : (
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              )}
+            </svg>
+          </button>
+
+          {useCustomRate && (
+            <div className="custom-rate-input-wrapper">
+              <div className="custom-rate-input-group">
+                <span className="currency-symbol">$</span>
+                <input
+                  type="number"
+                  className="custom-rate-input"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0.01"
+                  value={customRate}
+                  onChange={(e) => onCustomRateChange(e.target.value)}
+                />
+                <span className="per-unit">/{habit.unit}</span>
+              </div>
+              <p className="custom-rate-hint">
+                Enter your preferred rate amount for this habit
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -270,6 +365,7 @@ function StepCustomize({
       <button 
         className="confirm-button"
         onClick={onConfirm}
+        disabled={!canConfirm}
       >
         Add to Portfolio
       </button>

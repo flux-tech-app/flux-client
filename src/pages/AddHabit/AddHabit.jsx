@@ -96,7 +96,6 @@ export default function AddHabit() {
   const displayRate = parseFloat(formData.rate) || 0;
 
   return (
-    <PageTransition>
       <div className="add-habit-page">
         <div className="add-habit-container">
           {/* Header */}
@@ -282,6 +281,5 @@ export default function AddHabit() {
           </form>
         </div>
       </div>
-    </PageTransition>
   );
 }

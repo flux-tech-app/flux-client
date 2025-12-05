@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HabitProvider, useHabits } from './context/HabitContext';
+import { ACTION_TYPES } from './utils/HABIT_LIBRARY';
 
 // Pages
 import Onboarding from './pages/Onboarding';
@@ -24,7 +25,7 @@ import LogHabitSheet from './components/LogHabitSheet';
 /**
  * Main App Routes
  * - Onboarding guard for first-time users
- * - FAB with Create and Log actions
+ * - FAB with 3 actions: Add Position, Log, Pass
  * - Bottom sheets for quick actions
  */
 function AppRoutes() {
@@ -32,7 +33,7 @@ function AppRoutes() {
   const location = useLocation();
 
   // Sheet states for FAB actions
-  const [activeSheet, setActiveSheet] = useState(null); // 'create' | 'log' | null
+  const [activeSheet, setActiveSheet] = useState(null); // 'create' | 'log' | 'pass' | null
 
   // Check if we should skip onboarding (for testing)
   const urlParams = new URLSearchParams(window.location.search);
@@ -65,6 +66,10 @@ function AppRoutes() {
     setActiveSheet('log');
   };
 
+  const handlePass = () => {
+    setActiveSheet('pass');
+  };
+
   const closeSheet = () => {
     setActiveSheet(null);
   };
@@ -86,7 +91,7 @@ function AppRoutes() {
     <>
       <Routes location={location}>
         {/* Bottom Nav Routes */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
@@ -105,11 +110,12 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* FAB - Shows on main pages (2 actions: Create + Log) */}
+      {/* FAB - Shows on main pages (3 actions: Add Position, Log, Pass) */}
       {!shouldHideFAB && (
         <FAB
           onCreateHabit={handleCreateHabit}
           onLog={handleLog}
+          onPass={handlePass}
         />
       )}
 
@@ -132,6 +138,20 @@ function AppRoutes() {
         height="tall"
       >
         <LogHabitSheet
+          actionType={ACTION_TYPES.LOG}
+          onClose={closeSheet}
+          onLogComplete={handleLogComplete}
+        />
+      </BottomSheet>
+
+      {/* Pass Activity Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeSheet === 'pass'}
+        onClose={closeSheet}
+        height="tall"
+      >
+        <LogHabitSheet
+          actionType={ACTION_TYPES.PASS}
           onClose={closeSheet}
           onLogComplete={handleLogComplete}
         />

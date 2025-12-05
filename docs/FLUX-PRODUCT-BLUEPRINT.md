@@ -2,7 +2,7 @@
 
 **Complete Feature Specifications**
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 4, 2025
 
 ---
 
@@ -39,10 +39,10 @@ Flux is a behavioral intelligence platform that connects habit completion to rea
 
 ### Core Experience Loop
 
-1. **Select habits** from curated library (MVT: 15 habits)
-2. **Complete habit** in real life
-3. **Log completion** in app
-4. **Earn transfer right** (each log = money earned)
+1. **Select behaviors** from curated library (MVT: 23 behaviors)
+2. **Complete behavior** in real life (or successfully avoid it)
+3. **Log or Pass** in app
+4. **Earn transfer right** (each log/pass = money earned)
 5. **Friday transfer** moves pending earnings to Flux savings
 6. **View patterns** as data accumulates
 7. **Receive insights** from AI based on your behavior
@@ -56,6 +56,7 @@ Flux is a behavioral intelligence platform that connects habit completion to rea
 | Measures compliance to goals | Compares you to yourself |
 | Breaks streaks when life happens | Forgiving, pattern-based analysis |
 | Generic coaching | AI reflects your personal data |
+| Awkward "No X" habit framing | Clean Log/Pass action system |
 
 ---
 
@@ -87,11 +88,11 @@ User Withdrawal
 
 ### Transfer Amount Structure
 
-Users configure transfer amounts per habit. Two structures available:
+Users configure transfer amounts per behavior. Two structures available:
 
 **Fixed Rate**
 - Flat amount per completion
-- Examples: $5 per workout, $2 per meditation session, $3 per deep work block
+- Examples: $5 per workout, $2 per meditation session, $7 per takeout pass
 
 **Variable Rate**
 - Amount per unit (duration, distance, count)
@@ -101,7 +102,7 @@ Users configure transfer amounts per habit. Two structures available:
 
 | Day | Action |
 |-----|--------|
-| Mon-Thu | User logs habits → earns transfer rights → pending balance increases |
+| Mon-Thu | User logs/passes behaviors → earns transfer rights → pending balance increases |
 | Friday | Pending balance calculated → transfer executes (checking → Flux savings) |
 | Sat-Sun | User continues logging → starts new week's pending balance |
 
@@ -126,25 +127,72 @@ Users configure transfer amounts per habit. Two structures available:
 For Minimum Viable Test (MVT), users select from a pre-defined library rather than creating custom habits.
 
 **Rationale:**
-1. **Index data quality** - Consistent habit definitions enable meaningful comparisons
+1. **Index data quality** - Consistent behavior definitions enable meaningful comparisons
 2. **Simplified scope** - Reduces edge cases and complexity
 3. **Faster onboarding** - Select instead of configure
-4. **Better insights** - AI can reference shared habit definitions
+4. **Better insights** - AI can reference shared behavior definitions
+
+### Dual-Action System: Log & Pass
+
+Behaviors are defined neutrally. The user's action determines intent:
+
+| Action | Purpose | Example |
+|--------|---------|---------|
+| **Log** | Track completion of positive behaviors | "Logged gym workout" |
+| **Pass** | Track successful avoidance | "Passed on takeout" |
+
+This eliminates awkward "No X" habit framing. Instead of creating "No Takeout" and logging when you didn't order food, you have "Takeout" as a behavior and hit **Pass** when you successfully avoid it.
+
+**Key insight:** The action carries the intent, not the behavior definition itself.
 
 ### MVT Library Structure
 
-**4 Categories, 15 Base Habits**
+**2 Action Types, 23 Behaviors**
 
-| Category | Habits |
-|----------|--------|
-| FITNESS | Running, Gym Workout, Yoga, Walking, Swimming |
-| FINANCIAL | No Impulse Purchases, No Food Delivery, Budget Review, Savings Transfer |
-| PRODUCTIVITY | Deep Work Session, Reading, Learning/Study, Morning Routine |
-| WELLNESS | Meditation, Journaling, Sleep Hygiene |
+#### Log Behaviors (13)
 
-### Habit Configurations
+| # | Habit | Ticker | Rate Type | Default Rate |
+|---|-------|--------|-----------|--------------|
+| 1 | Running | $RUN | Distance | $1.00/mile |
+| 2 | Gym Workout | $GYM | Binary | $5.00/session |
+| 3 | Push Ups | $PUSH | Count | $0.05/rep |
+| 4 | Walking | $WALK | Count | $0.001/step |
+| 5 | Crunches | $CRUNCH | Count | $0.03/rep |
+| 6 | Review Budget | $BUDGET | Binary | $3.00/session |
+| 7 | Cook at Home | $COOK | Binary | $4.00/meal |
+| 8 | Reading | $READ | Count | $0.50/chapter |
+| 9 | Learning/Study | $STUDY | Duration | $0.10/minute |
+| 10 | Meditation | $ZEN | Duration | $0.20/minute |
+| 11 | Journaling | $JOURNAL | Binary | $2.00/session |
+| 12 | Give Compliment | $KIND | Count | $1.00/compliment |
+| 13 | Make Bed | $BED | Binary | $2.00/day |
 
-Each habit has default configurations that users can customize:
+#### Pass Behaviors (Avoidance) (10)
+
+| # | Behavior | Ticker | Rate Type | Default Rate |
+|---|----------|--------|-----------|--------------|
+| 14 | Takeout | $TAKEOUT | Binary | $7.00/pass |
+| 15 | Alcohol | $BOOZE | Binary | $5.00/pass |
+| 16 | Doomscrolling | $SCROLL | Binary | $3.00/pass |
+| 17 | Smoking | $SMOKE | Binary | $5.00/pass |
+| 18 | Vaping | $VAPE | Binary | $5.00/pass |
+| 19 | Impulse Purchases | $IMPULSE | Binary | $5.00/pass |
+| 20 | Junk Food | $JUNK | Binary | $3.00/pass |
+| 21 | Midnight Snacks | $MIDNIGHT | Binary | $3.00/pass |
+| 22 | Gambling | $BET | Binary | $10.00/pass |
+| 23 | Hitting Snooze | $SNOOZE | Binary | $2.00/pass |
+
+### Avoidance Behaviors: Key Characteristics
+
+Pass behaviors share a common pattern: **frequent impulse + immediate gratification + long-term cost**. Success = not doing the thing.
+
+**Stake Treatment:** Pass actions are treated identically to Log actions for financial stakes. Successfully passing on a behavior earns toward the stake just like logging a positive behavior.
+
+**Flux Score for Avoidance:** Deferred post-MVT. The pattern recognition model doesn't cleanly map to avoidance (no natural frequency baseline, asymmetric data). MVT will validate whether users engage with Pass functionality before designing scoring.
+
+### Behavior Configurations
+
+Each behavior has default configurations that users can customize:
 
 **Rate Type Options:**
 - Binary (complete/not complete)
@@ -152,29 +200,25 @@ Each habit has default configurations that users can customize:
 - Distance (miles/km)
 - Count (reps, chapters, sessions)
 
-**Example Configurations:**
+**Rate Selection at Log/Pass Time:**
+- Low (suggested lower amount)
+- Default (pre-set amount)
+- High (suggested higher amount)
+- Custom (user enters amount)
 
-| Habit | Default Rate Type | Default Transfer |
-|-------|-------------------|------------------|
-| Running | Distance (miles) | $1/mile |
-| Gym Workout | Binary | $5/session |
-| Meditation | Duration (minutes) | $0.20/minute |
-| Deep Work | Duration (minutes) | $0.15/minute |
-| No Food Delivery | Binary | $7/day resisted |
-| Reading | Count (chapters) | $0.50/chapter |
+**Custom Defaults:** Users can set their own default rate type and amount when adding a behavior, overriding the preset defaults.
 
-### Ticker Symbols
+### User Flow: Logging & Passing
 
-Each habit displays with an investment-style ticker:
+1. **Press FAB** → Presented with two options: **Log** or **Pass**
+2. **Select action** → Smart input field appears with predictive autocomplete
+3. **Type or browse** → Active behaviors filter as user types
+4. **Select behavior** → Rate selection (Low/Default/High/Custom)
+5. **Confirm** → Done
 
-| Habit | Ticker |
-|-------|--------|
-| Running | $RUN |
-| Gym Workout | $GYM |
-| Meditation | $ZEN |
-| Deep Work | $WORK |
-| Reading | $READ |
-| No Food Delivery | $NDASH |
+### Request Behavior (Coming Soon)
+
+Users can request behaviors not in the MVT library. Placeholder UI with "Coming Soon" message captures interest for future custom behavior feature.
 
 ---
 
@@ -248,144 +292,46 @@ For each habit, Flux calculates:
 
 ## 5. Flux Score
 
-### Overview
+### What It Measures
 
-A proprietary 100-point score measuring habit quality. Uses continuous mathematical formulas with exponential decay - no arbitrary thresholds or tiers. Gets smarter as more data accumulates.
-
-**Formerly called:** Habit Strength Score (HSS) - deprecated terminology.
+The Flux Score (0-100) represents the overall health and strength of a user's behavioral patterns. It's calculated per habit and aggregated across all habits.
 
 ### Five Components
 
-| Component | Max Points | What It Measures |
-|-----------|------------|------------------|
-| Frequency Trend | 30 | Recent frequency vs. baseline |
-| Consistency | 25 | Variance in gaps between logs |
-| Recency | 20 | Days since last log vs. typical gap |
-| Volume/Intensity | 15 | For measurable habits: units vs. baseline |
-| Data Maturity | 10 | Confidence based on total logs |
+| Component | Weight | What It Measures |
+|-----------|--------|------------------|
+| Consistency | 30% | Regular gaps between logs (low variance) |
+| Momentum | 25% | Recent trend vs. historical baseline |
+| Volume | 20% | Meeting/exceeding typical output |
+| Longevity | 15% | Total time tracking this habit |
+| Recency | 10% | How recently you've logged |
 
-### Component Formulas
+### Score Interpretation
 
-**1. Frequency Trend (30 points max)**
+| Score Range | Label | Meaning |
+|-------------|-------|---------|
+| 90-100 | Exceptional | Habit is deeply established, highly consistent |
+| 75-89 | Strong | Solid pattern, minor room for improvement |
+| 60-74 | Building | Pattern emerging, some inconsistency |
+| 40-59 | Developing | Early stage or inconsistent |
+| 0-39 | Nascent | Just starting or significant gap |
 
-Compares recent frequency (last 14 days) to established baseline (90-day average).
+### Key Principles
 
-```
-score = 30 × min(1, recent_frequency / baseline_frequency)
-```
+**Compare to Yourself:**
+- Score reflects YOUR patterns, not external standards
+- A 75 for someone who exercises 2x/week is as valid as 75 for someone who exercises 6x/week
+- Consistency to your own baseline matters most
 
-- 2× baseline = 30 pts (capped)
-- 1× baseline = 15 pts
-- 0.5× baseline = 7.5 pts
-- Linear relationship, caps at 30
+**No Punishment:**
+- Score can decrease but messaging stays neutral
+- "Your score dropped 8 points this week" not "You're failing"
+- Dips are information, not judgment
 
-**2. Consistency Score (25 points max)**
-
-Measures variance in gaps between logs. Lower variance = more consistent = higher score.
-
-```
-score = 25 × e^(-gap_variance / baseline_gap)
-```
-
-- Gap variance = 0 (perfectly consistent) = 25 pts
-- Gap variance = baseline gap = ~9 pts
-- Gap variance = 2× baseline gap = ~3 pts
-- Exponential decay rewards low variance heavily
-
-**3. Recency (20 points max)**
-
-How recently you've logged relative to your typical gap.
-
-```
-score = 20 × e^(-days_since_log / typical_gap)
-```
-
-- Logged today = 20 pts
-- Logged at typical gap = ~7 pts
-- 2× typical gap = ~3 pts
-- Exponential decay based on your pattern
-
-**4. Volume/Intensity (15 points max)**
-
-Only applies to habits with measurable units (minutes, miles, reps, chapters).
-
-```
-score = 15 × min(1, recent_avg_units / baseline_avg_units)
-```
-
-- 2× baseline intensity = 15 pts (capped)
-- 1× baseline = 7.5 pts
-- Binary habits skip this component (reallocate to others)
-
-**5. Data Maturity Confidence (10 points max)**
-
-More logs = more reliable score.
-
-```
-score = 10 × min(1, total_logs / 30)
-```
-
-- 5 logs = 1.67 pts
-- 15 logs = 5 pts
-- 30+ logs = 10 pts (full confidence)
-
-### Example Calculation
-
-**Exercise Habit Profile (90-Day Baseline):**
-- Average frequency: 4.2 logs/week
-- Gap variance: 1.8 days
-- Typical gap: 1.8 days
-- Average intensity: 4.1 miles/session
-- Total logs: 42
-
-**Recent Behavior (Last 14 Days):**
-- Frequency: 8 logs (5.6/week) → 1.33× baseline
-- Gap variance: 1.3 days
-- Last log: 1 day ago
-- Average intensity: 4.8 miles → 1.17× baseline
-
-**Score Breakdown:**
-
-| Component | Calculation | Points |
-|-----------|-------------|--------|
-| Frequency Trend | 30 × min(1, 1.33) | 30.0 |
-| Consistency | 25 × e^(-1.3/1.8) | 12.2 |
-| Recency | 20 × e^(-1/1.8) | 11.3 |
-| Volume/Intensity | 15 × min(1, 1.17) | 15.0 |
-| Data Maturity | 10 × min(1, 42/30) | 10.0 |
-| **TOTAL** | | **78.5** |
-
-**Interpretation:** Strong habit (78.5/100). Logging more frequently than baseline, maintaining good consistency, increasing intensity.
-
-### Score Display
-
-**Color Coding:**
-- 80-100: Green (Strong habit)
-- 60-79: Yellow (Moderate)
-- 40-59: Orange (Declining)
-- 0-39: Red (Needs attention)
-
-**Trend Indicators:**
-- ↑ Improving (score increased over last period)
-- → Stable
-- ↓ Declining
-
-### Edge Cases
-
-**New Habits (<10 logs):**
-- Show simplified score based only on Recency + Data Maturity
-- Display: "Flux Score: Building baseline... (4 logs)"
-- Message: "Keep logging to unlock full Flux Score"
-
-**Inactive Habits (>30 days no log):**
-- Recency approaches 0
-- Badge: "Inactive habit"
-- AI prompt: "Want to archive or restart?"
-
-**High-Variance Habits (Naturally irregular):**
-- Detect baseline variance >7 days
-- Adjust scoring: Weight recency less
-- Display: "Your pattern varies widely - median 1x/month"
+**Flux Score for Avoidance Behaviors:**
+- Deferred to post-MVT
+- Pattern recognition model doesn't cleanly map to avoidance
+- MVT tracks Pass logs without scoring
 
 ---
 
@@ -393,38 +339,36 @@ score = 10 × min(1, total_logs / 30)
 
 ### The Concept
 
-Users can link habits to specific financial objectives, creating direct connections between behavior and wealth-building.
+Users can link habits to specific financial objectives, creating a direct behavior-to-wealth connection.
 
 **Examples:**
-- "Every meditation session adds $4 to my vacation fund"
-- "Each gym workout puts $5 toward my new laptop"
-- "Running earnings go to my emergency fund"
+- "My running earnings go toward my vacation fund"
+- "Meditation money builds my emergency savings"
+- "Every gym session adds to my new bike fund"
 
 ### How It Works
 
-1. **Create Savings Goal** - Name and optional target amount
-   - "Vacation Fund - $2,000"
-   - "Emergency Savings - no target"
-   - "Wedding - $10,000"
+1. **Create savings goal** with name and target amount
+2. **Link one or more habits** to the goal
+3. **Each log** adds to that goal's progress
+4. **Visualize progress** toward the target
 
-2. **Link Habits to Goals** - Each habit can route earnings to a specific goal
-   - Running → Vacation Fund
-   - Meditation → Emergency Savings
-   - Deep Work → Wedding
+### Display Example
 
-3. **Track Progress** - See earnings accumulate toward goals
-   - "Vacation Fund: $847 of $2,000 (42%)"
+```
+🏖️ Vacation Fund
+━━━━━━━━━━━━━━━━━━━━
+$847 of $2,000 (42%)
+Habits contributing: Running, Gym Workout
+This week: +$34 from 6 logs
+```
 
-4. **Celebrate Milestones** - AI recognizes goal progress
-   - "You just hit 50% of your vacation fund! At this rate, you'll reach your goal in 4 months."
+### Key Principles
 
-### UX Considerations (To Be Designed)
-
-- Default goal: Unallocated savings (if no goal specified)
-- Multiple habits can feed same goal
-- One habit → one goal (no splitting)
-- Goals can be edited/archived
-- Progress visualization on portfolio page
+- Goals are optional (users can use Flux without them)
+- One habit can link to one goal (MVP simplicity)
+- Goals don't affect Flux Score or pattern recognition
+- Purely motivational/visualization feature
 
 ---
 
@@ -432,119 +376,37 @@ Users can link habits to specific financial objectives, creating direct connecti
 
 ### The Concept
 
-Aggregate performance data across all Flux users for specific behaviors. Think "Morningstar for habits" - clean, thoughtful analysis rather than dense real-time data.
+Aggregate anonymized data across users to create behavior-level benchmarks. Users can opt-in to see how they compare to others doing the same behaviors.
 
-**Key Distinction:** Behavior-level indices (Cardio Index, Meditation Index) not category rollups (not "Exercise Category Index").
+**Example:** "Your running Flux Score is in the 73rd percentile of all Flux runners"
 
-### Index Page Components
+### Why Behavior-Level (Not Category)
 
-Based on current mockup (17-behavior-index-cardio.html):
+- Comparing runners to runners is meaningful
+- Comparing "all fitness people" mixes incomparable behaviors
+- Cleaner data, more actionable insights
 
-**1. Index Hero**
-- Index value with trend (e.g., "71.3 ↑2.1 from last week")
-- Participant count (e.g., "847 users")
-- Live indicator showing real-time data
+### Minimum Threshold
 
-**2. Your Performance Card**
-- User's score vs index (e.g., "78.2")
-- Percentile ranking (e.g., "Top 15%")
-- Delta above/below index (e.g., "+6.9 above index")
-- Context message (e.g., "You're outperforming the average")
+Indices require minimum users per behavior for statistical validity. Target: 50+ active users per behavior before index becomes available.
 
-**3. Time Range Toggles**
-- 1W, 1M, 3M, 6M, 1Y, ALL
-- Chart updates to show selected period
+### Privacy & Opt-In
 
-**4. Comparison Chart**
-- Dual line chart: User performance vs Index over time
-- User line (solid blue) vs Index line (dashed gray)
-- Tooltip shows delta between lines
+- Indices are opt-in only
+- Data is anonymized and aggregated
+- Users can contribute data without viewing indices
+- Clear consent flow
 
-**5. Quick Stats Comparison**
-| Your Metric | Index Average |
-|-------------|---------------|
-| Your logs/wk: 4.2 | Index: 3.1 |
-| Your avg gap: 1.8d | Index: 2.4d |
-| Consistency: 94% | Index: 76% |
-
-**6. Population Distribution**
-Visual bar showing user segments:
-- Top 15% (green)
-- Strong 32% (blue)
-- Building 35% (yellow)
-- Starting 18% (gray)
-- "YOU" marker positioned on the bar
-
-**7. Pattern Insight**
-AI-generated insight comparing user to index:
-> "Your cardio consistency (1.8 day avg gap) beats 84% of users. The index shows most users have 3-4 day gaps between sessions. Your pattern of shorter, more frequent sessions is outperforming the 'weekend warrior' approach common in this index."
-
-**8. Your Habit Connection**
-Links to user's specific habit that feeds this index:
-- Habit name and ticker ($RUN · Morning Run)
-- Rate type (Variable rate · $0.25/minute)
-- Flux Score, Total Logs, Earned
-
-**9. Leaderboard Teaser (Optional)**
-Anonymous rankings showing top performers:
-- Rank 1, 2, 3 with scores
-- User's rank position (e.g., "#47 · 78.2")
-
-### Index Calculation
-
-**Pattern-Recognition Based:**
-
-Since Flux uses pattern recognition rather than schedules, indices measure pattern adherence:
+### Index Display Example
 
 ```
-Index = Average of (user's recent performance / user's baseline) across all users
+$RUN Running Index
+━━━━━━━━━━━━━━━━━━━━
+Your Flux Score: 78
+Percentile: 73rd
+Index Average: 71
+Active Runners: 1,247
 ```
-
-**Metrics Aggregated:**
-- Logs per week (frequency)
-- Average gap between logs (consistency)
-- Consistency percentage (gap variance)
-
-### User Percentile
-
-Position relative to others on same behavior:
-
-```
-Percentile = Percentage of users whose performance ratio is lower than yours
-```
-
-### Requirements for Valid Index
-
-**Minimum Data:**
-- At least 50 users logging that specific behavior
-- Each user must have 10+ logs (established baseline)
-- Recent activity within last 30 days
-
-**Data Quality:**
-- Financial incentives create higher quality data than free apps
-- Users care about accuracy when money is involved
-- Gaming prevention through anomaly detection
-
-### Display Philosophy
-
-**Morningstar, Not Bloomberg:**
-- Clean, accessible insights
-- Long-term perspective
-- What matters, not everything
-- Clarity over comprehensiveness
-
-**Opt-In Only:**
-- Users choose to see comparative data
-- Not forced social comparison
-- Informational, not competitive pressure
-
-### Future: Data Licensing
-
-As user base grows, anonymized index data becomes valuable for:
-- Corporate wellness programs
-- Insurance companies
-- Academic researchers
-- Behavioral science applications
 
 ---
 
@@ -552,25 +414,16 @@ As user base grows, anonymized index data becomes valuable for:
 
 ### The Concept
 
-Users can track behaviors they're trying to quit (gambling, vaping, excessive spending, etc.) by logging when they slip.
+Users can track "quit" behaviors (smoking, gambling, etc.) by logging slips. This enables pattern recognition and AI coaching for behaviors they want to eliminate.
 
-**Key Principle:** These logs provide insights but do NOT earn transfer rights.
+**Important:** This is separate from Pass behaviors. Negative behavior logging is for tracking failures/slips in quit attempts, not successful avoidance.
 
 ### How It Works
 
-1. **Add quit behavior** to habit library
-   - "Quit Vaping"
-   - "No Gambling"
-   - "Limit Alcohol"
-
-2. **Log when you slip** (not when you resist)
-   - "Logged: Vaped today"
-   - "Logged: Bought lottery tickets"
-
-3. **Receive pattern insights** (no money earned)
-   - "You tend to slip on weekends"
-   - "3 days since last slip - that's your longest streak"
-   - "Slips correlate with late nights"
+1. User adds a "quit" behavior (e.g., "Quit Smoking")
+2. User logs when they slip (have a cigarette)
+3. Flux tracks slip patterns over time
+4. AI provides coaching based on slip data
 
 ### Why No Earnings
 
@@ -754,8 +607,8 @@ Flux uses financial/investment metaphor throughout:
 
 | Element | Implementation |
 |---------|----------------|
-| Habits | Displayed as "positions" |
-| Habit names | Ticker symbols ($RUN, $ZEN) |
+| Behaviors | Displayed as "positions" |
+| Behavior names | Ticker symbols ($RUN, $ZEN) |
 | Log history | "Transaction history" |
 | Earnings | "Returns" |
 | Dashboard | "Portfolio" view |
@@ -789,10 +642,10 @@ Flux uses financial/investment metaphor throughout:
 
 ### Core Screens
 
-1. **Today** - Daily habits available to log, quick log *(under evaluation - may merge into Dashboard/Portfolio)*
+1. **Today** - Daily behaviors available to log/pass, quick action *(under evaluation - may merge into Dashboard/Portfolio)*
 2. **Dashboard** - Overall performance view, key metrics at a glance
 3. **Portfolio** - All positions, total balance, earnings breakdown
-4. **Habit Detail** - Individual habit metrics, history, patterns
+4. **Behavior Detail** - Individual behavior metrics, history, patterns
 5. **Flux Score** - Score breakdown, component visualization, trends
 6. **Activity Feed** - Log history, earnings, transfers
 7. **Indices** - Behavior-level performance (opt-in)
@@ -804,17 +657,22 @@ Flux uses financial/investment metaphor throughout:
 
 | Feature | MVT Status | Notes |
 |---------|------------|-------|
-| Habit Library (15 habits) | ✓ Required | Curated selection, no custom creation |
+| Behavior Library (23 behaviors) | ✓ Required | Curated selection, no custom creation |
+| Log/Pass Dual-Action | ✓ Required | Neutral behaviors, action carries intent |
 | Manual Logging | ✓ Required | Core input method |
-| Transfer Rights/Earnings | ✓ Required | Each log earns |
+| Transfer Rights/Earnings | ✓ Required | Each log/pass earns |
 | Friday Transfers | ✓ Required | Weekly settlement |
 | Pattern Recognition | ✓ Required | No schedules, learn from logs |
-| Flux Score | ✓ Required | 5 components, 100-point |
+| Flux Score (Log behaviors) | ✓ Required | 5 components, 100-point |
 | Portfolio Dashboard | ✓ Required | Position view |
 | Basic AI Insights | ✓ Required | Contextual, not chat-first |
-| Savings Goals | ○ Stretch | Link habits to objectives |
+| Custom Rate Configuration | ✓ Required | At setup and log/pass time |
+| Predictive Autocomplete | ✓ Required | Smart input for behavior selection |
+| Savings Goals | ○ Stretch | Link behaviors to objectives |
 | Behavior-Level Indices | ○ Stretch | Requires 50+ users per behavior |
 | Optional User Goals | ○ Post-MVT | Targets alongside patterns |
+| Flux Score (Pass behaviors) | ○ Post-MVT | Scoring model needs user data |
+| Avoidance Indices | ○ Post-MVT | Requires Pass scoring model |
 | Negative Behavior Logging | ○ Post-MVT | Quit tracking |
 | AI Chat Interface | ○ Post-MVT | Deep-dive conversations |
 | App Integrations | ✗ Future | After core validation |
