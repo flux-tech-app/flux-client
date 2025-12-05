@@ -1,53 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { getNextTransferDate } from '../../utils/calculations';
 import Navigation from '../../components/Navigation';
 import './Portfolio.css';
 
-// Flux Score to Star Rating mapping
-const getStarRating = (fluxScore) => {
-  if (fluxScore >= 90) return 5;
-  if (fluxScore >= 75) return 4;
-  if (fluxScore >= 60) return 3;
-  if (fluxScore >= 40) return 2;
-  return 1;
-};
-
-// Render star display using SVG for reliability
-const StarRating = ({ rating }) => {
-  const stars = [];
-  for (let i = 1; i <= 5; i++) {
-    const isFilled = i <= rating;
-    stars.push(
-      <svg 
-        key={i} 
-        className={`star-icon ${isFilled ? 'filled' : 'empty'}`}
-        width="12" 
-        height="12" 
-        viewBox="0 0 24 24"
-        fill={isFilled ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    );
-  }
-  return <div className="star-rating">{stars}</div>;
-};
-
-// Trend arrow component
-const TrendArrow = ({ trend }) => {
-  if (trend === 'up') {
-    return <span className="trend-arrow up">▲</span>;
-  } else if (trend === 'down') {
-    return <span className="trend-arrow down">▼</span>;
-  }
-  return <span className="trend-arrow neutral">—</span>;
-};
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 export default function Portfolio() {
   const { 
@@ -56,7 +38,8 @@ export default function Portfolio() {
     getTransferredBalance, 
     getPendingBalance, 
     getWeekEarnings,
-    getHabitLogs 
+    calculateFluxScore,
+    getPortfolioFluxScore
   } = useHabits();
   const navigate = useNavigate();
   const [chartPeriod, setChartPeriod] = useState('1M');
@@ -65,140 +48,138 @@ export default function Portfolio() {
   const weekEarnings = getWeekEarnings();
   const nextTransfer = getNextTransferDate();
   const pendingBalance = getPendingBalance();
+  const portfolioScore = getPortfolioFluxScore();
 
   /**
-   * Calculate Flux Score for a habit (simplified for MVT)
-   * No schedules - based purely on logging activity and patterns
-   * 
-   * Components:
-   * - Frequency (35%): Logs in last 30 days / expected baseline
-   * - Consistency (25%): How evenly spread are logs
-   * - Recency (20%): Days since last log (exponential decay)
-   * - Trend (15%): Recent 2 weeks vs previous 2 weeks
-   * - Data Maturity (5%): Bonus for having more total logs
+   * Generate chart data for Flux Score view
    */
-  const calculateFluxScore = (habit) => {
-    const habitLogs = getHabitLogs(habit.id);
-    
-    // Need at least 1 log to score
-    if (habitLogs.length === 0) return 0;
-
+  const generateFluxScoreChartData = () => {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+    let dataPoints;
+    let days;
     
-    // Get recent logs
-    const recentLogs = habitLogs.filter(log => 
-      new Date(log.timestamp) >= thirtyDaysAgo
-    );
-
-    // ========== FREQUENCY SCORE (35%) ==========
-    // For MVT without schedules, we use a reasonable baseline
-    // Assume ~15-20 logs in 30 days is "good" frequency for most habits
-    const expectedLogs = 15;
-    const frequencyScore = Math.min(100, (recentLogs.length / expectedLogs) * 100);
-
-    // ========== CONSISTENCY SCORE (25%) ==========
-    // Calculate variance in gaps between logs
-    let consistencyScore = 50; // Default to mid-range
-    
-    if (recentLogs.length >= 3) {
-      const sortedLogs = [...recentLogs].sort(
-        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      
-      // Calculate gaps between consecutive logs
-      const gaps = [];
-      for (let i = 1; i < sortedLogs.length; i++) {
-        const gap = (new Date(sortedLogs[i].timestamp) - new Date(sortedLogs[i-1].timestamp)) 
-          / (1000 * 60 * 60 * 24); // Days
-        gaps.push(gap);
-      }
-      
-      if (gaps.length > 0) {
-        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-        const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - avgGap, 2), 0) / gaps.length;
-        const stdDev = Math.sqrt(variance);
-        
-        // Lower standard deviation = more consistent = higher score
-        // Score 100 if stdDev < 0.5, decreasing as variance increases
-        consistencyScore = Math.max(0, Math.min(100, 100 - (stdDev * 15)));
-      }
+    switch(chartPeriod) {
+      case '1W':
+        days = 7;
+        dataPoints = 7;
+        break;
+      case '1M':
+        days = 30;
+        dataPoints = 15;
+        break;
+      case '3M':
+        days = 90;
+        dataPoints = 15;
+        break;
+      case '1Y':
+        days = 365;
+        dataPoints = 16;
+        break;
+      case 'YTD':
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        days = Math.floor((now - startOfYear) / (1000 * 60 * 60 * 24));
+        dataPoints = Math.min(15, days);
+        break;
+      case 'ALL':
+      default:
+        days = 90; // Default to 90 days for ALL
+        dataPoints = 15;
     }
-
-    // ========== RECENCY SCORE (20%) ==========
-    // Exponential decay based on days since last log
-    const sortedAll = [...habitLogs].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
-    const lastLogDate = new Date(sortedAll[0].timestamp);
-    const daysSinceLog = (now - lastLogDate) / (1000 * 60 * 60 * 24);
     
-    // Score 100 if logged today, ~50 after 3 days, ~25 after 7 days
-    const recencyScore = Math.max(0, 100 * Math.exp(-daysSinceLog / 4));
-
-    // ========== TREND SCORE (15%) ==========
-    // Compare last 2 weeks vs previous 2 weeks
-    const recentTwoWeeks = habitLogs.filter(log => 
-      new Date(log.timestamp) >= twoWeeksAgo
-    ).length;
+    const labels = [];
+    const data = [];
+    const interval = Math.max(1, Math.floor(days / dataPoints));
     
-    const previousTwoWeeks = habitLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      return logDate >= fourWeeksAgo && logDate < twoWeeksAgo;
-    }).length;
-
-    let trendScore = 50; // Neutral baseline
-    if (previousTwoWeeks > 0) {
-      const changeRatio = recentTwoWeeks / previousTwoWeeks;
-      if (changeRatio > 1) {
-        trendScore = Math.min(100, 50 + (changeRatio - 1) * 50);
-      } else if (changeRatio < 1) {
-        trendScore = Math.max(0, 50 * changeRatio);
-      }
-    } else if (recentTwoWeeks > 0) {
-      trendScore = 75; // Some activity when there was none before
+    for (let i = dataPoints; i >= 0; i--) {
+      const date = new Date(now.getTime() - (i * interval * 24 * 60 * 60 * 1000));
+      const dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      labels.push(dateLabel);
+      // Simulate gradual improvement over time
+      data.push(60 + (dataPoints - i) * 1.5 + Math.random() * 8);
     }
-
-    // ========== DATA MATURITY BONUS (5%) ==========
-    // Reward for having more total logs (max at 30+ logs)
-    const maturityScore = Math.min(100, (habitLogs.length / 30) * 100);
-
-    // ========== CALCULATE FINAL SCORE ==========
-    const fluxScore = Math.round(
-      (frequencyScore * 0.35) +
-      (consistencyScore * 0.25) +
-      (recencyScore * 0.20) +
-      (trendScore * 0.15) +
-      (maturityScore * 0.05)
-    );
-
-    return Math.min(100, Math.max(0, fluxScore));
+    
+    return { labels, data };
   };
 
-  // Determine trend direction
-  const getTrend = (habit) => {
-    const habitLogs = getHabitLogs(habit.id);
-    
-    if (habitLogs.length < 4) return 'neutral';
+  // Generate chart data
+  const chartData = generateFluxScoreChartData();
 
-    const now = new Date();
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+  // Chart.js configuration
+  const chartConfig = {
+    labels: chartData.labels,
+    datasets: [{
+      label: 'Your Flux Score',
+      data: chartData.data,
+      borderColor: '#3b82f6',
+      backgroundColor: (context) => {
+        const chart = context.chart;
+        const {ctx, chartArea} = chart;
+        if (!chartArea) return null;
+        
+        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        return gradient;
+      },
+      borderWidth: 2.5,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      pointHoverBackgroundColor: '#3b82f6',
+      pointHoverBorderColor: '#fff',
+      pointHoverBorderWidth: 2,
+    }]
+  };
 
-    const recentCount = habitLogs.filter(log => 
-      new Date(log.timestamp) >= twoWeeksAgo
-    ).length;
-    
-    const previousCount = habitLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      return logDate >= fourWeeksAgo && logDate < twoWeeksAgo;
-    }).length;
-
-    if (recentCount > previousCount) return 'up';
-    if (recentCount < previousCount) return 'down';
-    return 'neutral';
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#6b7280',
+        bodyColor: '#111827',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          label: function(context) {
+            const value = context.parsed.y;
+            return `Score: ${Math.round(value)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 10
+          },
+          color: '#9ca3af',
+          maxTicksLimit: 5
+        }
+      },
+      y: {
+        display: false, // Hide Y-axis completely
+        grid: {
+          color: '#f3f4f6'
+        }
+      }
+    }
   };
 
   // Calculate total earned for a habit
@@ -207,16 +188,21 @@ export default function Portfolio() {
     return habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
   };
 
-  // Get holdings data (active habits with stats)
+  // Get holdings data with Flux Scores
   const getHoldingsData = () => {
     return habits
-      .map(habit => ({
-        ...habit,
-        fluxScore: calculateFluxScore(habit),
-        trend: getTrend(habit),
-        totalEarned: getHabitTotalEarned(habit.id)
-      }))
-      .sort((a, b) => b.totalEarned - a.totalEarned); // Sort by earnings
+      .map(habit => {
+        const fluxScoreData = calculateFluxScore(habit.id);
+        return {
+          ...habit,
+          fluxScore: fluxScoreData?.score ?? null,
+          fluxScoreStatus: fluxScoreData?.status ?? 'building',
+          logsNeeded: fluxScoreData?.logsNeeded ?? 0,
+          totalLogs: fluxScoreData?.totalLogs ?? 0,
+          totalEarned: getHabitTotalEarned(habit.id)
+        };
+      })
+      .sort((a, b) => b.totalEarned - a.totalEarned);
   };
 
   const holdings = getHoldingsData();
@@ -230,7 +216,7 @@ export default function Portfolio() {
           <div className="app-logo">Flux</div>
           <div className="header-actions">
             <button className="icon-button" aria-label="Activity" onClick={() => navigate('/activity')}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <polyline points="12 6 12 12 16 14"/>
               </svg>
@@ -245,21 +231,18 @@ export default function Portfolio() {
           
           {hasHabits && weekEarnings > 0 && (
             <div className="value-change">
-              <span className="change-badge">
-                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-                </svg>
-                +{formatCurrency(weekEarnings)}
-              </span>
-              <span className="change-period">this week</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+              </svg>
+              +{formatCurrency(weekEarnings)}
             </div>
           )}
 
           {/* Pending Transfer */}
           {hasHabits && pendingBalance > 0 && (
             <div className="pending-transfer">
-              <svg className="pending-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              <svg className="pending-icon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               <span className="pending-amount">{formatCurrency(pendingBalance)} pending</span>
               <span className="pending-separator">•</span>
@@ -268,39 +251,56 @@ export default function Portfolio() {
           )}
         </section>
 
-        {/* Chart Section */}
+        {/* Flux Score Section */}
         {hasHabits && (
-          <section className="chart-section">
-            <div className="chart-header">
-              <div className="chart-title">Growth</div>
-              <div className="time-toggles">
-                {['1M', '3M', '6M', 'YTD', '1Y', 'ALL'].map(period => (
-                  <button 
-                    key={period}
-                    className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
-                    onClick={() => setChartPeriod(period)}
-                  >
-                    {period}
-                  </button>
-                ))}
+          <section className="growth-section">
+            {/* Growth Header */}
+            <div className="growth-header">
+              <div className="growth-title">Flux Score</div>
+            </div>
+
+            {/* Index Summary Card (Matches Mockup) */}
+            <div className="index-summary">
+              <div className="index-summary-row">
+                <div className="index-summary-info">
+                  <div className="index-summary-label">Your Overall vs Flux Average</div>
+                  <div className="index-summary-value">
+                    {portfolioScore.status === 'active' 
+                      ? `${portfolioScore.score} - Building baseline` 
+                      : 'Building your score...'}
+                  </div>
+                  <div className="index-summary-context">
+                    Indices coming soon • Compare your progress
+                  </div>
+                </div>
+                <a href="#" className="index-summary-link" onClick={(e) => {
+                  e.preventDefault();
+                  // Future: navigate to indices page
+                }}>
+                  All Indices
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </a>
               </div>
             </div>
-            <div className="chart-placeholder">
-              {/* Grid lines */}
-              <div className="chart-grid">
-                <div className="grid-line"></div>
-                <div className="grid-line"></div>
-                <div className="grid-line"></div>
-                <div className="grid-line"></div>
-              </div>
-              
-              {/* Simulated line chart */}
-              <div className="chart-line-container">
-                <div className="chart-line">
-                  <div className="line-gradient"></div>
-                  <div className="line-stroke"></div>
-                </div>
-              </div>
+
+            {/* Chart */}
+            <div className="chart-container">
+              <Line data={chartConfig} options={chartOptions} />
+            </div>
+
+            {/* Time Period Toggles - Added 1W, Removed 6M */}
+            <div className="time-toggles">
+              {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(period => (
+                <button 
+                  key={period}
+                  className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
+                  onClick={() => setChartPeriod(period)}
+                >
+                  {period}
+                </button>
+              ))}
             </div>
           </section>
         )}
@@ -308,48 +308,59 @@ export default function Portfolio() {
         {/* Holdings Section */}
         {hasHabits ? (
           <section className="holdings-section">
-            <div className="section-header">
-              <div className="section-title">Holdings</div>
+            <div className="holdings-header">
+              <span className="holdings-title">Holdings</span>
               <span className="holdings-count">{holdings.length} habits</span>
             </div>
 
             <div className="holdings-list">
-              {holdings.map((holding, index) => {
-                const starRating = getStarRating(holding.fluxScore);
-                
-                return (
-                  <motion.div 
-                    key={holding.id}
-                    className="holding-row"
-                    onClick={() => navigate(`/habit/${holding.id}`)}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="holding-ticker">${holding.ticker}</div>
-                    <div className="holding-metrics">
-                      <StarRating rating={starRating} />
-                      <span className="holding-hhs">{holding.fluxScore}</span>
-                      <TrendArrow trend={holding.trend} />
+              {holdings.map((holding, index) => (
+                <motion.div 
+                  key={holding.id}
+                  className={`holding-item ${holding.fluxScoreStatus === 'building' ? 'inactive' : ''}`}
+                  onClick={() => navigate(`/habit/${holding.id}`)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {/* Ticker */}
+                  <span className="holding-ticker">${holding.ticker}</span>
+                  
+                  {/* Middle: Score + Rank */}
+                  <div className="holding-middle">
+                    <div className="holding-score">
+                      <span className="holding-score-value">
+                        {holding.fluxScoreStatus === 'active' ? holding.fluxScore : '--'}
+                      </span>
+                      <span className="holding-score-label">Flux</span>
                     </div>
-                    <div className="holding-earned">{formatCurrency(holding.totalEarned)}</div>
-                  </motion.div>
-                );
-              })}
+                    {holding.fluxScoreStatus === 'active' ? (
+                      <span className="holding-rank coming-soon">Rank soon</span>
+                    ) : (
+                      <span className="no-data-badge">{holding.logsNeeded} more</span>
+                    )}
+                  </div>
+                  
+                  {/* Earnings */}
+                  <div className="holding-earnings">
+                    <div className="holding-earnings-value">{formatCurrency(holding.totalEarned)}</div>
+                    <div className="holding-earnings-label">earned</div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </section>
         ) : (
           <section className="empty-state-section">
             <div className="empty-icon">
-              <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
               </svg>
             </div>
             <h3>Start Building Your Portfolio</h3>
             <p>
               Create your first habit to begin tracking your behavioral investments.
-              Your progress will appear here.
             </p>
           </section>
         )}
@@ -386,7 +397,6 @@ export default function Portfolio() {
         )}
       </div>
 
-      {/* Navigation */}
       <Navigation />
     </div>
   );

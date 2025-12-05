@@ -3,7 +3,16 @@ import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
-  const { user, processTransfer, getPendingBalance, addHabit, addLog, addTransfer } = useHabits();
+  const { 
+    user, 
+    habits,
+    logs,
+    processTransfer, 
+    getPendingBalance, 
+    addHabits, 
+    addLog, 
+    addTransfer 
+  } = useHabits();
 
   // Get user initials for avatar
   const getInitials = (name) => {
@@ -13,245 +22,342 @@ export default function Account() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
+  /**
+   * Generate example data optimized for Flux Score testing
+   * 
+   * Creates:
+   * - 8 habits from the MVT library
+   * - 60-90 days of logs with varied patterns
+   * - Some habits with 30+ logs (full Flux Score)
+   * - Some habits with 10-20 logs (active but building)
+   * - Some habits with <10 logs (building state)
+   * - Realistic patterns (some consistent, some sporadic)
+   */
   const handleAddExampleData = () => {
+    // Check if data already exists
+    const existingHabits = JSON.parse(localStorage.getItem('flux_habits') || '[]');
+    if (existingHabits.length > 0) {
+      const confirmOverwrite = window.confirm(
+        'You already have habits. Clear existing data first?\n\n' +
+        'Click OK to clear and add fresh example data.\n' +
+        'Click Cancel to keep your current data.'
+      );
+      if (!confirmOverwrite) return;
+      
+      // Clear existing data
+      localStorage.removeItem('flux_habits');
+      localStorage.removeItem('flux_logs');
+      localStorage.removeItem('flux_transfers');
+      localStorage.removeItem('flux_last_transfer');
+    }
+
     const confirmAdd = window.confirm(
-      'Add example data to showcase the app?\n\n' +
+      'Add example data for Flux Score testing?\n\n' +
       'This will add:\n' +
-      '• 10+ example habits across all categories\n' +
-      '• Activity logs from the past week\n' +
-      '• Mix of BUILD and RESIST habits\n' +
-      '• Various rate structures\n\n' +
-      'You can clear this later with "Clear All Data".'
+      '• 8 habits from the MVT behavior library\n' +
+      '• 60-90 days of activity logs\n' +
+      '• Varied patterns for Flux Score testing\n' +
+      '• Mix of high/medium/building score habits\n\n' +
+      'The page will reload after data is added.'
     );
 
     if (!confirmAdd) return;
 
     try {
-      // Example habits with various configurations
-      const exampleHabits = [
-        // Fitness
-        {
-          name: 'Morning Cardio',
-          category: 'Fitness',
-          type: 'duration',
-          behaviorType: 'build',
-          rate: 0.10,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-          unit: 'min'
+      const today = new Date();
+      
+      // ========================================
+      // HABIT LIBRARY REFERENCE
+      // ========================================
+      const libraryHabits = {
+        running: {
+          name: 'Running',
+          ticker: 'RUN',
+          icon: 'running',
+          rateType: 'DISTANCE',
+          unit: 'mile',
+          unitPlural: 'miles'
         },
-        {
-          name: 'Strength Training',
-          category: 'Fitness',
-          type: 'duration',
-          behaviorType: 'build',
-          rate: 0.15,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Wednesday', 'Friday'],
-          unit: 'min'
-        },
-        {
-          name: 'Push-ups',
-          category: 'Fitness',
-          type: 'count',
-          behaviorType: 'build',
-          rate: 0.05,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-          unit: 'reps'
-        },
-        {
-          name: 'Evening Walk',
-          category: 'Fitness',
-          type: 'duration',
-          behaviorType: 'build',
-          rate: 0.05,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          unit: 'min'
-        },
-        
-        // Wellness
-        {
-          name: 'Read 30 Minutes',
-          category: 'Wellness',
-          type: 'duration',
-          behaviorType: 'build',
-          rate: 0.10,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          unit: 'min'
-        },
-        {
+        meditation: {
           name: 'Meditation',
-          category: 'Wellness',
-          type: 'duration',
-          behaviorType: 'build',
+          ticker: 'ZEN',
+          icon: 'meditation',
+          rateType: 'DURATION',
+          unit: 'minute',
+          unitPlural: 'minutes'
+        },
+        gym: {
+          name: 'Gym Workout',
+          ticker: 'GYM',
+          icon: 'gym',
+          rateType: 'BINARY',
+          unit: 'session',
+          unitPlural: 'sessions'
+        },
+        reading: {
+          name: 'Reading',
+          ticker: 'READ',
+          icon: 'reading',
+          rateType: 'COUNT',
+          unit: 'chapter',
+          unitPlural: 'chapters'
+        },
+        takeout: {
+          name: 'Takeout',
+          ticker: 'TAKEOUT',
+          icon: 'takeout',
+          rateType: 'BINARY',
+          unit: 'pass',
+          unitPlural: 'passes'
+        },
+        journal: {
+          name: 'Journaling',
+          ticker: 'JOURNAL',
+          icon: 'journal',
+          rateType: 'BINARY',
+          unit: 'session',
+          unitPlural: 'sessions'
+        },
+        pushups: {
+          name: 'Push Ups',
+          ticker: 'PUSH',
+          icon: 'pushups',
+          rateType: 'COUNT',
+          unit: 'rep',
+          unitPlural: 'reps'
+        },
+        doomscrolling: {
+          name: 'Doomscrolling',
+          ticker: 'SCROLL',
+          icon: 'doomscrolling',
+          rateType: 'BINARY',
+          unit: 'pass',
+          unitPlural: 'passes'
+        }
+      };
+
+      // ========================================
+      // HABIT CONFIGURATIONS
+      // ========================================
+      const habitConfigs = [
+        // HIGH FLUX SCORE HABITS (50+ logs, consistent patterns)
+        {
+          libraryId: 'running',
+          rate: 1.00,
+          pattern: 'consistent',
+          daysBack: 75,
+          avgUnits: { min: 2, max: 5 }, // 2-5 miles
+        },
+        {
+          libraryId: 'meditation',
           rate: 0.20,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          unit: 'min'
+          pattern: 'consistent',
+          daysBack: 60,
+          avgUnits: { min: 10, max: 25 }, // 10-25 minutes
         },
         
-        // Social
+        // MEDIUM FLUX SCORE HABITS (15-30 logs, regular patterns)
         {
-          name: 'No Social Media',
-          category: 'Social',
-          type: 'binary',
-          behaviorType: 'resist',
+          libraryId: 'gym',
           rate: 5.00,
-          rateType: 'daily',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        },
-        
-        // Financial
-        {
-          name: 'No DoorDash',
-          category: 'Financial',
-          type: 'binary',
-          behaviorType: 'resist',
-          rate: 7.00,
-          rateType: 'daily',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          pattern: 'regular',
+          daysBack: 45,
+          avgUnits: null, // binary
         },
         {
-          name: 'No Impulse Purchases',
-          category: 'Financial',
-          type: 'binary',
-          behaviorType: 'resist',
-          rate: 7.00,
-          rateType: 'daily',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        },
-        
-        // Nutrition
-        {
-          name: 'Meal Prep',
-          category: 'Nutrition',
-          type: 'binary',
-          behaviorType: 'build',
-          rate: 8.00,
-          rateType: 'fixed',
-          schedule: ['Sunday']
-        },
-        {
-          name: 'Drink 8 Glasses Water',
-          category: 'Nutrition',
-          type: 'count',
-          behaviorType: 'build',
+          libraryId: 'reading',
           rate: 0.50,
-          rateType: 'perUnit',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-          unit: 'glasses'
+          pattern: 'regular',
+          daysBack: 50,
+          avgUnits: { min: 1, max: 3 }, // 1-3 chapters
         },
         {
-          name: 'No Alcohol',
-          category: 'Nutrition',
-          type: 'binary',
-          behaviorType: 'resist',
-          rate: 5.00,
-          rateType: 'daily',
-          schedule: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          libraryId: 'takeout',
+          rate: 7.00,
+          pattern: 'sporadic',
+          daysBack: 40,
+          avgUnits: null, // binary (PASS behavior)
+        },
+        
+        // BUILDING STATE HABITS (10-15 logs)
+        {
+          libraryId: 'journal',
+          rate: 2.00,
+          pattern: 'building',
+          daysBack: 20,
+          avgUnits: null, // binary
+        },
+        
+        // NEW HABITS (<10 logs - will show "X more logs needed")
+        {
+          libraryId: 'pushups',
+          rate: 0.05,
+          pattern: 'new',
+          daysBack: 10,
+          avgUnits: { min: 20, max: 50 }, // 20-50 reps
+        },
+        {
+          libraryId: 'doomscrolling',
+          rate: 3.00,
+          pattern: 'new',
+          daysBack: 7,
+          avgUnits: null, // binary (PASS behavior)
         },
       ];
 
-      // Add all habits
-      const addedHabits = exampleHabits.map(habit => addHabit(habit));
+      // ========================================
+      // CREATE HABITS
+      // ========================================
+      const newHabits = [];
+      
+      habitConfigs.forEach((config, index) => {
+        const libHabit = libraryHabits[config.libraryId];
+        if (!libHabit) return;
+        
+        const habitId = `example-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Set createdAt to before the first log
+        const createdAt = new Date(today);
+        createdAt.setDate(today.getDate() - config.daysBack - 5);
+        
+        newHabits.push({
+          id: habitId,
+          libraryId: config.libraryId,
+          name: libHabit.name,
+          ticker: libHabit.ticker,
+          icon: libHabit.icon,
+          rateType: libHabit.rateType,
+          unit: libHabit.unit,
+          unitPlural: libHabit.unitPlural,
+          rate: config.rate,
+          createdAt: createdAt.toISOString(),
+          baseline: null,
+          // Store config for log generation
+          _config: config
+        });
+      });
 
-      // Generate logs for the past 7 days and track them
-      const today = new Date();
-      const daysToGenerate = 7;
-      const createdLogs = [];
+      // ========================================
+      // GENERATE LOGS
+      // ========================================
+      const newLogs = [];
+      let totalEarnings = 0;
+      const logCounts = {};
 
-      addedHabits.forEach(habit => {
-        for (let i = 0; i < daysToGenerate; i++) {
+      newHabits.forEach(habit => {
+        const config = habit._config;
+        delete habit._config; // Remove temp config
+        
+        logCounts[habit.ticker] = 0;
+        
+        // Determine log probability based on pattern
+        let logProbability;
+        switch (config.pattern) {
+          case 'consistent': logProbability = 0.85; break;
+          case 'regular': logProbability = 0.60; break;
+          case 'sporadic': logProbability = 0.35; break;
+          case 'building': logProbability = 0.55; break;
+          case 'new': logProbability = 0.70; break;
+          default: logProbability = 0.50;
+        }
+
+        // Generate logs for each day going back
+        for (let daysAgo = 0; daysAgo < config.daysBack; daysAgo++) {
+          // Skip some days randomly based on probability
+          if (Math.random() > logProbability) continue;
+
           const logDate = new Date(today);
-          logDate.setDate(today.getDate() - i);
+          logDate.setDate(today.getDate() - daysAgo);
+          const dayOfWeek = logDate.getDay();
           
-          // Check if habit is scheduled for this day
-          const dayName = logDate.toLocaleDateString('en-US', { weekday: 'long' });
-          if (habit.schedule && !habit.schedule.includes(dayName)) continue;
-
-          // Randomly decide if completed (80% chance for demo purposes)
-          const isCompleted = Math.random() > 0.2;
-          if (!isCompleted) continue;
-
-          let logValue = 0;
-          let totalEarnings = 0;
-
-          // Calculate value and earnings based on habit type
-          if (habit.type === 'duration') {
-            // Random duration between 15-60 minutes
-            logValue = Math.floor(Math.random() * 45) + 15;
-            totalEarnings = logValue * habit.rate;
-          } else if (habit.type === 'count') {
-            // Random count based on habit
-            if (habit.name === 'Push-ups') {
-              logValue = Math.floor(Math.random() * 50) + 50; // 50-100 push-ups
-            } else if (habit.name === 'Drink 8 Glasses Water') {
-              logValue = Math.floor(Math.random() * 3) + 6; // 6-8 glasses
-            } else {
-              logValue = Math.floor(Math.random() * 20) + 10;
-            }
-            totalEarnings = logValue * habit.rate;
-          } else if (habit.type === 'binary') {
-            // Binary completion
-            logValue = 1;
-            if (habit.rateType === 'daily') {
-              totalEarnings = habit.rate;
-            } else if (habit.rateType === 'fixed') {
-              totalEarnings = habit.rate;
-            }
+          // Reduce weekend activity for regular habits
+          if (config.pattern === 'regular' && (dayOfWeek === 0 || dayOfWeek === 6)) {
+            if (Math.random() > 0.4) continue;
           }
 
-          // Add log
-          addLog({
-            habitId: habit.id,
-            value: logValue,
-            totalEarnings: totalEarnings,
-            timestamp: logDate.toISOString(),
-            date: logDate.toISOString().split('T')[0]
-          });
+          // Set realistic time (6am - 10pm)
+          const hour = Math.floor(Math.random() * 16) + 6;
+          const minute = Math.floor(Math.random() * 60);
+          logDate.setHours(hour, minute, Math.floor(Math.random() * 60), 0);
+
+          // Calculate units and earnings
+          let units = 1;
+          let earnings = habit.rate;
+
+          if (config.avgUnits) {
+            units = Math.floor(
+              Math.random() * (config.avgUnits.max - config.avgUnits.min + 1)
+            ) + config.avgUnits.min;
+            earnings = units * habit.rate;
+          }
+
+          const logId = `log-${Date.now()}-${daysAgo}-${Math.random().toString(36).substr(2, 9)}`;
           
-          // Track the log for transfer calculation
-          createdLogs.push({
-            totalEarnings: totalEarnings,
+          newLogs.push({
+            id: logId,
+            habitId: habit.id,
             timestamp: logDate.toISOString(),
-            dayIndex: i
+            units: units,
+            totalEarnings: earnings,
+            notes: ''
           });
+
+          totalEarnings += earnings;
+          logCounts[habit.ticker]++;
         }
       });
 
-      // Create example transfer from last week to show transfer history
-      const lastWeekDate = new Date();
-      lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-      lastWeekDate.setHours(23, 59, 0, 0); // Friday 11:59 PM
+      // ========================================
+      // CREATE TRANSFERS
+      // ========================================
+      const newTransfers = [];
+      const transferAmounts = [45.50, 52.25, 48.75, 55.00];
       
-      // Calculate earnings from days 5-6 (simulate previous week's transfer)
-      const lastWeekLogs = createdLogs.filter(log => log.dayIndex >= 5 && log.dayIndex <= 6);
-      const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
-      
-      if (lastWeekEarnings > 0) {
-        addTransfer({
-          amount: lastWeekEarnings,
-          date: lastWeekDate.toISOString(),
-          status: 'completed'
+      for (let weeksAgo = 4; weeksAgo >= 1; weeksAgo--) {
+        const transferDate = new Date(today);
+        transferDate.setDate(today.getDate() - (weeksAgo * 7));
+        transferDate.setHours(23, 59, 0, 0);
+        
+        newTransfers.push({
+          id: `transfer-${Date.now()}-${weeksAgo}`,
+          amount: transferAmounts[4 - weeksAgo],
+          date: transferDate.toISOString(),
+          status: 'completed',
+          breakdown: []
         });
       }
 
-      // Calculate current week pending (days 0-4)
-      const currentWeekLogs = createdLogs.filter(log => log.dayIndex >= 0 && log.dayIndex <= 4);
-      const currentWeekEarnings = currentWeekLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
+      // ========================================
+      // WRITE TO LOCALSTORAGE
+      // ========================================
+      localStorage.setItem('flux_habits', JSON.stringify(newHabits));
+      localStorage.setItem('flux_logs', JSON.stringify(newLogs));
+      localStorage.setItem('flux_transfers', JSON.stringify(newTransfers));
+
+      // ========================================
+      // SUMMARY
+      // ========================================
+      const habitSummary = Object.entries(logCounts)
+        .map(([ticker, count]) => {
+          let status = 'Active';
+          if (count < 10) status = `Building (${10 - count} more needed)`;
+          return `• $${ticker}: ${count} logs - ${status}`;
+        })
+        .join('\n');
 
       alert(
         'Example data added successfully!\n\n' +
-        `✅ ${addedHabits.length} habits created\n` +
-        `✅ ${createdLogs.length} activity logs generated\n` +
-        `✅ ${lastWeekEarnings > 0 ? 1 : 0} transfer created\n\n` +
-        `Portfolio Balance: $${lastWeekEarnings.toFixed(2)}\n` +
-        `Pending Balance: $${currentWeekEarnings.toFixed(2)}\n\n` +
-        'Navigate to Home or Activity page to see results!'
+        `✅ ${newHabits.length} habits created\n` +
+        `✅ ${newLogs.length} activity logs generated\n` +
+        `✅ ${newTransfers.length} historical transfers\n\n` +
+        'Habit Summary:\n' +
+        habitSummary + '\n\n' +
+        `Total Earnings: $${totalEarnings.toFixed(2)}\n\n` +
+        'Page will now reload...'
       );
+
+      // Force reload to pick up new data
+      window.location.reload();
 
     } catch (error) {
       console.error('Error adding example data:', error);
@@ -270,7 +376,12 @@ export default function Account() {
     const result = processTransfer();
     
     if (result.success) {
-      alert(`Manual transfer completed!\n\nAmount: $${result.amount.toFixed(2)}\nThis has been moved to your portfolio balance.\n\nReload the page to see changes.`);
+      alert(
+        `Manual transfer completed!\n\n` +
+        `Amount: $${result.amount.toFixed(2)}\n` +
+        `This has been moved to your portfolio balance.\n\n` +
+        `Reload the page to see changes.`
+      );
     } else {
       alert(result.message);
     }
@@ -278,28 +389,26 @@ export default function Account() {
 
   const handleClearAllData = () => {
     const confirmClear = window.confirm(
-      'Are you sure you want to clear ALL data?\n\n' +
-      'This will delete:\n' +
+      '⚠️ Clear ALL data?\n\n' +
+      'This will permanently delete:\n' +
       '• All habits\n' +
       '• All activity logs\n' +
-      '• All transfers\n' +
+      '• All transfer history\n' +
       '• User profile\n\n' +
-      'This action cannot be undone.'
+      'This cannot be undone!'
     );
 
-    if (confirmClear) {
-      // Clear all localStorage keys
-      localStorage.removeItem('flux_habits');
-      localStorage.removeItem('flux_logs');
-      localStorage.removeItem('flux_user');
-      localStorage.removeItem('flux_transfers');
-      localStorage.removeItem('flux_last_transfer');
-      
-      alert('All data cleared successfully!\n\nThe page will now reload.');
-      
-      // Reload to reset state
-      window.location.href = '/';
-    }
+    if (!confirmClear) return;
+
+    // Clear all localStorage
+    localStorage.removeItem('flux_habits');
+    localStorage.removeItem('flux_logs');
+    localStorage.removeItem('flux_transfers');
+    localStorage.removeItem('flux_user');
+    localStorage.removeItem('flux_last_transfer');
+
+    alert('All data cleared. Reloading app...');
+    window.location.reload();
   };
 
   return (
@@ -308,10 +417,10 @@ export default function Account() {
         {/* Profile Header */}
         <div className="profile-header">
           <div className="profile-avatar">
-            {getInitials(user.name || 'User')}
+            {getInitials(user?.name || 'User')}
           </div>
-          <div className="profile-name">{user.name || 'User'}</div>
-          <div className="profile-email">{user.email || 'email@example.com'}</div>
+          <div className="profile-name">{user?.name || 'User'}</div>
+          <div className="profile-email">{user?.email || 'Set up your profile'}</div>
           <button className="edit-profile-button">
             <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -332,7 +441,7 @@ export default function Account() {
               </div>
               <div className="menu-content">
                 <div className="menu-title">Add Example Data</div>
-                <div className="menu-subtitle">Populate with demo habits & logs</div>
+                <div className="menu-subtitle">60-90 days of logs for Flux Score testing</div>
               </div>
               <svg className="chevron" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -480,7 +589,7 @@ export default function Account() {
 
         {/* Version Info */}
         <div className="version-info">
-          Flux v1.0.0 • Made with intention
+          Flux v2.0.0 • Made with intention
         </div>
       </div>
 

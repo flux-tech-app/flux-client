@@ -389,6 +389,159 @@ export function HabitProvider({ children }) {
     return newTransfer;
   };
 
+  // ========== FLUX SCORE CALCULATIONS ==========
+  
+  /**
+   * Calculate Flux Score for a habit (0-100 scale)
+   * Components:
+   * - Frequency Trend (30 pts): Recent vs baseline frequency
+   * - Consistency (25 pts): Gap variance (lower = better)
+   * - Recency (20 pts): Days since last log vs typical gap
+   * - Volume/Intensity (15 pts): For non-binary habits only
+   * - Data Maturity (10 pts): Total logs (confidence indicator)
+   */
+  const calculateFluxScore = (habitId) => {
+    const habitLogs = getHabitLogs(habitId);
+    const habit = habits.find(h => h.id === habitId);
+    
+    if (!habit) return null;
+    
+    const totalLogs = habitLogs.length;
+    
+    // Not enough data - return building state
+    if (totalLogs < 10) {
+      return {
+        score: null,
+        status: 'building',
+        logsNeeded: 10 - totalLogs,
+        totalLogs
+      };
+    }
+    
+    const now = new Date();
+    const sortedLogs = [...habitLogs].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    
+    // Calculate date boundaries
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    
+    // Get logs in each window
+    const recentLogs = sortedLogs.filter(log => new Date(log.timestamp) >= fourteenDaysAgo);
+    const baselineLogs = sortedLogs.filter(log => new Date(log.timestamp) >= ninetyDaysAgo);
+    
+    // === COMPONENT 1: Frequency Trend (30 pts) ===
+    // Compare recent frequency to baseline frequency
+    const recentFrequency = recentLogs.length / 14; // logs per day (last 14 days)
+    const baselineDays = Math.min(90, Math.floor((now - new Date(sortedLogs[sortedLogs.length - 1].timestamp)) / (24 * 60 * 60 * 1000)));
+    const baselineFrequency = baselineLogs.length / Math.max(baselineDays, 1);
+    
+    const frequencyRatio = baselineFrequency > 0 ? recentFrequency / baselineFrequency : 1;
+    const frequencyScore = 30 * Math.min(1, frequencyRatio);
+    
+    // === COMPONENT 2: Consistency (25 pts) ===
+    // Calculate gap variance - lower variance = more consistent
+    const gaps = [];
+    for (let i = 1; i < sortedLogs.length; i++) {
+      const gap = (new Date(sortedLogs[i - 1].timestamp) - new Date(sortedLogs[i].timestamp)) / (24 * 60 * 60 * 1000);
+      gaps.push(gap);
+    }
+    
+    const avgGap = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
+    const gapVariance = gaps.length > 0 
+      ? Math.sqrt(gaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / gaps.length)
+      : 0;
+    
+    const consistencyScore = 25 * Math.exp(-gapVariance / Math.max(avgGap, 0.5));
+    
+    // === COMPONENT 3: Recency (20 pts) ===
+    // How recently logged relative to typical gap
+    const daysSinceLog = sortedLogs.length > 0 
+      ? (now - new Date(sortedLogs[0].timestamp)) / (24 * 60 * 60 * 1000)
+      : 30;
+    
+    const recencyScore = 20 * Math.exp(-daysSinceLog / Math.max(avgGap, 1));
+    
+    // === COMPONENT 4: Volume/Intensity (15 pts) ===
+    // Only for non-binary habits
+    let volumeScore = 0;
+    if (habit.rateType !== 'BINARY') {
+      const recentUnits = recentLogs.reduce((sum, log) => sum + (log.units || 1), 0);
+      const baselineUnits = baselineLogs.reduce((sum, log) => sum + (log.units || 1), 0);
+      
+      const recentAvgUnits = recentLogs.length > 0 ? recentUnits / recentLogs.length : 0;
+      const baselineAvgUnits = baselineLogs.length > 0 ? baselineUnits / baselineLogs.length : 1;
+      
+      const volumeRatio = baselineAvgUnits > 0 ? recentAvgUnits / baselineAvgUnits : 1;
+      volumeScore = 15 * Math.min(1, volumeRatio);
+    }
+    
+    // === COMPONENT 5: Data Maturity (10 pts) ===
+    // More logs = higher confidence
+    const maturityScore = 10 * Math.min(1, totalLogs / 30);
+    
+    // === TOTAL SCORE ===
+    let totalScore;
+    if (habit.rateType === 'BINARY') {
+      // For binary habits, scale to 100 (max possible is 85 without volume)
+      const rawScore = frequencyScore + consistencyScore + recencyScore + maturityScore;
+      totalScore = (rawScore / 85) * 100;
+    } else {
+      totalScore = frequencyScore + consistencyScore + recencyScore + volumeScore + maturityScore;
+    }
+    
+    return {
+      score: Math.round(totalScore),
+      status: 'active',
+      components: {
+        frequency: Math.round(frequencyScore * 10) / 10,
+        consistency: Math.round(consistencyScore * 10) / 10,
+        recency: Math.round(recencyScore * 10) / 10,
+        volume: Math.round(volumeScore * 10) / 10,
+        maturity: Math.round(maturityScore * 10) / 10
+      },
+      meta: {
+        totalLogs,
+        avgGap: Math.round(avgGap * 10) / 10,
+        daysSinceLog: Math.round(daysSinceLog * 10) / 10,
+        recentLogs: recentLogs.length
+      }
+    };
+  };
+
+  /**
+   * Calculate overall portfolio Flux Score
+   * Weighted average of all habits with 10+ logs
+   */
+  const getPortfolioFluxScore = () => {
+    const habitScores = habits
+      .map(habit => ({
+        habit,
+        fluxScore: calculateFluxScore(habit.id)
+      }))
+      .filter(item => item.fluxScore?.status === 'active');
+    
+    if (habitScores.length === 0) {
+      return {
+        score: null,
+        status: 'building',
+        habitsWithScore: 0,
+        totalHabits: habits.length
+      };
+    }
+    
+    // Simple average (could weight by earnings or logs later)
+    const avgScore = habitScores.reduce((sum, item) => sum + item.fluxScore.score, 0) / habitScores.length;
+    
+    return {
+      score: Math.round(avgScore),
+      status: 'active',
+      habitsWithScore: habitScores.length,
+      totalHabits: habits.length
+    };
+  };
+
   // ========== HABIT STATS ==========
   
   /**
@@ -483,6 +636,10 @@ export function HabitProvider({ children }) {
     
     // Stats
     getHabitStats,
+    
+    // Flux Score
+    calculateFluxScore,
+    getPortfolioFluxScore,
     
     // User operations
     updateUser,
