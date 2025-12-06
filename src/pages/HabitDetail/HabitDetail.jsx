@@ -1,10 +1,34 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import BackButton from '../../components/BackButton';
 import './HabitDetail.css';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 export default function HabitDetail() {
   const { id } = useParams();
@@ -12,14 +36,20 @@ export default function HabitDetail() {
   const { habits, logs, deleteHabit } = useHabits();
   
   // Chart state
-  const [chartType, setChartType] = useState('earnings');
-  const [timeRange, setTimeRange] = useState('1M');
+  const [chartType, setChartType] = useState('fluxScore');
+  const [chartPeriod, setChartPeriod] = useState('1M');
   
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [showCalibrationInfo, setShowCalibrationInfo] = useState(false);
+
+  // Calendar month navigation
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
   
   const habit = habits.find(h => h.id === id);
   
@@ -177,25 +207,60 @@ export default function HabitDetail() {
     return 'sessions';
   };
 
-  // Calendar heatmap data (current month with padding)
+  // Calendar navigation functions
+  const goToPreviousMonth = () => {
+    setCalendarMonth(prev => {
+      const newMonth = prev.month - 1;
+      if (newMonth < 0) {
+        return { year: prev.year - 1, month: 11 };
+      }
+      return { ...prev, month: newMonth };
+    });
+  };
+
+  const goToNextMonth = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Don't go past current month
+    if (calendarMonth.year === currentYear && calendarMonth.month === currentMonth) {
+      return;
+    }
+
+    setCalendarMonth(prev => {
+      const newMonth = prev.month + 1;
+      if (newMonth > 11) {
+        return { year: prev.year + 1, month: 0 };
+      }
+      return { ...prev, month: newMonth };
+    });
+  };
+
+  // Check if we can go to next month
+  const canGoNext = useMemo(() => {
+    const now = new Date();
+    return !(calendarMonth.year === now.getFullYear() && calendarMonth.month === now.getMonth());
+  }, [calendarMonth]);
+
+  // Calendar heatmap data (selected month with padding)
   const calendarData = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    
+
+    const { year, month } = calendarMonth;
+
     // First day of the month
-    const firstOfMonth = new Date(currentYear, currentMonth, 1);
+    const firstOfMonth = new Date(year, month, 1);
     // Last day of the month
-    const lastOfMonth = new Date(currentYear, currentMonth + 1, 0);
+    const lastOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastOfMonth.getDate();
-    
+
     // What day of week does the month start on? (0 = Sunday)
     const startDayOfWeek = firstOfMonth.getDay();
     // What day of week does the month end on?
     const endDayOfWeek = lastOfMonth.getDay();
-    
+
     // Build log map for quick lookup
     const logMap = new Map();
     habitLogs.forEach(log => {
@@ -204,9 +269,9 @@ export default function HabitDetail() {
       const key = d.getTime();
       logMap.set(key, (logMap.get(key) || 0) + 1);
     });
-    
+
     const days = [];
-    
+
     // Add padding days before the 1st (from previous month)
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push({
@@ -217,14 +282,14 @@ export default function HabitDetail() {
         level: 0
       });
     }
-    
-    // Add days of the current month
+
+    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
+      const date = new Date(year, month, day);
       const key = date.getTime();
       const count = logMap.get(key) || 0;
       const isFuture = date > today;
-      
+
       days.push({
         date,
         day,
@@ -234,7 +299,7 @@ export default function HabitDetail() {
         level: isFuture ? 0 : count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
       });
     }
-    
+
     // Add padding days after the last day (to complete the week)
     const remainingDays = 6 - endDayOfWeek;
     for (let i = 0; i < remainingDays; i++) {
@@ -246,100 +311,208 @@ export default function HabitDetail() {
         level: 0
       });
     }
-    
+
     // Convert to weeks (array of 7-day arrays)
     const weeks = [];
     for (let i = 0; i < days.length; i += 7) {
       weeks.push(days.slice(i, i + 7));
     }
-    
+
     return {
       weeks,
       monthName: firstOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     };
-  }, [habitLogs]);
+  }, [habitLogs, calendarMonth]);
 
   // Chart data generation
   const chartData = useMemo(() => {
+    const now = new Date();
     const ranges = {
       '1W': 7,
       '1M': 30,
       '3M': 90,
-      '6M': 180,
-      'YTD': Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)),
-      'ALL': Math.floor((new Date() - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1
+      'YTD': Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)),
+      '1Y': 365,
+      'ALL': Math.floor((now - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1
     };
-    
-    const days = Math.max(7, Math.min(ranges[timeRange], 365));
+
+    const days = Math.max(7, Math.min(ranges[chartPeriod], 365));
     const data = [];
-    
-    for (let i = days - 1; i >= 0; i--) {
+
+    // Determine number of data points based on range
+    let dataPoints;
+    switch(chartPeriod) {
+      case '1W':
+        dataPoints = 7;
+        break;
+      case '1M':
+        dataPoints = 15;
+        break;
+      case '3M':
+        dataPoints = 15;
+        break;
+      case '1Y':
+        dataPoints = 16;
+        break;
+      case 'YTD':
+        dataPoints = Math.min(15, days);
+        break;
+      case 'ALL':
+      default:
+        dataPoints = 15;
+    }
+
+    const interval = Math.max(1, Math.floor(days / dataPoints));
+
+    for (let i = dataPoints; i >= 0; i--) {
       const date = new Date();
-      date.setDate(date.getDate() - i);
+      date.setDate(date.getDate() - (i * interval));
       date.setHours(0, 0, 0, 0);
-      
-      const dayLogs = habitLogs.filter(log => {
+
+      // Get all logs up to this date for cumulative earnings
+      const logsUpToDate = habitLogs.filter(log => {
         const logDate = new Date(log.timestamp);
         logDate.setHours(0, 0, 0, 0);
-        return logDate.getTime() === date.getTime();
+        return logDate.getTime() <= date.getTime();
       });
-      
-      const dayEarnings = dayLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-      
+
+      const cumulativeEarnings = logsUpToDate.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
+
+      // Calculate rolling Flux Score (7-day window ending on this date)
+      const sevenDaysAgo = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const logsInWindow = habitLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        logDate.setHours(0, 0, 0, 0);
+        return logDate.getTime() > sevenDaysAgo.getTime() && logDate.getTime() <= date.getTime();
+      });
+
+      // Count unique days logged in window
+      const uniqueDaysLogged = new Set(logsInWindow.map(log => {
+        const d = new Date(log.timestamp);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      })).size;
+
+      const fluxScore = Math.round((uniqueDaysLogged / 7) * 100);
+
       data.push({
-        date: date.toISOString(),
-        earnings: dayEarnings,
-        logged: dayLogs.length > 0
+        date: date,
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        cumulativeEarnings,
+        fluxScore
       });
     }
-    
-    let cumulative = 0;
-    data.forEach(d => {
-      cumulative += d.earnings;
-      d.cumulativeEarnings = cumulative;
-    });
-    
-    // Calculate rolling HSS (7-day window)
-    data.forEach((d, i) => {
-      const start = Math.max(0, i - 6);
-      const slice = data.slice(start, i + 1);
-      const completedDays = slice.filter(s => s.logged).length;
-      d.hss = Math.round((completedDays / slice.length) * 100);
-    });
-    
-    return data;
-  }, [habitLogs, timeRange, habit.createdAt]);
 
-  // Generate SVG line chart path
-  const generateChartPath = useMemo(() => {
-    if (chartData.length < 2) return { linePath: '', areaPath: '', points: [] };
-    
-    const width = 100;
-    const height = 100;
-    const paddingX = 0;
-    const paddingTop = 5;
-    const paddingBottom = 5;
-    
-    const values = chartData.map(d => chartType === 'hss' ? d.hss : d.cumulativeEarnings);
-    const maxValue = chartType === 'hss' ? 100 : Math.max(...values, 10);
-    const minValue = 0;
-    
-    const points = chartData.map((d, i) => {
-      const x = paddingX + (i / (chartData.length - 1)) * (width - paddingX * 2);
-      const value = chartType === 'hss' ? d.hss : d.cumulativeEarnings;
-      const y = paddingTop + ((maxValue - value) / (maxValue - minValue || 1)) * (height - paddingTop - paddingBottom);
-      return { x, y };
-    });
-    
-    const linePath = points.reduce((path, point, i) => {
-      if (i === 0) return `M ${point.x} ${point.y}`;
-      return `${path} L ${point.x} ${point.y}`;
-    }, '');
-    
-    const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
-    
-    return { linePath, areaPath, points };
+    return data;
+  }, [habitLogs, chartPeriod, habit.createdAt]);
+
+  // Calculate change over period
+  const periodChange = useMemo(() => {
+    if (chartData.length < 2) return { value: 0, formatted: '0' };
+
+    const firstPoint = chartData[0];
+    const lastPoint = chartData[chartData.length - 1];
+
+    if (chartType === 'fluxScore') {
+      const change = lastPoint.fluxScore - firstPoint.fluxScore;
+      return { value: change, formatted: `${Math.abs(change)}` };
+    } else {
+      const change = lastPoint.cumulativeEarnings - firstPoint.cumulativeEarnings;
+      return { value: change, formatted: formatCurrency(Math.abs(change)) };
+    }
   }, [chartData, chartType]);
+
+  // Chart.js configuration
+  const getChartConfig = useMemo(() => {
+    const labels = chartData.map(d => d.label);
+    const values = chartData.map(d => chartType === 'fluxScore' ? d.fluxScore : d.cumulativeEarnings);
+
+    return {
+      labels,
+      datasets: [{
+        label: chartType === 'fluxScore' ? 'Flux Score' : 'Earnings',
+        data: values,
+        borderColor: '#3b82f6',
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const {ctx, chartArea} = chart;
+          if (!chartArea) return null;
+
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+          return gradient;
+        },
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#3b82f6',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+      }]
+    };
+  }, [chartData, chartType]);
+
+  const chartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 10
+      }
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#6b7280',
+        bodyColor: '#111827',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          label: function(context) {
+            const value = context.parsed.y;
+            if (chartType === 'fluxScore') {
+              return `Score: ${Math.round(value)}`;
+            }
+            return `Earned: ${formatCurrency(value)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 10
+          },
+          color: '#9ca3af',
+          maxTicksLimit: 5
+        }
+      },
+      y: {
+        display: false,
+        grace: '10%',
+        grid: {
+          color: '#f3f4f6'
+        }
+      }
+    }
+  }), [chartType]);
 
   // Handle actions
   const handleEdit = () => {
@@ -366,29 +539,6 @@ export default function HabitDetail() {
     navigate('/portfolio', { state: { direction: 'back' } });
   };
 
-  // Chart display value - show change over period
-  const chartChangeValue = useMemo(() => {
-    if (chartData.length < 2) return { value: '$0.00', isPositive: true };
-    
-    const firstPoint = chartData[0];
-    const lastPoint = chartData[chartData.length - 1];
-    
-    if (chartType === 'earnings') {
-      const change = lastPoint.cumulativeEarnings - firstPoint.cumulativeEarnings;
-      return {
-        value: `${change >= 0 ? '+' : ''}${formatCurrency(change)}`,
-        isPositive: change >= 0
-      };
-    } else {
-      // HSS change
-      const change = lastPoint.hss - firstPoint.hss;
-      return {
-        value: `${change >= 0 ? '+' : ''}${change}%`,
-        isPositive: change >= 0
-      };
-    }
-  }, [chartData, chartType]);
-
   // HSS ring calculations
   const hssProgress = stats.hss / 100;
   const circumference = 2 * Math.PI * 36;
@@ -398,10 +548,9 @@ export default function HabitDetail() {
     <div className="habit-detail-page">
       <div className="habit-detail-container">
         {/* Header with Habit Name */}
-        <header className="detail-header">
+        <header className="detail-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
           <BackButton to="/portfolio" />
-          <h1 className="header-title">{habit.name}</h1>
-          <div className="header-spacer"></div>
+          <span className="header-title" style={{ display: 'inline' }}>{habit.name}</span>
         </header>
 
         {/* Hero Section - Two Column Layout */}
@@ -498,68 +647,66 @@ export default function HabitDetail() {
         {/* Performance Chart */}
         <section className="detail-chart-section">
           <div className="detail-chart-header">
-            <div className="chart-title">Growth</div>
+            <div className={`chart-change ${periodChange.value >= 0 ? 'positive' : 'negative'}`}>
+              {periodChange.value >= 0 ? (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                </svg>
+              ) : (
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+              {periodChange.formatted}
+            </div>
             <div className="chart-toggle-group">
-              <button 
+              <button
+                className={`chart-toggle-btn ${chartType === 'fluxScore' ? 'active' : ''}`}
+                onClick={() => setChartType('fluxScore')}
+              >
+                Flux Score
+              </button>
+              <button
                 className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`}
                 onClick={() => setChartType('earnings')}
               >
                 Earnings
               </button>
-              <button 
-                className={`chart-toggle-btn ${chartType === 'hss' ? 'active' : ''}`}
-                onClick={() => setChartType('hss')}
+            </div>
+          </div>
+
+          {/* View Index Link */}
+          {chartType === 'fluxScore' && (
+            <div className="view-index-row">
+              <button
+                className="view-index-link"
+                onClick={() => {
+                  setShowComingSoon(true);
+                  setTimeout(() => setShowComingSoon(false), 2000);
+                }}
               >
-                HSS
+                View Index
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
+          )}
+
+          {/* Chart */}
+          <div className="chart-container">
+            <Line data={getChartConfig} options={chartOptions} />
           </div>
-          
-          <div className={`chart-change-value ${chartChangeValue.isPositive ? 'positive' : 'negative'}`}>
-            {chartChangeValue.value}
-          </div>
-          
-          <div className="detail-chart-container">
-            <div className="chart-grid">
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-              <div className="grid-line"></div>
-            </div>
-            
-            {chartData.length >= 2 ? (
-              <svg className="line-chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d={generateChartPath.areaPath}
-                  fill="url(#chartGradient)"
-                />
-                <path
-                  d={generateChartPath.linePath}
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-            ) : (
-              <div className="chart-empty">Log more activities to see trends</div>
-            )}
-          </div>
-          
-          <div className="time-filters">
-            {['1W', '1M', '3M', '6M', 'YTD', 'ALL'].map(range => (
+
+          {/* Time Period Toggles */}
+          <div className="time-toggles">
+            {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(period => (
               <button
-                key={range}
-                className={`time-filter-btn ${timeRange === range ? 'active' : ''}`}
-                onClick={() => setTimeRange(range)}
+                key={period}
+                className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
+                onClick={() => setChartPeriod(period)}
               >
-                {range}
+                {period}
               </button>
             ))}
           </div>
@@ -569,7 +716,26 @@ export default function HabitDetail() {
         <section className="calendar-section">
           <div className="calendar-header">
             <h3 className="detail-section-title">Activity</h3>
-            <span className="calendar-month-label">{calendarData.monthName}</span>
+            <div className="calendar-nav">
+              <span className="calendar-month-label">{calendarData.monthName}</span>
+              <div className="calendar-arrows">
+                <button className="calendar-arrow" onClick={goToPreviousMonth} aria-label="Previous month">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  className={`calendar-arrow ${!canGoNext ? 'disabled' : ''}`}
+                  onClick={goToNextMonth}
+                  disabled={!canGoNext}
+                  aria-label="Next month"
+                >
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
           <div className="calendar-heatmap">
             <div className="calendar-weekday-labels">
@@ -585,11 +751,11 @@ export default function HabitDetail() {
               {calendarData.weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="calendar-week-row">
                   {week.map((day, dayIndex) => (
-                    <div 
-                      key={dayIndex} 
+                    <div
+                      key={dayIndex}
                       className={`calendar-day ${
-                        day.isPadding ? 'padding' : 
-                        day.isFuture ? 'future' : 
+                        day.isPadding ? 'padding' :
+                        day.isFuture ? 'future' :
                         `level-${day.level}`
                       }`}
                       title={day.isPadding || day.isFuture ? '' : `${day.date.toLocaleDateString()}: ${day.count} ${day.count === 1 ? 'log' : 'logs'}`}

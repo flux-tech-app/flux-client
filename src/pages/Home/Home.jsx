@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHabits } from '../../context/HabitContext'
-import Navigation from '../../components/Navigation'
 import EmptyState from '../Portfolio/EmptyState'
 import './Home.css'
 
@@ -310,8 +309,6 @@ export default function Home() {
           </>
         )}
       </div>
-
-      <Navigation />
 
       {/* Log Habit Modal */}
       <AnimatePresence>

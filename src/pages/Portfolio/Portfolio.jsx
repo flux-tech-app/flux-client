@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
@@ -16,8 +16,39 @@ import {
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { getNextTransferDate } from '../../utils/calculations';
-import Navigation from '../../components/Navigation';
 import './Portfolio.css';
+
+// Animated counter hook - counts up from 0 to target value
+const useAnimatedCounter = (targetValue, duration = 1500) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const startTime = useRef(null);
+  const startValue = useRef(0);
+
+  useEffect(() => {
+    startValue.current = displayValue;
+    startTime.current = Date.now();
+
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTime.current;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function (ease-out cubic)
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = startValue.current + (targetValue - startValue.current) * easeOut;
+
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [targetValue, duration]);
+
+  return displayValue;
+};
 
 // Register Chart.js components
 ChartJS.register(
@@ -49,6 +80,9 @@ export default function Portfolio() {
   const nextTransfer = getNextTransferDate();
   const pendingBalance = getPendingBalance();
   const portfolioScore = getPortfolioFluxScore();
+
+  // Animated portfolio value - counts up from 0 on load
+  const animatedBalance = useAnimatedCounter(transferredBalance, 1200);
 
   /**
    * Generate chart data for Flux Score view
@@ -215,6 +249,11 @@ export default function Portfolio() {
         <header className="portfolio-header">
           <div className="app-logo">Flux</div>
           <div className="header-actions">
+            <button className="icon-button" aria-label="Indices" onClick={() => navigate('/indices')}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+              </svg>
+            </button>
             <button className="icon-button" aria-label="Activity" onClick={() => navigate('/activity')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -227,17 +266,8 @@ export default function Portfolio() {
         {/* Portfolio Value Section */}
         <section className="portfolio-value-section">
           <div className="value-label">Total Portfolio Value</div>
-          <div className="portfolio-value">{formatCurrency(transferredBalance)}</div>
+          <div className="portfolio-value">{formatCurrency(animatedBalance)}</div>
           
-          {hasHabits && weekEarnings > 0 && (
-            <div className="value-change">
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
-              </svg>
-              +{formatCurrency(weekEarnings)}
-            </div>
-          )}
-
           {/* Pending Transfer */}
           {hasHabits && pendingBalance > 0 && (
             <div className="pending-transfer">
@@ -257,32 +287,7 @@ export default function Portfolio() {
             {/* Growth Header */}
             <div className="growth-header">
               <div className="growth-title">Flux Score</div>
-            </div>
-
-            {/* Index Summary Card (Matches Mockup) */}
-            <div className="index-summary">
-              <div className="index-summary-row">
-                <div className="index-summary-info">
-                  <div className="index-summary-label">Your Overall vs Flux Average</div>
-                  <div className="index-summary-value">
-                    {portfolioScore.status === 'active' 
-                      ? `${portfolioScore.score} - Building baseline` 
-                      : 'Building your score...'}
-                  </div>
-                  <div className="index-summary-context">
-                    Indices coming soon • Compare your progress
-                  </div>
-                </div>
-                <a href="#" className="index-summary-link" onClick={(e) => {
-                  e.preventDefault();
-                  // Future: navigate to indices page
-                }}>
-                  All Indices
-                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </a>
-              </div>
+              <span className="random-data-badge">Random Data</span>
             </div>
 
             {/* Chart */}
@@ -310,12 +315,15 @@ export default function Portfolio() {
           <section className="holdings-section">
             <div className="holdings-header">
               <span className="holdings-title">Holdings</span>
-              <span className="holdings-count">{holdings.length} habits</span>
+              <div className="holdings-header-right">
+                <span className="random-data-badge">Random Rankings</span>
+                <span className="holdings-count">{holdings.length} habits</span>
+              </div>
             </div>
 
             <div className="holdings-list">
               {holdings.map((holding, index) => (
-                <motion.div 
+                <motion.div
                   key={holding.id}
                   className={`holding-item ${holding.fluxScoreStatus === 'building' ? 'inactive' : ''}`}
                   onClick={() => navigate(`/habit/${holding.id}`)}
@@ -326,22 +334,21 @@ export default function Portfolio() {
                 >
                   {/* Ticker */}
                   <span className="holding-ticker">${holding.ticker}</span>
-                  
-                  {/* Middle: Score + Rank */}
+
+                  {/* Rank Badge */}
                   <div className="holding-middle">
-                    <div className="holding-score">
-                      <span className="holding-score-value">
-                        {holding.fluxScoreStatus === 'active' ? holding.fluxScore : '--'}
-                      </span>
-                      <span className="holding-score-label">Flux</span>
-                    </div>
-                    {holding.fluxScoreStatus === 'active' ? (
-                      <span className="holding-rank coming-soon">Rank soon</span>
-                    ) : (
-                      <span className="no-data-badge">{holding.logsNeeded} more</span>
+                    {holding.fluxScoreStatus === 'active' ? (() => {
+                      const rankPercent = Math.floor(Math.random() * 40 + 10);
+                      return (
+                        <span className={`holding-rank ${rankPercent <= 20 ? 'top-performer' : ''}`}>
+                          Top {rankPercent}%
+                        </span>
+                      );
+                    })() : (
+                      <span className="holding-rank inactive">{holding.logsNeeded} more logs needed</span>
                     )}
                   </div>
-                  
+
                   {/* Earnings */}
                   <div className="holding-earnings">
                     <div className="holding-earnings-value">{formatCurrency(holding.totalEarned)}</div>
@@ -396,8 +403,6 @@ export default function Portfolio() {
           </section>
         )}
       </div>
-
-      <Navigation />
     </div>
   );
 }

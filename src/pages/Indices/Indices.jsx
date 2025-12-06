@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navigation from '../../components/Navigation';
 import './Indices.css';
 
 export default function Indices() {
@@ -267,9 +266,6 @@ export default function Indices() {
           </div>
         </div>
       )}
-
-      {/* Navigation */}
-      <Navigation />
     </div>
   );
 }

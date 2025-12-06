@@ -1,49 +1,84 @@
-/* ===== HABIT DETAIL PAGE - All styles scoped to .habit-detail-page ===== */
+/* ===== HABIT DETAIL PAGE - Glassmorphic Design ===== */
 
 .habit-detail-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: linear-gradient(
+    180deg,
+    #e8eff4 0%,
+    #ecf2f6 20%,
+    #f0f5f8 40%,
+    #f4f7f9 60%,
+    #f7f9fb 80%,
+    #fafbfc 100%
+  );
   padding-bottom: 100px;
+  position: relative;
 }
 
 .habit-detail-page .habit-detail-container {
   max-width: 768px;
   margin: 0 auto;
-  background: white;
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
 }
 
-/* ===== Header with Habit Name ===== */
+/* ===== Header ===== */
 .habit-detail-page .detail-header {
   position: sticky;
   top: 0;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 12px 16px;
-  display: flex;
+  z-index: 50;
+  padding: 20px 16px 16px;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px;
+  background: linear-gradient(180deg, #e8eff4 0%, #e8eff4 80%, transparent 100%);
+  border: none;
+  width: 100%;
+}
+
+.habit-detail-page .detail-header .back-button {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
   align-items: center;
-  gap: 12px;
-  z-index: 10;
+  width: auto !important;
+}
+
+.habit-detail-page .detail-header .back-button svg {
+  margin-top: 28px;
 }
 
 .habit-detail-page .header-title {
-  flex: 1;
   font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  text-align: center;
-  margin: 0;
+  font-weight: 700;
+  margin: 0 !important;
+  padding: 0;
+  text-align: left !important;
+  flex: 0 0 auto !important;
+  display: inline !important;
+  width: auto !important;
+  max-width: none;
+  line-height: 20px;
+  vertical-align: middle;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter:
+    drop-shadow(0 1px 1px rgba(59, 130, 246, 0.2))
+    drop-shadow(0 2px 4px rgba(59, 130, 246, 0.15))
+    drop-shadow(0 4px 8px rgba(59, 130, 246, 0.1));
 }
 
-.habit-detail-page .header-spacer {
-  width: 40px;
-  flex-shrink: 0;
-}
 
-/* ===== Hero Section - Two Column Layout ===== */
+/* ===== Hero Section - Borderless ===== */
 .habit-detail-page .hero-section {
-  padding: 20px 16px;
-  background: linear-gradient(180deg, #eff6ff 0%, white 100%);
+  background: transparent;
+  margin: 0 16px 16px;
+  padding: 24px 20px;
 }
 
 .habit-detail-page .hero-content {
@@ -58,7 +93,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
 }
 
 .habit-detail-page .hero-right {
@@ -69,10 +104,12 @@
   font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   font-size: 14px;
   font-weight: 700;
-  color: #1d4ed8;
-  background: #dbeafe;
-  padding: 4px 10px;
-  border-radius: 6px;
+  color: #2c4a6e;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .habit-meta-line {
@@ -80,11 +117,11 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.6);
 }
 
 .habit-detail-page .meta-dot {
-  color: #d1d5db;
+  color: rgba(44, 74, 110, 0.3);
 }
 
 .habit-detail-page .meta-schedule {
@@ -92,24 +129,25 @@
 }
 
 .habit-detail-page .total-earned {
-  /* No extra margin - parent gap handles spacing */
+  margin-top: 4px;
 }
 
 .habit-detail-page .detail-earned-amount {
-  font-size: 28px;
-  font-weight: 600;
-  background: linear-gradient(90deg, #3b82f6 0%, #93c5fd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.2;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a3a5c;
+  line-height: 1.1;
   display: block;
+  letter-spacing: -0.5px;
 }
 
 .habit-detail-page .earned-label {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: 11px;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
   display: block;
+  margin-top: 2px;
 }
 
 .habit-detail-page .status-badges {
@@ -117,50 +155,47 @@
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  margin-top: 4px;
 }
 
 .habit-detail-page .today-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
-  background: #d1fae5;
-  color: #065f46;
-  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(34, 197, 94, 0.15);
+  backdrop-filter: blur(10px);
+  color: #16a34a;
+  border-radius: 12px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .habit-detail-page .paused-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
-  background: #fef3c7;
-  color: #92400e;
-  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(252, 211, 77, 0.25);
+  backdrop-filter: blur(10px);
+  color: #8b6914;
+  border-radius: 12px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  border: 1px solid rgba(252, 211, 77, 0.3);
 }
 
 .habit-detail-page .rating-badge {
   display: inline-flex;
-  padding: 4px 8px;
-  background: #eff6ff;
-  color: #3b82f6;
-  border-radius: 8px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  color: #2c4a6e;
+  border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
-}
-
-.habit-detail-page .rating-badge.exceptional {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.habit-detail-page .rating-badge.strong {
-  background: #d1fae5;
-  color: #065f46;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 /* HSS Ring in Hero - Tappable */
@@ -168,18 +203,20 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px;
-  border-radius: 12px;
+  padding: 8px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
+  background: transparent;
 }
 
 .habit-detail-page .hss-tappable:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
 }
 
 .habit-detail-page .hss-tappable:active {
-  background: rgba(59, 130, 246, 0.12);
+  transform: scale(0.98);
 }
 
 .habit-detail-page .hss-main {
@@ -200,6 +237,10 @@
   transform: scaleX(-1);
 }
 
+.habit-detail-page .hss-ring circle:first-of-type {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
 .habit-detail-page .hss-ring-value {
   position: absolute;
   top: 50%;
@@ -215,211 +256,292 @@
 .habit-detail-page .hss-number {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: #1a3a5c;
 }
 
 .habit-detail-page .hss-label {
   font-size: 9px;
   font-weight: 600;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.6);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   margin-top: 2px;
 }
 
 .habit-detail-page .hero-star-rating {
   display: flex;
   gap: 2px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .habit-detail-page .hero-star {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
 }
 
 .habit-detail-page .hero-star.filled {
-  color: #fbbf24;
+  color: #f59e0b;
 }
 
 .habit-detail-page .hero-star.empty {
-  color: #d1d5db;
+  color: rgba(44, 74, 110, 0.2);
 }
 
 .habit-detail-page .hss-chevron {
-  color: #9ca3af;
+  color: rgba(44, 74, 110, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .habit-detail-page .hss-tappable:hover .hss-chevron {
-  color: #3b82f6;
+  color: #2c4a6e;
 }
-
 
 /* ===== Section Titles ===== */
 .habit-detail-page .detail-section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2c4a6e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   margin-bottom: 12px;
 }
 
-/* ===== Chart Section ===== */
+/* ===== Chart Section - Glassmorphic Card ===== */
 .habit-detail-page .detail-chart-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  margin: 0 16px 16px;
+  border-radius: 28px;
+  padding: 24px 20px;
+  box-shadow:
+    0 20px 40px rgba(100, 130, 160, 0.12),
+    0 8px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .detail-chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .habit-detail-page .chart-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.habit-detail-page .chart-change-value {
-  font-size: 28px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 16px;
+  color: #2c4a6e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.habit-detail-page .chart-change-value.positive {
-  color: #0d9488;
+.habit-detail-page .chart-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.habit-detail-page .chart-change-value.negative {
-  color: #ef4444;
+.habit-detail-page .chart-change.positive {
+  color: #22c55e;
+}
+
+.habit-detail-page .chart-change.negative {
+  color: #dc2626;
+}
+
+.habit-detail-page .chart-change svg {
+  width: 18px;
+  height: 18px;
 }
 
 .habit-detail-page .chart-toggle-group {
   display: flex;
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 2px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  padding: 3px;
 }
 
 .habit-detail-page .chart-toggle-btn {
   padding: 6px 12px;
   border: none;
   background: transparent;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.5);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .habit-detail-page .chart-toggle-btn.active {
-  background: white;
-  color: #3b82f6;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  color: #2c4a6e;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
 }
 
-.habit-detail-page .detail-chart-container {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  height: 180px;
-  margin-bottom: 16px;
+.habit-detail-page .chart-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* Chart */
+.habit-detail-page .chart-container {
+  height: 160px;
+  margin-bottom: 14px;
   position: relative;
-  overflow: hidden;
-}
-
-.habit-detail-page .chart-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px;
-  pointer-events: none;
-}
-
-.habit-detail-page .grid-line {
-  width: 100%;
-  height: 1px;
-  background: #f3f4f6;
-}
-
-.habit-detail-page .line-chart-svg {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  width: calc(100% - 40px);
-  height: calc(100% - 40px);
-}
-
-.habit-detail-page .chart-empty {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #9ca3af;
-  font-size: 14px;
-}
-
-.habit-detail-page .time-filters {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-}
-
-.habit-detail-page .time-filter-btn {
-  padding: 8px 12px;
-  border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 16px;
+  padding: 12px 8px;
+}
+
+.habit-detail-page .view-index-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.habit-detail-page .view-index-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+  background: transparent;
+  border: none;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: #3b82f6;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.habit-detail-page .time-filter-btn.active {
-  background: #eff6ff;
-  color: #3b82f6;
+.habit-detail-page .view-index-link:hover {
+  opacity: 0.7;
 }
 
-.habit-detail-page .time-filter-btn:hover:not(.active) {
-  background: #f3f4f6;
+.habit-detail-page .view-index-link:active {
+  transform: scale(0.95);
 }
 
-/* ===== Calendar Heatmap - Month View ===== */
+.habit-detail-page .view-index-link svg {
+  flex-shrink: 0;
+}
+
+/* Time Toggles */
+.habit-detail-page .time-toggles {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.habit-detail-page .time-toggle {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.45);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.habit-detail-page .time-toggle.active {
+  background: rgba(255, 255, 255, 0.8);
+  color: #2c4a6e;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
+.habit-detail-page .time-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ===== Calendar Heatmap - Glassmorphic Card ===== */
 .habit-detail-page .calendar-section {
-  padding: 16px;
-  border-bottom: 8px solid #f5f5f5;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  margin: 0 16px 16px;
+  border-radius: 28px;
+  padding: 24px 20px;
+  box-shadow:
+    0 20px 40px rgba(100, 130, 160, 0.12),
+    0 8px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .habit-detail-page .calendar-header .detail-section-title {
   margin-bottom: 0;
 }
 
+.habit-detail-page .calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .habit-detail-page .calendar-month-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.7);
+}
+
+.habit-detail-page .calendar-arrows {
+  display: flex;
+  gap: 4px;
+}
+
+.habit-detail-page .calendar-arrow {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  color: rgba(44, 74, 110, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.habit-detail-page .calendar-arrow:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.7);
+  color: #2c4a6e;
+}
+
+.habit-detail-page .calendar-arrow:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.habit-detail-page .calendar-arrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .habit-detail-page .calendar-heatmap {
@@ -430,89 +552,92 @@
 
 .habit-detail-page .calendar-weekday-labels {
   display: grid;
-  grid-template-columns: repeat(7, 20px);
-  gap: 3px;
-  justify-content: center;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
 
 .habit-detail-page .calendar-weekday-labels span {
   text-align: center;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
-  color: #9ca3af;
+  color: rgba(44, 74, 110, 0.4);
   text-transform: uppercase;
 }
 
 .habit-detail-page .calendar-month-grid {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  align-items: center;
+  gap: 4px;
 }
 
 .habit-detail-page .calendar-week-row {
   display: grid;
-  grid-template-columns: repeat(7, 20px);
-  gap: 3px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
 
 .habit-detail-page .calendar-day {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-  background: #ebedf0;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
 }
 
 .habit-detail-page .calendar-day .day-number {
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 600;
-  color: #374151;
+  color: rgba(44, 74, 110, 0.6);
 }
 
 .habit-detail-page .calendar-day:hover:not(.padding):not(.future) {
-  outline: 2px solid #3b82f6;
-  outline-offset: -2px;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(100, 130, 160, 0.2);
 }
 
 .habit-detail-page .calendar-day.padding {
-  background: #f9fafb;
-  border: 1px dashed #e5e7eb;
+  background: transparent;
+  border: 1px dashed rgba(44, 74, 110, 0.1);
 }
 
 .habit-detail-page .calendar-day.future {
-  background: #f9fafb;
-  border: 1px dashed #d1d5db;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px dashed rgba(44, 74, 110, 0.15);
 }
 
 .habit-detail-page .calendar-day.future .day-number {
-  color: #9ca3af;
+  color: rgba(44, 74, 110, 0.3);
 }
 
 .habit-detail-page .calendar-day.level-0 {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .habit-detail-page .calendar-day.level-1 {
-  background: #ccfbf1;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.25);
 }
 
 .habit-detail-page .calendar-day.level-1 .day-number {
-  color: #0f766e;
+  color: #16a34a;
 }
 
 .habit-detail-page .calendar-day.level-2 {
-  background: #5eead4;
+  background: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.45);
 }
 
 .habit-detail-page .calendar-day.level-2 .day-number {
-  color: #134e4a;
+  color: #15803d;
 }
 
 .habit-detail-page .calendar-day.level-3 {
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #4ade80 100%);
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
 }
 
 .habit-detail-page .calendar-day.level-3 .day-number {
@@ -523,71 +648,85 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .habit-detail-page .legend-squares {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .habit-detail-page .legend-square {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .habit-detail-page .legend-square.level-0 {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .habit-detail-page .legend-square.level-1 {
-  background: #ccfbf1;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.25);
 }
 
 .habit-detail-page .legend-square.level-2 {
-  background: #5eead4;
+  background: rgba(34, 197, 94, 0.35);
+  border-color: rgba(34, 197, 94, 0.45);
 }
 
 .habit-detail-page .legend-square.level-3 {
-  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #4ade80 100%);
 }
 
 .habit-detail-page .legend-label {
-  font-size: 9px;
-  color: #9ca3af;
+  font-size: 11px;
+  color: rgba(44, 74, 110, 0.5);
+  font-weight: 500;
 }
 
-/* ===== NEW INSIGHT CARDS ===== */
+/* ===== Insight Cards - Glassmorphic Style ===== */
 .habit-detail-page .insight-section {
-  padding: 16px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 0 16px 16px;
 }
 
 .habit-detail-page .insight-card {
   padding: 20px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 28px;
+  box-shadow:
+    0 20px 40px rgba(100, 130, 160, 0.12),
+    0 8px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .insight-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .habit-detail-page .insight-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eff6ff;
-  border-radius: 8px;
-  color: #3b82f6;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  color: #2c4a6e;
   flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .insight-icon svg {
@@ -597,94 +736,95 @@
 
 .habit-detail-page .insight-title {
   font-size: 15px;
-  font-weight: 600;
-  color: #111827;
+  font-weight: 700;
+  color: #1a3a5c;
   flex: 1;
 }
 
 .habit-detail-page .info-button {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  color: rgba(44, 74, 110, 0.5);
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .habit-detail-page .info-button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.6);
+  color: #2c4a6e;
 }
 
 .habit-detail-page .info-button:active {
-  background: rgba(0, 0, 0, 0.08);
+  transform: scale(0.95);
 }
 
 .habit-detail-page .insight-message {
   font-size: 14px;
-  line-height: 1.5;
-  color: #4b5563;
+  line-height: 1.6;
+  color: rgba(44, 74, 110, 0.7);
   margin: 0;
 }
 
 .habit-detail-page .insight-suggestion {
   font-size: 13px;
   line-height: 1.5;
-  color: #6b7280;
-  margin: 12px 0 0 0;
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  color: rgba(44, 74, 110, 0.6);
+  margin: 16px 0 0 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .habit-detail-page .insight-advice {
   font-size: 13px;
   line-height: 1.5;
-  color: #6b7280;
-  margin: 12px 0 0 0;
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  border-left: 3px solid #3b82f6;
+  color: rgba(44, 74, 110, 0.7);
+  margin: 16px 0 0 0;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 14px;
+  border-left: 3px solid #3a5a8a;
 }
 
 /* Milestone Card Specifics */
 .habit-detail-page .insight-card.milestone {
-  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 50%, #f8fafc 100%);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, rgba(58, 90, 138, 0.1) 0%, rgba(255, 255, 255, 0.25) 100%);
+  border: 1px solid rgba(58, 90, 138, 0.2);
 }
 
 .habit-detail-page .insight-card.milestone .insight-icon {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #3a5a8a 0%, #5a7aa8 50%, #7a9ac4 100%);
   color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(58, 90, 138, 0.3);
 }
 
 .habit-detail-page .milestone-target {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .habit-detail-page .milestone-amount {
   display: block;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1a3a5c;
   line-height: 1;
+  letter-spacing: -1px;
 }
 
 .habit-detail-page .milestone-label {
-  font-size: 12px;
-  color: #6b7280;
+  font-size: 11px;
+  color: rgba(44, 74, 110, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  margin-top: 4px;
 }
 
 .habit-detail-page .milestone-progress-container {
@@ -693,42 +833,45 @@
 
 .habit-detail-page .milestone-progress-bar {
   height: 10px;
-  background: #e0e7ff;
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 5px;
   overflow: hidden;
-  margin-bottom: 8px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .habit-detail-page .milestone-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 40%, #60a5fa 80%, #93c5fd 100%);
+  background: linear-gradient(90deg, #3a5a8a 0%, #5a7aa8 50%, #7a9ac4 100%);
   border-radius: 5px;
   transition: width 0.3s ease;
-  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(58, 90, 138, 0.3);
 }
 
 .habit-detail-page .milestone-progress-text {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.6);
+  font-weight: 500;
 }
 
 /* Maturity Card Specifics */
 .habit-detail-page .maturity-badge {
   font-size: 11px;
-  font-weight: 500;
-  color: #6b7280;
-  background: white;
-  padding: 4px 8px;
-  border-radius: 6px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.6);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .habit-detail-page .maturity-description {
   font-size: 14px;
-  color: #374151;
-  margin: 0 0 12px 0;
+  color: rgba(44, 74, 110, 0.7);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
 }
 
 .habit-detail-page .maturity-progress-container {
@@ -737,32 +880,32 @@
 
 .habit-detail-page .maturity-progress-bar {
   height: 6px;
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .habit-detail-page .maturity-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
+  background: linear-gradient(90deg, #3a5a8a 0%, #5a7aa8 100%);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 .habit-detail-page .maturity-next {
   font-size: 12px;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.5);
   margin: 0;
 }
 
-/* Maturity stage colors */
+/* Maturity stage colors - Glassmorphic */
 .habit-detail-page .insight-card.maturity.forming {
-  border-left: 4px solid #a3e635;
+  border-left: 4px solid #84cc16;
 }
 
 .habit-detail-page .insight-card.maturity.forming .insight-icon {
-  background: #ecfccb;
+  background: rgba(132, 204, 22, 0.2);
   color: #65a30d;
 }
 
@@ -771,7 +914,7 @@
 }
 
 .habit-detail-page .insight-card.maturity.establishing .insight-icon {
-  background: #dcfce7;
+  background: rgba(34, 197, 94, 0.2);
   color: #16a34a;
 }
 
@@ -780,121 +923,140 @@
 }
 
 .habit-detail-page .insight-card.maturity.strengthening .insight-icon {
-  background: #ccfbf1;
+  background: rgba(20, 184, 166, 0.2);
   color: #0d9488;
 }
 
 .habit-detail-page .insight-card.maturity.stable {
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid #3a5a8a;
 }
 
 .habit-detail-page .insight-card.maturity.stable .insight-icon {
-  background: #dbeafe;
-  color: #2563eb;
+  background: rgba(58, 90, 138, 0.2);
+  color: #3a5a8a;
 }
 
 .habit-detail-page .insight-card.maturity.mastered {
   border-left: 4px solid #f59e0b;
-  background: linear-gradient(135deg, #fffbeb 0%, #f9fafb 100%);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(255, 255, 255, 0.25) 100%);
 }
 
 .habit-detail-page .insight-card.maturity.mastered .insight-icon {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.2);
   color: #d97706;
 }
 
-/* Calibration Card Specifics */
+/* Calibration Card Specifics - Glassmorphic */
 .habit-detail-page .insight-card.calibration.calibrated {
   border-left: 4px solid #22c55e;
 }
 
 .habit-detail-page .insight-card.calibration.calibrated .insight-icon {
-  background: #dcfce7;
+  background: rgba(34, 197, 94, 0.2);
   color: #16a34a;
 }
 
 .habit-detail-page .insight-card.calibration.challenging {
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid #3a5a8a;
 }
 
 .habit-detail-page .insight-card.calibration.challenging .insight-icon {
-  background: #dbeafe;
-  color: #2563eb;
+  background: rgba(58, 90, 138, 0.2);
+  color: #3a5a8a;
 }
 
 .habit-detail-page .insight-card.calibration.struggling {
   border-left: 4px solid #f59e0b;
-  background: linear-gradient(135deg, #fffbeb 0%, #f9fafb 100%);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(255, 255, 255, 0.25) 100%);
 }
 
 .habit-detail-page .insight-card.calibration.struggling .insight-icon {
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.2);
   color: #d97706;
 }
 
 .habit-detail-page .insight-card.calibration.mastered {
   border-left: 4px solid #8b5cf6;
-  background: linear-gradient(135deg, #f5f3ff 0%, #f9fafb 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(255, 255, 255, 0.25) 100%);
 }
 
 .habit-detail-page .insight-card.calibration.mastered .insight-icon {
-  background: #ede9fe;
+  background: rgba(139, 92, 246, 0.2);
   color: #7c3aed;
 }
 
 .habit-detail-page .insight-card.calibration.evaluating {
-  border-left: 4px solid #6b7280;
+  border-left: 4px solid rgba(44, 74, 110, 0.4);
 }
 
 .habit-detail-page .insight-card.calibration.evaluating .insight-icon {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: rgba(44, 74, 110, 0.15);
+  color: rgba(44, 74, 110, 0.6);
 }
 
-/* ===== Recent Activity ===== */
+/* ===== Recent Activity - Glassmorphic Card ===== */
 .habit-detail-page .detail-activity-section {
-  padding: 20px 16px;
-  border-bottom: 8px solid #f5f5f5;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  margin: 0 16px 16px;
+  border-radius: 28px;
+  padding: 24px 20px;
+  box-shadow:
+    0 20px 40px rgba(100, 130, 160, 0.12),
+    0 8px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .detail-activity-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .habit-detail-page .detail-activity-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 10px;
+  gap: 14px;
+  padding: 14px 12px;
+  margin: 0 -12px;
+  border-radius: 14px;
   transition: all 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.habit-detail-page .detail-activity-item:last-child {
+  border-bottom: none;
 }
 
 .habit-detail-page .detail-activity-item:hover {
-  background: #eff6ff;
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .habit-detail-page .activity-date {
-  width: 40px;
+  width: 44px;
   text-align: center;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .habit-detail-page .date-day {
   display: block;
   font-size: 18px;
   font-weight: 700;
-  color: #111827;
+  color: #1a3a5c;
   line-height: 1;
 }
 
 .habit-detail-page .date-month {
   display: block;
-  font-size: 10px;
-  color: #6b7280;
+  font-size: 9px;
+  color: rgba(44, 74, 110, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 2px;
@@ -907,52 +1069,57 @@
 
 .habit-detail-page .activity-title {
   font-size: 14px;
-  font-weight: 500;
-  color: #111827;
+  font-weight: 600;
+  color: #1a3a5c;
   margin-bottom: 2px;
 }
 
 .habit-detail-page .activity-time {
   font-size: 12px;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.5);
 }
 
 .habit-detail-page .activity-amount {
   font-size: 14px;
-  font-weight: 600;
-  color: #0d9488;
+  font-weight: 700;
+  color: #16a34a;
   flex-shrink: 0;
 }
 
 .habit-detail-page .activity-empty {
   text-align: center;
   padding: 32px 20px;
-  color: #9ca3af;
+  color: rgba(44, 74, 110, 0.5);
   font-size: 14px;
 }
 
 .habit-detail-page .view-history-btn {
   width: 100%;
-  margin-top: 12px;
-  padding: 12px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
   font-size: 14px;
-  font-weight: 500;
-  color: #3b82f6;
+  font-weight: 600;
+  color: #2c4a6e;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .habit-detail-page .view-history-btn:hover {
-  background: #eff6ff;
-  border-color: #93c5fd;
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
 }
 
-/* ===== Action Buttons ===== */
+.habit-detail-page .view-history-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===== Action Buttons - Glassmorphic ===== */
 .habit-detail-page .actions-section {
-  padding: 20px 16px;
+  padding: 0 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -960,56 +1127,80 @@
 
 .habit-detail-page .action-btn {
   width: 100%;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .habit-detail-page .action-btn.edit {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(135deg, #3a5a8a 0%, #5a7aa8 50%, #7a9ac4 100%);
   color: white;
   border: none;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  box-shadow:
+    0 8px 24px rgba(58, 90, 138, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .habit-detail-page .action-btn.edit:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
+  box-shadow:
+    0 12px 32px rgba(58, 90, 138, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.habit-detail-page .action-btn.edit:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .habit-detail-page .action-btn.pause {
-  background: white;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  color: rgba(44, 74, 110, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
 .habit-detail-page .action-btn.pause:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.6);
+  color: #2c4a6e;
+  transform: translateY(-1px);
+}
+
+.habit-detail-page .action-btn.pause:active {
+  transform: scale(0.98);
 }
 
 .habit-detail-page .action-btn.delete {
-  background: white;
+  background: rgba(220, 38, 38, 0.08);
+  backdrop-filter: blur(12px);
   color: #dc2626;
-  border: 1px solid #fee2e2;
+  border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
 .habit-detail-page .action-btn.delete:hover {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.25);
 }
 
-/* ===== Confirmation Modals ===== */
+.habit-detail-page .action-btn.delete:active {
+  transform: scale(0.98);
+}
+
+/* ===== Confirmation Modals - Glassmorphic ===== */
 .habit-detail-page .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(26, 58, 92, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1024,12 +1215,18 @@
 }
 
 .habit-detail-page .modal-content {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  padding: 28px;
   max-width: 340px;
   width: 100%;
   animation: detailSlideUp 0.3s ease;
+  box-shadow:
+    0 24px 48px rgba(100, 130, 160, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 @keyframes detailSlideUp {
@@ -1044,16 +1241,16 @@
 }
 
 .habit-detail-page .modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a3a5c;
   margin-bottom: 12px;
 }
 
 .habit-detail-page .modal-text {
   font-size: 14px;
-  line-height: 1.5;
-  color: #6b7280;
+  line-height: 1.6;
+  color: rgba(44, 74, 110, 0.7);
   margin-bottom: 24px;
 }
 
@@ -1064,8 +1261,8 @@
 
 .habit-detail-page .modal-btn {
   flex: 1;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 14px;
+  border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1073,33 +1270,38 @@
 }
 
 .habit-detail-page .modal-btn.cancel {
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
+  background: rgba(255, 255, 255, 0.6);
+  color: rgba(44, 74, 110, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .habit-detail-page .modal-btn.cancel:hover {
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.8);
+  color: #2c4a6e;
 }
 
 .habit-detail-page .modal-btn.confirm {
-  background: #f59e0b;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
   color: white;
   border: none;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .habit-detail-page .modal-btn.confirm:hover {
-  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
 }
 
 .habit-detail-page .modal-btn.delete {
-  background: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
   color: white;
   border: none;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .habit-detail-page .modal-btn.delete:hover {
-  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
 }
 
 /* ===== Error State ===== */
@@ -1114,27 +1316,29 @@
 
 .habit-detail-page .error-container p {
   font-size: 16px;
-  color: #6b7280;
+  color: rgba(44, 74, 110, 0.6);
   margin-bottom: 16px;
 }
 
 .habit-detail-page .error-container button {
-  padding: 12px 24px;
-  background: #3b82f6;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #3a5a8a 0%, #5a7aa8 50%, #7a9ac4 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(58, 90, 138, 0.25);
 }
 
 .habit-detail-page .error-container button:hover {
-  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(58, 90, 138, 0.35);
 }
 
-/* ===== Coming Soon Toast ===== */
+/* ===== Coming Soon Toast - Glassmorphic ===== */
 .habit-detail-page .coming-soon-toast {
   position: fixed;
   bottom: 100px;
@@ -1142,20 +1346,24 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: #1f2937;
+  gap: 10px;
+  padding: 14px 24px;
+  background: rgba(26, 58, 92, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: white;
-  border-radius: 12px;
+  border-radius: 16px;
   font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  box-shadow:
+    0 8px 32px rgba(26, 58, 92, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   z-index: 200;
   animation: toastSlideUp 0.3s ease;
 }
 
 .habit-detail-page .coming-soon-toast svg {
-  color: #60a5fa;
+  color: #7a9ac4;
   flex-shrink: 0;
 }
 
@@ -1170,14 +1378,20 @@
   }
 }
 
-/* ===== Info Modal ===== */
+/* ===== Info Modal - Glassmorphic ===== */
 .habit-detail-page .info-modal-content {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  padding: 28px;
   max-width: 340px;
   width: 100%;
   animation: detailSlideUp 0.3s ease;
+  box-shadow:
+    0 24px 48px rgba(100, 130, 160, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .habit-detail-page .info-modal-header {
@@ -1188,41 +1402,45 @@
 }
 
 .habit-detail-page .info-modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a3a5c;
 }
 
 .habit-detail-page .info-modal-close {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  border: none;
-  border-radius: 8px;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  color: rgba(44, 74, 110, 0.6);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .habit-detail-page .info-modal-close:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.8);
+  color: #2c4a6e;
+}
+
+.habit-detail-page .info-modal-close:active {
+  transform: scale(0.95);
 }
 
 .habit-detail-page .info-modal-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #4b5563;
+  color: rgba(44, 74, 110, 0.7);
   margin-bottom: 16px;
 }
 
 .habit-detail-page .info-modal-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 24px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1231,8 +1449,8 @@
 .habit-detail-page .info-modal-list li {
   font-size: 13px;
   line-height: 1.5;
-  color: #4b5563;
-  padding-left: 12px;
+  color: rgba(44, 74, 110, 0.7);
+  padding-left: 14px;
   position: relative;
 }
 
@@ -1240,43 +1458,48 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  width: 4px;
-  height: 4px;
-  background: #3b82f6;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  background: #3a5a8a;
   border-radius: 50%;
 }
 
 .habit-detail-page .info-modal-list li strong {
-  color: #111827;
+  color: #1a3a5c;
 }
 
 .habit-detail-page .info-modal-button {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  padding: 14px;
+  background: linear-gradient(135deg, #3a5a8a 0%, #5a7aa8 50%, #7a9ac4 100%);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(58, 90, 138, 0.25);
 }
 
 .habit-detail-page .info-modal-button:hover {
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(58, 90, 138, 0.35);
+}
+
+.habit-detail-page .info-modal-button:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 375px) {
+@media (max-width: 380px) {
   .habit-detail-page .header-title {
     font-size: 16px;
   }
 
   .habit-detail-page .detail-earned-amount {
-    font-size: 24px;
+    font-size: 28px;
   }
 
   .habit-detail-page .hss-ring-container {
@@ -1293,43 +1516,50 @@
   }
 
   .habit-detail-page .hero-ticker {
-    font-size: 13px;
-    padding: 4px 10px;
+    font-size: 12px;
+    padding: 5px 10px;
   }
 
-  .habit-detail-page .calendar-weekday-labels {
-    grid-template-columns: repeat(7, 18px);
-    gap: 2px;
-  }
-
-  .habit-detail-page .calendar-week-row {
-    grid-template-columns: repeat(7, 18px);
-    gap: 2px;
+  .habit-detail-page .calendar-weekday-labels span {
+    font-size: 10px;
   }
 
   .habit-detail-page .calendar-day {
-    width: 18px;
-    height: 18px;
+    border-radius: 6px;
   }
 
   .habit-detail-page .calendar-day .day-number {
-    font-size: 7px;
+    font-size: 10px;
   }
 
-  .habit-detail-page .time-filter-btn {
-    padding: 6px 8px;
+  .habit-detail-page .time-toggle {
+    padding: 6px 10px;
     font-size: 11px;
   }
 
   .habit-detail-page .insight-card {
-    padding: 16px;
+    padding: 18px;
+    border-radius: 24px;
   }
 
   .habit-detail-page .milestone-amount {
-    font-size: 28px;
+    font-size: 32px;
   }
 
   .habit-detail-page .insight-title {
     font-size: 14px;
+  }
+
+  .habit-detail-page .hero-section {
+    margin: 0 12px 12px;
+    padding: 20px 16px;
+  }
+
+  .habit-detail-page .detail-chart-section,
+  .habit-detail-page .calendar-section,
+  .habit-detail-page .detail-activity-section {
+    margin: 0 12px 12px;
+    padding: 20px 16px;
+    border-radius: 24px;
   }
 }

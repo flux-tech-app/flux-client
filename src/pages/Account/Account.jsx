@@ -1,5 +1,4 @@
 import { useHabits } from '../../context/HabitContext';
-import Navigation from '../../components/Navigation';
 import './Account.css';
 
 export default function Account() {
@@ -592,9 +591,6 @@ export default function Account() {
           Flux v2.0.0 • Made with intention
         </div>
       </div>
-
-      {/* Navigation */}
-      <Navigation />
     </div>
   );
 }

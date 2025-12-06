@@ -105,13 +105,12 @@
 .fab-bubble-label {
   position: absolute;
   right: 60px;
-  background: white;
+  background: transparent;
   color: #111827;
   font-size: 14px;
   font-weight: 500;
   padding: 8px 12px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
   pointer-events: none;
 }

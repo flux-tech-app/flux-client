@@ -1,5 +1,5 @@
 .back-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   background: none;
@@ -11,6 +11,8 @@
   margin: -8px;
   cursor: pointer;
   transition: opacity 0.2s ease;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .back-button:hover {

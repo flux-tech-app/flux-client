@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHabits } from '../../context/HabitContext'
-import Navigation from '../../components/Navigation'
 import './Dashboard.css'
 
 // Default star color for MVT (no categories)
@@ -573,8 +572,6 @@ export default function Dashboard() {
         </div>
         
       </div>
-      
-      <Navigation />
     </div>
   )
 }

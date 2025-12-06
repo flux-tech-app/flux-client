@@ -1,7 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HabitProvider, useHabits } from './context/HabitContext';
 import { ACTION_TYPES } from './utils/HABIT_LIBRARY';
+
+// Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 // Pages
 import Onboarding from './pages/Onboarding';
@@ -17,7 +28,7 @@ import Indices from './pages/Indices';
 import IndexDetail from './pages/IndexDetail';
 
 // Components
-import FAB from './components/FAB';
+import Navigation from './components/Navigation';
 import BottomSheet from './components/BottomSheet';
 import AddHabitFlow from './components/AddHabitFlow';
 import LogHabitSheet from './components/LogHabitSheet';
@@ -25,7 +36,7 @@ import LogHabitSheet from './components/LogHabitSheet';
 /**
  * Main App Routes
  * - Onboarding guard for first-time users
- * - FAB with 3 actions: Add Position, Log, Pass
+ * - Navigation bar with integrated FAB
  * - Bottom sheets for quick actions
  */
 function AppRoutes() {
@@ -53,9 +64,9 @@ function AppRoutes() {
     );
   }
 
-  // Determine which pages should show the FAB
-  const hideFABPaths = ['/add', '/log'];
-  const shouldHideFAB = hideFABPaths.some(path => location.pathname.startsWith(path));
+  // Determine which pages should show the Navigation
+  const hideNavPaths = ['/add', '/log'];
+  const shouldHideNav = hideNavPaths.some(path => location.pathname.startsWith(path));
 
   // Handle FAB actions
   const handleCreateHabit = () => {
@@ -89,9 +100,10 @@ function AppRoutes() {
 
   return (
     <>
+      <ScrollToTop />
       <Routes location={location}>
         {/* Bottom Nav Routes */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/portfolio" replace />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
@@ -110,9 +122,9 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* FAB - Shows on main pages (3 actions: Add Position, Log, Pass) */}
-      {!shouldHideFAB && (
-        <FAB
+      {/* Navigation Bar with integrated FAB */}
+      {!shouldHideNav && (
+        <Navigation
           onCreateHabit={handleCreateHabit}
           onLog={handleLog}
           onPass={handlePass}

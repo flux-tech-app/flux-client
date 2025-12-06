@@ -1,66 +1,376 @@
+/* Overlay when FAB is open */
+.fab-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid var(--gray-300, #e2e8f0);
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
   display: flex;
   justify-content: space-around;
-  padding: var(--space-2, 8px) 0;
-  padding-bottom: max(var(--space-2, 8px), env(safe-area-inset-bottom));
+  align-items: flex-end;
+  padding: 8px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 50;
+  box-shadow:
+    0 -4px 24px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1, 4px);
-  padding: var(--space-1, 4px) var(--space-2, 8px);
-  color: var(--gray-500, #64748b);
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px;
+  color: rgba(44, 74, 110, 0.45);
   text-decoration: none;
   font-size: 10px;
-  font-weight: 500;
-  transition: color 0.2s;
-  flex: 1;
-  max-width: 80px;
-  min-width: 56px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.25s ease;
+  border-radius: 16px;
+  position: relative;
+  min-width: 64px;
 }
 
 .nav-item:hover {
-  color: var(--gray-700, #334155);
+  color: rgba(44, 74, 110, 0.65);
 }
 
 .nav-item.active {
-  color: var(--primary, #3b82f6);
+  color: #2c4a6e;
 }
 
 .nav-icon {
   width: 22px;
   height: 22px;
+  transition: all 0.25s ease;
 }
 
-/* Subtle scale effect on active */
+/* Active state - subtle glass pill */
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 2px 8px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 .nav-item.active .nav-icon {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 /* Touch feedback */
 .nav-item:active {
-  opacity: 0.7;
+  transform: scale(0.94);
+  opacity: 0.85;
+}
+
+/* Center FAB Container */
+.nav-fab-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+/* FAB Actions Row - horizontal layout above nav */
+.fab-actions-row {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  left: 16px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+}
+
+/* Main FAB Button in Navigation */
+.nav-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  box-shadow:
+    0 2px 4px rgba(59, 130, 246, 0.2),
+    0 4px 8px rgba(59, 130, 246, 0.2),
+    0 8px 16px rgba(59, 130, 246, 0.15),
+    0 16px 32px rgba(59, 130, 246, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  position: relative;
+  z-index: 51;
+  margin-bottom: 8px;
+}
+
+.nav-fab:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
+  box-shadow:
+    0 2px 4px rgba(59, 130, 246, 0.25),
+    0 6px 12px rgba(59, 130, 246, 0.25),
+    0 12px 24px rgba(59, 130, 246, 0.2),
+    0 20px 40px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.nav-fab:active {
+  transform: scale(0.95) translateY(0);
+}
+
+.nav-fab.fab-open {
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  box-shadow:
+    0 4px 12px rgba(100, 116, 139, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.nav-fab.fab-open:hover {
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  transform: none;
+}
+
+.nav-fab svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+/* FAB Action Item - vertical stack: label on top, icon below */
+.fab-action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fab-action-item:hover {
+  transform: translateY(-2px);
+}
+
+.fab-action-item:active {
+  transform: scale(0.96);
+}
+
+/* Action Label - plain text above icon */
+.fab-action-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a3a5c;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* Action Icon - frosted circle */
+.fab-action-icon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.fab-action-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Frosted Blue - Add Position */
+.fab-action-blue .fab-action-icon {
+  background: rgba(59, 130, 246, 0.85);
+  border: none;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.fab-action-blue .fab-action-icon svg {
+  color: white;
+}
+
+.fab-action-blue:hover .fab-action-icon {
+  background: rgba(59, 130, 246, 0.95);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+/* Frosted Green - Log Activity */
+.fab-action-green .fab-action-icon {
+  background: rgba(34, 197, 94, 0.85);
+  border: none;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+}
+
+.fab-action-green .fab-action-icon svg {
+  color: white;
+}
+
+.fab-action-green:hover .fab-action-icon {
+  background: rgba(34, 197, 94, 0.95);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+}
+
+/* Frosted Amber - Skip Today */
+.fab-action-amber .fab-action-icon {
+  background: rgba(245, 158, 11, 0.85);
+  border: none;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+
+.fab-action-amber .fab-action-icon svg {
+  color: white;
+}
+
+.fab-action-amber:hover .fab-action-icon {
+  background: rgba(245, 158, 11, 0.95);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
 }
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 380px) {
-  .nav-item {
-    padding: var(--space-1, 4px) var(--space-1, 4px);
-    font-size: 9px;
-    min-width: 48px;
+  .bottom-nav {
+    padding: 6px 12px;
   }
-  
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 9px;
+    min-width: 56px;
+  }
+
   .nav-icon {
     width: 20px;
     height: 20px;
+  }
+
+  .nav-fab {
+    width: 50px;
+    height: 50px;
+  }
+
+  .nav-fab svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .fab-actions-row {
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    right: 12px;
+    padding: 10px 12px;
+    gap: 12px;
+    background: transparent;
+    border: none;
+  }
+
+  .fab-action-item {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .fab-action-label {
+    font-size: 10px;
+  }
+
+  .fab-action-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .fab-action-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Larger screens - more breathing room */
+@media (min-width: 500px) {
+  .bottom-nav {
+    padding: 10px 24px;
+  }
+
+  .nav-item {
+    padding: 12px 20px;
+    min-width: 72px;
+    gap: 5px;
+  }
+
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .nav-fab {
+    width: 60px;
+    height: 60px;
+  }
+
+  .nav-fab svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .fab-actions-row {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    left: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    gap: 20px;
+    background: transparent;
+    border: none;
+  }
+
+  .fab-action-item {
+    padding: 10px 20px;
+    gap: 10px;
+  }
+
+  .fab-action-label {
+    font-size: 13px;
+  }
+
+  .fab-action-icon {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+  }
+
+  .fab-action-icon svg {
+    width: 26px;
+    height: 26px;
   }
 }
