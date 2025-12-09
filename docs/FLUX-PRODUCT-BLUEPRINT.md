@@ -2,7 +2,7 @@
 
 **Complete Feature Specifications**
 
-**Last Updated:** December 4, 2025
+**Last Updated:** December 8, 2025
 
 ---
 
@@ -18,13 +18,13 @@ For terminology definitions, see FLUX-GLOSSARY.md.
 
 1. [Product Overview](#1-product-overview)
 2. [Money Flow](#2-money-flow)
-3. [Habit Library (MVT)](#3-habit-library-mvt)
+3. [Behavior Library (MVT)](#3-behavior-library-mvt)
 4. [Pattern Recognition](#4-pattern-recognition)
 5. [Flux Score](#5-flux-score)
 6. [Savings Goals](#6-savings-goals)
 7. [Behavior-Level Indices](#7-behavior-level-indices)
 8. [Negative Behavior Logging](#8-negative-behavior-logging)
-9. [Optional User Goals](#9-optional-user-goals)
+9. [Goals](#9-goals)
 10. [AI Companion](#10-ai-companion)
 11. [App Integrations (Future)](#11-app-integrations-future)
 12. [User Interface Philosophy](#12-user-interface-philosophy)
@@ -35,17 +35,19 @@ For terminology definitions, see FLUX-GLOSSARY.md.
 
 ### What Flux Is
 
-Flux is a behavioral intelligence platform that connects habit completion to real financial outcomes. Users earn real money by logging completed habits, with earnings transferred to FDIC-insured savings accounts. Unlike traditional habit trackers, Flux learns user patterns from actual behavior rather than enforcing rigid schedules.
+Flux is a behavioral intelligence platform that connects behavior completion to real financial outcomes. Users earn real money by logging completed behaviors, with earnings transferred to FDIC-insured savings accounts. Unlike traditional habit trackers, Flux learns user patterns from actual behavior rather than enforcing rigid schedules.
 
 ### Core Experience Loop
 
 1. **Select behaviors** from curated library (MVT: 23 behaviors)
-2. **Complete behavior** in real life (or successfully avoid it)
-3. **Log or Pass** in app
-4. **Earn transfer right** (each log/pass = money earned)
-5. **Friday transfer** moves pending earnings to Flux savings
-6. **View patterns** as data accumulates
-7. **Receive insights** from AI based on your behavior
+2. **Set goals** for each behavior (amount + period)
+3. **Complete behavior** in real life (or successfully avoid it)
+4. **Log or Pass** in app
+5. **Earn transfer right** (each log/pass = money earned)
+6. **Friday transfer** moves pending earnings to Flux savings
+7. **View patterns** as data accumulates
+8. **Track goal progress** toward aspirational targets
+9. **Receive insights** from AI based on your behavior
 
 ### What Makes Flux Different
 
@@ -53,7 +55,7 @@ Flux is a behavioral intelligence platform that connects habit completion to rea
 |---------------------------|------|
 | Virtual points, badges, streaks | Real money transfers |
 | User sets arbitrary schedules | Flux learns your natural patterns |
-| Measures compliance to goals | Compares you to yourself |
+| Measures compliance to goals | Compares you to yourself AND your goals |
 | Breaks streaks when life happens | Forgiving, pattern-based analysis |
 | Generic coaching | AI reflects your personal data |
 | Awkward "No X" habit framing | Clean Log/Pass action system |
@@ -77,7 +79,7 @@ User Withdrawal
 ### Key Principles
 
 **Opportunity Cost, Not Punishment**
-- Users never lose money when they skip a habit
+- Users never lose money when they skip a behavior
 - They miss the opportunity to earn
 - No guilt, no shame - just honest tracking with tangible rewards
 
@@ -120,11 +122,11 @@ Users configure transfer amounts per behavior. Two structures available:
 
 ---
 
-## 3. Habit Library (MVT)
+## 3. Behavior Library (MVT)
 
 ### Why a Curated Library
 
-For Minimum Viable Test (MVT), users select from a pre-defined library rather than creating custom habits.
+For Minimum Viable Test (MVT), users select from a pre-defined library rather than creating custom behaviors.
 
 **Rationale:**
 1. **Index data quality** - Consistent behavior definitions enable meaningful comparisons
@@ -151,8 +153,8 @@ This eliminates awkward "No X" habit framing. Instead of creating "No Takeout" a
 
 #### Log Behaviors (13)
 
-| # | Habit | Ticker | Rate Type | Default Rate |
-|---|-------|--------|-----------|--------------|
+| # | Behavior | Ticker | Rate Type | Default Rate |
+|---|----------|--------|-----------|--------------|
 | 1 | Running | $RUN | Distance | $1.00/mile |
 | 2 | Gym Workout | $GYM | Binary | $5.00/session |
 | 3 | Push Ups | $PUSH | Count | $0.05/rep |
@@ -188,7 +190,7 @@ Pass behaviors share a common pattern: **frequent impulse + immediate gratificat
 
 **Stake Treatment:** Pass actions are treated identically to Log actions for financial stakes. Successfully passing on a behavior earns toward the stake just like logging a positive behavior.
 
-**Flux Score for Avoidance:** Deferred post-MVT. The pattern recognition model doesn't cleanly map to avoidance (no natural frequency baseline, asymmetric data). MVT will validate whether users engage with Pass functionality before designing scoring.
+**Goals for Pass Behaviors:** Pass behaviors have goals representing maximum acceptable frequency (e.g., "Max 2 takeout orders / week" or "0 cigarettes / day"). Lower is better.
 
 ### Behavior Configurations
 
@@ -226,7 +228,7 @@ Users can request behaviors not in the MVT library. Placeholder UI with "Coming 
 
 ### Core Philosophy
 
-Flux doesn't enforce schedules. Users log whenever they complete habits, and Flux learns natural patterns from actual behavior.
+Flux doesn't enforce schedules. Users log whenever they complete behaviors, and Flux learns natural patterns from actual behavior.
 
 **Schedule Enforcement (What We Don't Do):**
 - User sets "M/W/F" schedule
@@ -235,7 +237,7 @@ Flux doesn't enforce schedules. Users log whenever they complete habits, and Flu
 - Streak breaks, guilt ensues
 
 **Pattern Recognition (What We Do):**
-- User logs when they actually complete habits
+- User logs when they actually complete behaviors
 - Flux identifies natural frequency over time
 - "You typically exercise 4-5x/week, usually mornings"
 - Compare current behavior to your own baseline
@@ -247,29 +249,32 @@ Flux doesn't enforce schedules. Users log whenever they complete habits, and Flu
 - Show simple metrics: "You've logged 8 times in 12 days"
 - Message: "Flux is learning your patterns - keep logging!"
 - Simplified Flux Score shown
+- Goal provides immediate direction during this phase
 
 **Phase 2: Patterns Emerging (10-30 logs)**
 - Baseline begins forming
 - Flux identifies typical gap between logs
 - Consistency patterns visible
 - Full Flux Score calculation begins
+- Goal progress becomes meaningful (baseline vs. goal comparison)
 
 **Phase 3: Established Patterns (30+ logs)**
 - High-confidence baseline established
 - Detailed insights available
 - "Your pattern varies: typically 4x/week with 1.8-day gaps"
 - Accurate comparison to baseline
+- Baseline ratchet eligibility begins
 
 ### Pattern Metrics Tracked
 
-For each habit, Flux calculates:
+For each behavior, Flux calculates:
 
 | Metric | Description |
 |--------|-------------|
 | Typical Gap | Average days between logs |
 | Gap Variance | How much gaps fluctuate (low = consistent) |
 | Baseline Frequency | Expected logs per week based on history |
-| Volume Baseline | For measurable habits: average units per log |
+| Volume Baseline | For measurable behaviors: average units per log |
 | Time Patterns | When you typically log (morning/evening, weekday/weekend) |
 
 ### Pattern Insights Examples
@@ -294,23 +299,23 @@ For each habit, Flux calculates:
 
 ### What It Measures
 
-The Flux Score (0-100) represents the overall health and strength of a user's behavioral patterns. It's calculated per habit and aggregated across all habits.
+The Flux Score (0-100) represents the overall health and strength of a user's behavioral patterns. It's calculated per behavior and aggregated across all behaviors.
 
 ### Five Components
 
 | Component | Weight | What It Measures |
 |-----------|--------|------------------|
-| Consistency | 30% | Regular gaps between logs (low variance) |
-| Momentum | 25% | Recent trend vs. historical baseline |
-| Volume | 20% | Meeting/exceeding typical output |
-| Longevity | 15% | Total time tracking this habit |
-| Recency | 10% | How recently you've logged |
+| Frequency Trend | 30% | Recent frequency vs. baseline frequency |
+| Consistency | 25% | Regular gaps between logs (low variance) |
+| Recency | 20% | Days since last log relative to typical gap |
+| Volume/Intensity | 15% | For measurable behaviors: recent avg vs. baseline avg |
+| Data Maturity | 10% | Confidence based on total log count (maxes at 30+) |
 
 ### Score Interpretation
 
 | Score Range | Label | Meaning |
 |-------------|-------|---------|
-| 90-100 | Exceptional | Habit is deeply established, highly consistent |
+| 90-100 | Exceptional | Behavior is deeply established, highly consistent |
 | 75-89 | Strong | Solid pattern, minor room for improvement |
 | 60-74 | Building | Pattern emerging, some inconsistency |
 | 40-59 | Developing | Early stage or inconsistent |
@@ -322,6 +327,11 @@ The Flux Score (0-100) represents the overall health and strength of a user's be
 - Score reflects YOUR patterns, not external standards
 - A 75 for someone who exercises 2x/week is as valid as 75 for someone who exercises 6x/week
 - Consistency to your own baseline matters most
+
+**Flux Score ≠ Goal Progress:**
+- Score measures habit health (how consistently you maintain your pattern)
+- Goal progress measures growth (how close you are to your aspiration)
+- Both are displayed but serve different purposes
 
 **No Punishment:**
 - Score can decrease but messaging stays neutral
@@ -339,7 +349,7 @@ The Flux Score (0-100) represents the overall health and strength of a user's be
 
 ### The Concept
 
-Users can link habits to specific financial objectives, creating a direct behavior-to-wealth connection.
+Users can link behaviors to specific financial objectives, creating a direct behavior-to-wealth connection.
 
 **Examples:**
 - "My running earnings go toward my vacation fund"
@@ -349,7 +359,7 @@ Users can link habits to specific financial objectives, creating a direct behavi
 ### How It Works
 
 1. **Create savings goal** with name and target amount
-2. **Link one or more habits** to the goal
+2. **Link one or more behaviors** to the goal
 3. **Each log** adds to that goal's progress
 4. **Visualize progress** toward the target
 
@@ -359,16 +369,29 @@ Users can link habits to specific financial objectives, creating a direct behavi
 🏖️ Vacation Fund
 ━━━━━━━━━━━━━━━━━━━━
 $847 of $2,000 (42%)
-Habits contributing: Running, Gym Workout
+Behaviors contributing: Running, Gym Workout
 This week: +$34 from 6 logs
+```
+
+### Integration with Behavior Goals
+
+Savings Goals now connect to behavior goals for time-to-target projections:
+
+```
+Hawaii Trip: $3,000
+
+At current pace (baseline): 24 weeks
+At goal pace:               16 weeks
+
+Hitting your goals gets you there 8 weeks sooner.
 ```
 
 ### Key Principles
 
-- Goals are optional (users can use Flux without them)
-- One habit can link to one goal (MVP simplicity)
-- Goals don't affect Flux Score or pattern recognition
-- Purely motivational/visualization feature
+- Savings Goals are optional (users can use Flux without them)
+- One behavior can link to one savings goal (MVP simplicity)
+- Savings Goals don't affect Flux Score or pattern recognition
+- Powerful when combined with behavior goals for projections
 
 ---
 
@@ -451,47 +474,209 @@ Users can track "quit" behaviors (smoking, gambling, etc.) by logging slips. Thi
 
 ---
 
-## 9. Optional User Goals
+## 9. Goals
 
-### The Concept
+### The Problem Goals Solve
 
-Users can optionally set daily/weekly/monthly targets for any habit. These exist alongside pattern recognition - Flux still learns natural patterns regardless of goals.
+Pattern Recognition and Flux Score answer: "How healthy is this behavior right now?"
 
-**Goals provide:** User-defined benchmarks for motivation
-**Pattern recognition provides:** Data-driven insights based on actual behavior
+But they don't answer: "Am I becoming who I want to be?"
 
-Neither replaces the other.
+Without goals, users who want to **improve** have no aspirational target. The system validates whatever they're currently doing as "normal." Goals add an aspirational layer that coexists with pattern recognition.
 
-### How It Works
+### Two Coexisting Systems
 
-1. **Set optional goal** (not required)
-   - "I want to run 4x/week"
-   - "Target: 20 minutes meditation daily"
-   - "Goal: 3 deep work sessions per week"
+| System | Question | Source | Affects Score? |
+|--------|----------|--------|----------------|
+| **Flux Score** | "How healthy is this behavior?" | Calculated from logs | Yes (the score) |
+| **Goal Progress** | "Am I reaching my aspiration?" | User-set target vs. baseline | No |
 
-2. **Flux tracks against goal AND pattern**
-   - "This week: 3 of 4 runs (goal) | +1 from your baseline"
+Neither replaces the other:
+- Flux Score measures current health (maintenance)
+- Goals measure growth toward aspiration (improvement)
 
-3. **No penalty for missing goals**
-   - Goals don't affect Flux Score
-   - Goals don't reduce earnings
-   - Just informational tracking
+A user can have a high Flux Score (healthy behavior) while still being far from their goal (room to grow).
 
-### Display Example
+### Goal Structure
+
+Every goal has two components:
+
+**Amount** — The target value (15 miles, 10,000 steps, 4 sessions)
+**Period** — The time frame (per day, per week, per month)
+
+Users choose both, allowing flexibility:
+- "10,000 steps / day" (daily stepper)
+- "50,000 steps / week" (weekend warrior)
+- "30 min meditation / week" (casual practitioner)
+- "20 min meditation / day" (serious practitioner)
+
+### Goal Types by Rate Type
+
+Goals are native to the behavior's unit type:
+
+| Rate Type | Goal Expressed As | Example |
+|-----------|-------------------|---------|
+| BINARY | Frequency per period | "4 sessions / week" |
+| DURATION | Time per period | "30 min / day" or "3 hrs / week" |
+| DISTANCE | Distance per period | "15 miles / week" |
+| COUNT | Units per period | "10,000 steps / day" |
+
+### Goals Are Required
+
+Every behavior requires a goal at setup. This ensures:
+- All users have aspirational targets from day one
+- Financial projections are always available
+- The cold start period has immediate direction
+
+**Goal editing:** Users can adjust goals anytime, including lowering them. Life circumstances change; goals should adapt. Baseline is unaffected by goal changes—it's always calculated from actual behavior.
+
+### User Flow: Setting a Goal
+
+**At Behavior Setup (Onboarding or Add Behavior):**
+
+After selecting rate, user sets goal:
 
 ```
-Running This Week
-━━━━━━━━━━━━━━━━━
-Goal: 3 of 4 runs ○○○●
-Pattern: +1 above your typical 2.3/week
+┌─────────────────────────────────┐
+│  What's your goal for Running?  │
+│                                 │
+│  Amount: [15] miles             │
+│                                 │
+│  Period: [per week ▼]           │
+│          ├─ per day             │
+│          ├─ per week            │
+│          └─ per month           │
+│                                 │
+│  ─────────────────────────────  │
+│                                 │
+│  At this goal, you'd earn:      │
+│    $15 / week                   │
+│    $60 / month                  │
+│    $780 / year                  │
+│                                 │
+│  [Continue]                     │
+└─────────────────────────────────┘
 ```
 
-### Why This Matters
+**Smart Defaults:** Each behavior in the library has suggested goals that users can accept or customize. The goal input pre-populates with a sensible default.
 
-Some users are motivated by explicit goals. Others find them stressful. Flux accommodates both:
+### How Goals Display
 
-- **Goal-oriented users:** Set targets, track progress
-- **Pattern-oriented users:** Just log, let Flux learn
+**During Calibration (0-10 logs):**
+
+Goal provides direction while baseline builds:
+
+```
+$RUN — Running
+Goal: 15 miles / week
+
+Flux Score: Building baseline...
+Logged: 18 miles over 3 weeks
+
+Keep going — 3 more logs to unlock full insights
+```
+
+**After Baseline Emerges (10+ logs):**
+
+Two metrics shown together:
+
+```
+$RUN — Running
+
+Flux Score: 74
+Baseline: 9.2 miles / week (learned)
+Goal: 15 miles / week
+
+[Baseline ●━━━━━━━━○━━━━━ Goal]
+           ↑ You (11.3 this week)
+
+Gap: 3.7 miles / week
+     $192 / year potential
+```
+
+### Financial Projections
+
+Goals unlock powerful financial insights:
+
+**At Setup:**
+"At this goal, you'd earn $15/week, $780/year"
+
+**On Behavior Detail:**
+```
+Goal: 15 miles / week → $15/week
+Baseline: 9.2 miles / week → $9.20/week
+
+Gap: $5.80 / week
+     $302 / year you're leaving on the table
+```
+
+**Portfolio-Level:**
+```
+Your Goals (All Behaviors)
+
+At baseline: $127 / week
+At goal:     $185 / week
+
+Potential gain: $58 / week
+                $3,016 / year
+
+You're capturing 69% of your goal potential.
+```
+
+### The Baseline Ratchet
+
+When users consistently exceed their baseline (3-4 weeks), the baseline automatically increases (minimum 4 weeks between ratchets):
+
+```
+┌─────────────────────────────────┐
+│  Your running baseline has      │
+│  increased!                     │
+│                                 │
+│  Old: 9.2 miles / week          │
+│  New: 11.8 miles / week         │
+│                                 │
+│  This reflects your actual      │
+│  performance over the last      │
+│  4 weeks. Your floor has risen. │
+│                                 │
+│  [Set New Goal]  [Keep Current] │
+└─────────────────────────────────┘
+```
+
+**The Ratchet Creates Natural Progression:**
+1. User sets goal above baseline
+2. User works toward goal
+3. Baseline ratchets up as user improves
+4. Eventually baseline meets goal
+5. User sets new goal (or maintains)
+
+### Pass Behaviors and Goals
+
+For avoidance behaviors (Pass actions), goals represent maximum acceptable frequency:
+
+**Examples:**
+- "Max 2 takeout orders / week" (reduction goal)
+- "0 cigarettes / day" (complete avoidance)
+- "Max 1 alcohol drink / week" (moderation)
+
+The same goal structure (amount + period) works for avoidance. Lower is better for Pass behaviors.
+
+**Goal Progress for Pass Behaviors:**
+- Baseline = current average frequency of slips
+- Goal = target maximum frequency
+- Progress = moving from baseline toward goal (reducing frequency)
+
+**Financial Projections:**
+- "At your goal (0 cigarettes/day), you'd earn $35/week"
+- "Current baseline: 3 cigarettes/day → $20/week"
+- "Gap: $15/week potential by hitting your goal"
+
+### What Goals Don't Do
+
+- **Don't affect Flux Score** — Score measures pattern health, not goal compliance
+- **Don't reduce earnings** — Missing a goal doesn't cost money
+- **Don't enforce schedules** — Goals are targets, not commitments
+- **Don't create guilt** — Missing a goal is just data, not failure
 
 ---
 
@@ -499,7 +684,7 @@ Some users are motivated by explicit goals. Others find them stressful. Flux acc
 
 ### Role Definition
 
-The Flux AI provides intelligent insights and coaching throughout the app. It is NOT the primary command center - traditional UI handles core interactions (habit creation, logging, navigation).
+The Flux AI provides intelligent insights and coaching throughout the app. It is NOT the primary command center - traditional UI handles core interactions (behavior creation, logging, navigation).
 
 **AI is:** Intelligent companion, reflection tool, pattern analyst
 **AI is not:** Chat-first interface, primary input method, command center
@@ -508,7 +693,7 @@ The Flux AI provides intelligent insights and coaching throughout the app. It is
 
 **Contextual Insights (Throughout App):**
 - Home page: "Good morning! You typically meditate on Tuesdays - want to log?"
-- Habit detail: "Your running consistency has increased 23% this month"
+- Behavior detail: "Your running consistency has increased 23% this month"
 - Portfolio: "Great week! You're on pace for $104 by Friday"
 
 **Dedicated Chat (Optional Deep Dive):**
@@ -530,8 +715,9 @@ The Flux AI provides intelligent insights and coaching throughout the app. It is
 - "Reading happens mostly on weekends for you"
 
 **Goal Coaching:**
-- "You're 3 runs away from hitting your monthly goal"
+- "You're 3 runs away from hitting your weekly goal"
 - "At this pace, you'll reach your vacation fund by March"
+- "You've been exceeding your baseline for 3 weeks - baseline ratchet coming soon!"
 
 **Gentle Accountability:**
 - Not pushy or judgmental
@@ -548,7 +734,7 @@ The Flux AI provides intelligent insights and coaching throughout the app. It is
 ### Technical Implementation (Future)
 
 - LLM-powered (Claude or GPT)
-- User context: habit library, log history, patterns, goals
+- User context: behavior library, log history, patterns, goals
 - Streaming responses for conversational feel
 - Function calling for structured actions
 
@@ -644,8 +830,8 @@ Flux uses financial/investment metaphor throughout:
 
 1. **Today** - Daily behaviors available to log/pass, quick action *(under evaluation - may merge into Dashboard/Portfolio)*
 2. **Dashboard** - Overall performance view, key metrics at a glance
-3. **Portfolio** - All positions, total balance, earnings breakdown
-4. **Behavior Detail** - Individual behavior metrics, history, patterns
+3. **Portfolio** - All positions, total balance, earnings breakdown, goal progress summaries
+4. **Behavior Detail** - Individual behavior metrics, history, patterns, goal progress
 5. **Flux Score** - Score breakdown, component visualization, trends
 6. **Activity Feed** - Log history, earnings, transfers
 7. **Indices** - Behavior-level performance (opt-in)
@@ -668,9 +854,11 @@ Flux uses financial/investment metaphor throughout:
 | Basic AI Insights | ✓ Required | Contextual, not chat-first |
 | Custom Rate Configuration | ✓ Required | At setup and log/pass time |
 | Predictive Autocomplete | ✓ Required | Smart input for behavior selection |
+| **Goals (Required)** | ✓ Required | Amount + period at setup, financial projections |
+| **Pass Behavior Goals** | ✓ Required | Max frequency targets |
 | Savings Goals | ○ Stretch | Link behaviors to objectives |
 | Behavior-Level Indices | ○ Stretch | Requires 50+ users per behavior |
-| Optional User Goals | ○ Post-MVT | Targets alongside patterns |
+| **Baseline Ratchet** | ○ Post-MVT | Min 4 weeks between ratchets |
 | Flux Score (Pass behaviors) | ○ Post-MVT | Scoring model needs user data |
 | Avoidance Indices | ○ Post-MVT | Requires Pass scoring model |
 | Negative Behavior Logging | ○ Post-MVT | Quit tracking |

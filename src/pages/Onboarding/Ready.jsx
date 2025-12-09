@@ -6,11 +6,12 @@ import './Onboarding.css';
  * Ready Screen - Step 5
  * Professional summary of selections and launch
  */
-export default function Ready({ 
-  selectedHabits, 
-  habitRates, 
-  onComplete, 
-  onBack 
+export default function Ready({
+  selectedHabits,
+  habitRates,
+  habitGoals,
+  onComplete,
+  onBack
 }) {
   
   return (
@@ -44,7 +45,8 @@ export default function Ready({
             {selectedHabits.map(libraryId => {
               const habit = getHabitById(libraryId);
               const rate = habitRates[libraryId] ?? habit.defaultRate;
-              
+              const goal = habitGoals[libraryId];
+
               // Format rate
               let rateDisplay;
               if (rate < 0.01) {
@@ -52,14 +54,21 @@ export default function Ready({
               } else {
                 rateDisplay = `$${rate.toFixed(2)}/${habit.unit}`;
               }
-              
+
               return (
                 <div key={libraryId} className="summary-item">
                   <div className="summary-item-left">
                     <div className="summary-item-icon">
                       <HabitIcon habitId={habit.id} size={18} />
                     </div>
-                    <span className="summary-item-name">{habit.name}</span>
+                    <div className="summary-item-info">
+                      <span className="summary-item-name">{habit.name}</span>
+                      {goal && (
+                        <span className="summary-item-goal">
+                          Goal: {goal.amount.toLocaleString()} {habit.goalUnit}/{goal.period}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="summary-item-rate">{rateDisplay}</span>
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import {
@@ -16,6 +16,7 @@ import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import BackButton from '../../components/BackButton';
+import GoalSection from '../../components/GoalSection/GoalSection';
 import './HabitDetail.css';
 
 // Register Chart.js components
@@ -35,6 +36,9 @@ export default function HabitDetail() {
   const navigate = useNavigate();
   const { habits, logs, deleteHabit } = useHabits();
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState('overview');
+
   // Chart state
   const [chartType, setChartType] = useState('fluxScore');
   const [chartPeriod, setChartPeriod] = useState('1M');
@@ -44,12 +48,71 @@ export default function HabitDetail() {
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [showCalibrationInfo, setShowCalibrationInfo] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Insights accordion state
+  const [expandedInsight, setExpandedInsight] = useState(null);
+
+  // Calendar day detail state
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
 
   // Calendar month navigation
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
+
+  // Calendar swipe navigation
+  const calendarRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Swipe left = next month
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+
+      if (!(calendarMonth.year === currentYear && calendarMonth.month === currentMonth)) {
+        setCalendarMonth(prev => {
+          const newMonth = prev.month + 1;
+          if (newMonth > 11) {
+            return { year: prev.year + 1, month: 0 };
+          }
+          return { ...prev, month: newMonth };
+        });
+      }
+    } else if (isRightSwipe) {
+      // Swipe right = previous month
+      setCalendarMonth(prev => {
+        const newMonth = prev.month - 1;
+        if (newMonth < 0) {
+          return { year: prev.year - 1, month: 11 };
+        }
+        return { ...prev, month: newMonth };
+      });
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [calendarMonth]);
   
   const habit = habits.find(h => h.id === id);
   
@@ -170,6 +233,28 @@ export default function HabitDetail() {
     });
   }, [habitLogs]);
 
+  // Check if habit is new (insufficient data for meaningful insights)
+  const habitDataStatus = useMemo(() => {
+    const uniqueDaysLogged = new Set(habitLogs.map(log => {
+      const d = new Date(log.timestamp);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })).size;
+
+    const daysSinceCreation = stats.daysSinceCreation;
+
+    if (uniqueDaysLogged === 0) {
+      return { status: 'no_data', message: 'Complete this habit to start tracking your progress' };
+    } else if (uniqueDaysLogged < 3) {
+      return { status: 'minimal', message: `${3 - uniqueDaysLogged} more day${3 - uniqueDaysLogged > 1 ? 's' : ''} of data needed to see trends`, daysLogged: uniqueDaysLogged };
+    } else if (uniqueDaysLogged < 7 || daysSinceCreation < 7) {
+      return { status: 'building', message: 'Building your habit profile...', daysLogged: uniqueDaysLogged };
+    } else if (uniqueDaysLogged < 14) {
+      return { status: 'emerging', message: 'Patterns are starting to emerge', daysLogged: uniqueDaysLogged };
+    }
+    return { status: 'sufficient', daysLogged: uniqueDaysLogged };
+  }, [habitLogs, stats.daysSinceCreation]);
+
   // Get recent activity (last 10 logs)
   const recentActivity = useMemo(() => {
     return [...habitLogs]
@@ -177,16 +262,87 @@ export default function HabitDetail() {
       .slice(0, 10);
   }, [habitLogs]);
 
-  // Star rating based on HSS
-  const getStarRating = (hss) => {
-    if (hss >= 90) return { stars: 5, label: 'Exceptional' };
-    if (hss >= 80) return { stars: 4, label: 'Strong' };
-    if (hss >= 70) return { stars: 3, label: 'Solid' };
-    if (hss >= 60) return { stars: 2, label: 'Developing' };
-    return { stars: 1, label: 'Building' };
+  // Weekly summary data
+  const weeklySummary = useMemo(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday
+
+    // Start of current week (Sunday)
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dayOfWeek);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Start of last week
+    const lastWeekStart = new Date(weekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+    // End of last week
+    const lastWeekEnd = new Date(weekStart);
+    lastWeekEnd.setMilliseconds(-1);
+
+    // This week's logs
+    const thisWeekLogs = habitLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= weekStart;
+    });
+
+    // Last week's logs
+    const lastWeekLogs = habitLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= lastWeekStart && logDate < weekStart;
+    });
+
+    // Count unique days this week
+    const thisWeekDays = new Set(thisWeekLogs.map(log => {
+      const d = new Date(log.timestamp);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })).size;
+
+    // Count unique days last week
+    const lastWeekDays = new Set(lastWeekLogs.map(log => {
+      const d = new Date(log.timestamp);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })).size;
+
+    // Earnings
+    const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
+    const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
+
+    // Days elapsed this week (including today)
+    const daysElapsed = dayOfWeek + 1;
+
+    // Comparison
+    const daysDiff = thisWeekDays - lastWeekDays;
+    const earningsDiff = thisWeekEarnings - lastWeekEarnings;
+
+    return {
+      thisWeekDays,
+      lastWeekDays,
+      daysElapsed,
+      thisWeekEarnings,
+      lastWeekEarnings,
+      daysDiff,
+      earningsDiff,
+      isAhead: thisWeekDays >= Math.floor((daysElapsed / 7) * lastWeekDays) || thisWeekDays > lastWeekDays
+    };
+  }, [habitLogs]);
+
+  // Get logs for a specific calendar day
+  const getLogsForDay = (date) => {
+    if (!date) return [];
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return habitLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= dayStart && logDate <= dayEnd;
+    });
   };
-  
-  const rating = getStarRating(stats.hss);
+
 
   // Format time for activity
   const formatActivityTime = (timestamp) => {
@@ -289,6 +445,7 @@ export default function HabitDetail() {
       const key = date.getTime();
       const count = logMap.get(key) || 0;
       const isFuture = date > today;
+      const isToday = date.getTime() === today.getTime();
 
       days.push({
         date,
@@ -296,6 +453,7 @@ export default function HabitDetail() {
         count,
         isPadding: false,
         isFuture,
+        isToday,
         level: isFuture ? 0 : count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
       });
     }
@@ -539,434 +697,517 @@ export default function HabitDetail() {
     navigate('/portfolio', { state: { direction: 'back' } });
   };
 
-  // HSS ring calculations
-  const hssProgress = stats.hss / 100;
-  const circumference = 2 * Math.PI * 36;
-  const strokeDashoffset = circumference * (1 - hssProgress);
-
   return (
     <div className="habit-detail-page">
       <div className="habit-detail-container">
         {/* Header with Habit Name */}
-        <header className="detail-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        <header className="detail-header">
           <BackButton to="/portfolio" />
-          <span className="header-title" style={{ display: 'inline' }}>{habit.name}</span>
-        </header>
-
-        {/* Hero Section - Two Column Layout */}
-        <section className="hero-section">
-          <div className="hero-content">
-            <div className="hero-left">
-              <div className="hero-ticker">${habit.ticker || 'HABIT'}</div>
-              <div className="habit-meta-line">
-                <span className="meta-rate">{formatCurrency(habit.rate ?? 0)}/{habit.rateType === 'per_unit' ? habit.unit || 'unit' : 'day'}</span>
-                <span className="meta-dot">·</span>
-                <span className="meta-schedule">{habit.schedule?.type === 'specific_days' ? 'Custom' : habit.schedule?.type || 'Daily'}</span>
-              </div>
-              <div className="total-earned">
-                <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
-                <span className="earned-label">lifetime earnings</span>
-              </div>
-              <div className="status-badges">
-                {isLoggedToday && (
-                  <div className="today-status">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Completed today</span>
-                  </div>
-                )}
-                {habit.isActive === false && (
-                  <div className="paused-status">
-                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                    </svg>
-                    <span>Paused</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="hero-right">
-              <div className="hss-tappable" onClick={() => {
-                setShowComingSoon(true);
-                setTimeout(() => setShowComingSoon(false), 2000);
-              }}>
-                <div className="hss-main">
-                  <div className="hss-ring-container">
-                    <svg className="hss-ring" viewBox="0 0 80 80">
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="6"
-                      />
-                      <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
-                        fill="none"
-                        stroke="url(#hssGradient)"
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={strokeDashoffset}
-                        transform="rotate(-90 40 40)"
-                      />
-                      <defs>
-                        <linearGradient id="hssGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#3b82f6" />
-                          <stop offset="100%" stopColor="#60a5fa" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="hss-ring-value">
-                      <span className="hss-number">{stats.hss}</span>
-                      <span className="hss-label">HSS</span>
-                    </div>
-                  </div>
-                  <div className="hero-star-rating">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <span key={star} className={`hero-star ${star <= rating.stars ? 'filled' : 'empty'}`}>
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="hss-chevron">
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Performance Chart */}
-        <section className="detail-chart-section">
-          <div className="detail-chart-header">
-            <div className={`chart-change ${periodChange.value >= 0 ? 'positive' : 'negative'}`}>
-              {periodChange.value >= 0 ? (
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-                </svg>
-              ) : (
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-              {periodChange.formatted}
-            </div>
-            <div className="chart-toggle-group">
-              <button
-                className={`chart-toggle-btn ${chartType === 'fluxScore' ? 'active' : ''}`}
-                onClick={() => setChartType('fluxScore')}
-              >
-                Flux Score
-              </button>
-              <button
-                className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`}
-                onClick={() => setChartType('earnings')}
-              >
-                Earnings
-              </button>
-            </div>
-          </div>
-
-          {/* View Index Link */}
-          {chartType === 'fluxScore' && (
-            <div className="view-index-row">
-              <button
-                className="view-index-link"
-                onClick={() => {
-                  setShowComingSoon(true);
-                  setTimeout(() => setShowComingSoon(false), 2000);
-                }}
-              >
-                View Index
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* Chart */}
-          <div className="chart-container">
-            <Line data={getChartConfig} options={chartOptions} />
-          </div>
-
-          {/* Time Period Toggles */}
-          <div className="time-toggles">
-            {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(period => (
-              <button
-                key={period}
-                className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
-                onClick={() => setChartPeriod(period)}
-              >
-                {period}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Calendar Heatmap - Month View */}
-        <section className="calendar-section">
-          <div className="calendar-header">
-            <h3 className="detail-section-title">Activity</h3>
-            <div className="calendar-nav">
-              <span className="calendar-month-label">{calendarData.monthName}</span>
-              <div className="calendar-arrows">
-                <button className="calendar-arrow" onClick={goToPreviousMonth} aria-label="Previous month">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  className={`calendar-arrow ${!canGoNext ? 'disabled' : ''}`}
-                  onClick={goToNextMonth}
-                  disabled={!canGoNext}
-                  aria-label="Next month"
-                >
-                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="calendar-heatmap">
-            <div className="calendar-weekday-labels">
-              <span>S</span>
-              <span>M</span>
-              <span>T</span>
-              <span>W</span>
-              <span>T</span>
-              <span>F</span>
-              <span>S</span>
-            </div>
-            <div className="calendar-month-grid">
-              {calendarData.weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="calendar-week-row">
-                  {week.map((day, dayIndex) => (
-                    <div
-                      key={dayIndex}
-                      className={`calendar-day ${
-                        day.isPadding ? 'padding' :
-                        day.isFuture ? 'future' :
-                        `level-${day.level}`
-                      }`}
-                      title={day.isPadding || day.isFuture ? '' : `${day.date.toLocaleDateString()}: ${day.count} ${day.count === 1 ? 'log' : 'logs'}`}
-                    >
-                      {!day.isPadding && <span className="day-number">{day.day}</span>}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="calendar-legend">
-              <span className="legend-label">Less</span>
-              <div className="legend-squares">
-                <div className="legend-square level-0"></div>
-                <div className="legend-square level-1"></div>
-                <div className="legend-square level-2"></div>
-                <div className="legend-square level-3"></div>
-              </div>
-              <span className="legend-label">More</span>
-            </div>
-          </div>
-        </section>
-
-        {/* === NEW INSIGHTS SECTION === */}
-        
-        {/* Progress Milestone */}
-        <section className="insight-section">
-          <div className="insight-card milestone">
-            <div className="insight-header">
-              <span className="insight-icon">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                  <circle cx="12" cy="12" r="6" strokeWidth="2"/>
-                  <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                </svg>
-              </span>
-              <h3 className="insight-title">Next Milestone</h3>
-            </div>
-            {insights.milestone.reached ? (
-              <p className="insight-message">{insights.milestone.message}</p>
-            ) : (
+          <span className="header-title">{habit.name}</span>
+          <div className="header-actions">
+            <button
+              className="more-menu-btn"
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              aria-label="More options"
+            >
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="19" r="2"/>
+              </svg>
+            </button>
+            {showMoreMenu && (
               <>
-                <div className="milestone-target">
-                  <span className="milestone-amount">${insights.milestone.target}</span>
-                  <span className="milestone-label">lifetime earnings</span>
+                <div className="menu-backdrop" onClick={() => setShowMoreMenu(false)} />
+                <div className="more-menu-dropdown">
+                  <button className="menu-item" onClick={() => { setShowMoreMenu(false); handleEdit(); }}>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit Habit
+                  </button>
+                  <button className="menu-item" onClick={() => { setShowMoreMenu(false); handlePause(); }}>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Pause Habit
+                  </button>
+                  <button className="menu-item delete" onClick={() => { setShowMoreMenu(false); handleDelete(); }}>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Delete Habit
+                  </button>
                 </div>
-                <div className="milestone-progress-container">
-                  <div className="milestone-progress-bar">
-                    <div 
-                      className="milestone-progress-fill"
-                      style={{ width: `${insights.milestone.progress}%` }}
-                    />
-                  </div>
-                  <div className="milestone-progress-text">
-                    <span>{formatCurrency(insights.milestone.current)}</span>
-                    <span>{formatCurrency(insights.milestone.target)}</span>
-                  </div>
-                </div>
-                <p className="insight-message">{insights.milestone.message}</p>
               </>
             )}
           </div>
-        </section>
+        </header>
 
-        {/* Habit Maturity Stage */}
-        <section className="insight-section">
-          <div className={`insight-card maturity ${insights.maturity.stage}`}>
-            <div className="insight-header">
-              <span className="insight-icon">
-                {insights.maturity.stage === 'forming' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19V5m0 14l-3-3m3 3l3-3M5 12a7 7 0 1114 0"/>
-                  </svg>
-                )}
-                {insights.maturity.stage === 'establishing' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                  </svg>
-                )}
-                {insights.maturity.stage === 'strengthening' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                  </svg>
-                )}
-                {insights.maturity.stage === 'stable' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                  </svg>
-                )}
-                {insights.maturity.stage === 'mastered' && (
-                  <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                )}
-              </span>
-              <h3 className="insight-title">{insights.maturity.title}</h3>
-              <span className="maturity-badge">{insights.maturity.dayRange}</span>
-            </div>
-            <p className="maturity-description">{insights.maturity.description}</p>
-            {insights.maturity.nextStage && (
-              <div className="maturity-progress-container">
-                <div className="maturity-progress-bar">
-                  <div 
-                    className="maturity-progress-fill"
-                    style={{ width: `${insights.maturity.progress}%` }}
-                  />
-                </div>
-                <p className="maturity-next">
-                  {insights.maturity.daysUntilNext} days until {insights.maturity.nextStage}
-                </p>
+        {/* Hero Section - Stacked/Centered */}
+        <section className="hero-section">
+          {/* Flux Score Ring */}
+          <div className="hero-flux-score">
+            <div className="flux-ring-container">
+              <svg className="flux-ring" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.5)"
+                  strokeWidth="7"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="44"
+                  fill="none"
+                  stroke="url(#fluxGradient)"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 44}
+                  strokeDashoffset={2 * Math.PI * 44 * (1 - stats.hss / 100)}
+                  transform="rotate(-90 50 50)"
+                />
+                <defs>
+                  <linearGradient id="fluxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#60a5fa" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="flux-ring-value">
+                <span className="flux-number">{stats.hss}</span>
+                <span className="flux-label">Flux</span>
               </div>
-            )}
-            <p className="insight-advice">{insights.maturity.insight}</p>
+            </div>
           </div>
+
+          {/* Earnings */}
+          <div className="hero-earnings">
+            <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
+            <span className="earned-label">lifetime earnings</span>
+          </div>
+
+          {/* Status Badges */}
+          {(isLoggedToday || habit.isActive === false) && (
+            <div className="hero-status">
+              {isLoggedToday && (
+                <div className="today-status">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Completed today</span>
+                </div>
+              )}
+              {habit.isActive === false && (
+                <div className="paused-status">
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                  <span>Paused</span>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
-        {/* Difficulty Calibration */}
-        <section className="insight-section">
-          <div className={`insight-card calibration ${insights.calibration.status}`}>
-            <div className="insight-header">
-              <span className="insight-icon">
-                {insights.calibration.status === 'evaluating' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                  </svg>
+        {/* Tab Navigation */}
+        <div className="detail-tabs">
+          <button
+            className={`detail-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button
+            className={`detail-tab ${activeTab === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveTab('activity')}
+          >
+            Activity
+          </button>
+          <button
+            className={`detail-tab ${activeTab === 'insights' ? 'active' : ''}`}
+            onClick={() => setActiveTab('insights')}
+          >
+            Insights
+          </button>
+        </div>
+
+        {/* ========== OVERVIEW TAB ========== */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Performance Chart */}
+            <section className="detail-chart-section">
+              <div className="detail-chart-header">
+                <h3 className="detail-section-title">Performance</h3>
+                <div className="chart-toggle-group">
+                  <button
+                    className={`chart-toggle-btn ${chartType === 'fluxScore' ? 'active' : ''}`}
+                    onClick={() => setChartType('fluxScore')}
+                  >
+                    Score
+                  </button>
+                  <button
+                    className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`}
+                    onClick={() => setChartType('earnings')}
+                  >
+                    Earnings
+                  </button>
+                </div>
+              </div>
+
+              {habitDataStatus.status === 'no_data' ? (
+                <div className="chart-empty-state">
+                  <div className="chart-empty-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                  </div>
+                  <p className="chart-empty-message">{habitDataStatus.message}</p>
+                </div>
+              ) : (
+                <>
+                  {habitDataStatus.status !== 'sufficient' && (
+                    <div className="chart-building-notice">
+                      <span className="building-dot"></span>
+                      {habitDataStatus.message}
+                    </div>
+                  )}
+                  <div className="chart-container">
+                    <Line data={getChartConfig} options={chartOptions} />
+                  </div>
+                </>
+              )}
+
+              <div className="time-toggles">
+                {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(period => (
+                  <button
+                    key={period}
+                    className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
+                    onClick={() => setChartPeriod(period)}
+                  >
+                    {period}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Weekly Summary Card */}
+            <section className="weekly-summary-section">
+              <div className="weekly-summary-card">
+                <div className="weekly-summary-header">
+                  <h3 className="weekly-summary-title">This Week</h3>
+                  <span className={`weekly-trend ${weeklySummary.isAhead ? 'positive' : 'neutral'}`}>
+                    {weeklySummary.daysDiff > 0 ? '+' : ''}{weeklySummary.daysDiff} vs last week
+                  </span>
+                </div>
+                <div className="weekly-summary-stats">
+                  <div className="weekly-stat">
+                    <span className="weekly-stat-value">{weeklySummary.thisWeekDays}</span>
+                    <span className="weekly-stat-label">days completed</span>
+                  </div>
+                  <div className="weekly-stat-divider" />
+                  <div className="weekly-stat">
+                    <span className="weekly-stat-value">{formatCurrency(weeklySummary.thisWeekEarnings)}</span>
+                    <span className="weekly-stat-label">earned</span>
+                  </div>
+                </div>
+                {weeklySummary.lastWeekDays > 0 && (
+                  <div className="weekly-comparison">
+                    <span className="comparison-label">Last week:</span>
+                    <span className="comparison-value">{weeklySummary.lastWeekDays} days · {formatCurrency(weeklySummary.lastWeekEarnings)}</span>
+                  </div>
                 )}
-                {insights.calibration.status === 'struggling' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                  </svg>
-                )}
-                {insights.calibration.status === 'challenging' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                  </svg>
-                )}
-                {insights.calibration.status === 'calibrated' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                  </svg>
-                )}
-                {insights.calibration.status === 'mastered' && (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                  </svg>
-                )}
-              </span>
-              <h3 className="insight-title">{insights.calibration.title}</h3>
-              <button 
-                className="info-button"
-                onClick={() => setShowCalibrationInfo(true)}
-                aria-label="What is difficulty calibration?"
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* ========== ACTIVITY TAB ========== */}
+        {activeTab === 'activity' && (
+          <>
+            {/* Calendar Heatmap */}
+            <section className="calendar-section">
+              <div className="calendar-header">
+                <h3 className="detail-section-title">Calendar</h3>
+                <div className="calendar-nav">
+                  <span className="calendar-month-label">{calendarData.monthName}</span>
+                  <div className="calendar-arrows">
+                    <button className="calendar-arrow" onClick={goToPreviousMonth} aria-label="Previous month">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      className={`calendar-arrow ${!canGoNext ? 'disabled' : ''}`}
+                      onClick={goToNextMonth}
+                      disabled={!canGoNext}
+                      aria-label="Next month"
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="calendar-heatmap"
+                ref={calendarRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               >
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <div className="calendar-weekday-labels">
+                  <span>S</span>
+                  <span>M</span>
+                  <span>T</span>
+                  <span>W</span>
+                  <span>T</span>
+                  <span>F</span>
+                  <span>S</span>
+                </div>
+                <div className="calendar-month-grid">
+                  {calendarData.weeks.map((week, weekIndex) => (
+                    <div key={weekIndex} className="calendar-week-row">
+                      {week.map((day, dayIndex) => (
+                        <div
+                          key={dayIndex}
+                          className={`calendar-day ${
+                            day.isPadding ? 'padding' :
+                            day.isFuture ? 'future' :
+                            `level-${day.level}`
+                          } ${day.isToday ? 'today' : ''} ${!day.isPadding && !day.isFuture && day.count > 0 ? 'tappable' : ''}`}
+                          onClick={() => {
+                            if (!day.isPadding && !day.isFuture && day.count > 0) {
+                              setSelectedCalendarDay(day);
+                            }
+                          }}
+                        >
+                          {!day.isPadding && <span className="day-number">{day.day}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="calendar-legend">
+                  <span className="legend-label">Less</span>
+                  <div className="legend-squares">
+                    <div className="legend-square level-0"></div>
+                    <div className="legend-square level-1"></div>
+                    <div className="legend-square level-2"></div>
+                    <div className="legend-square level-3"></div>
+                  </div>
+                  <span className="legend-label">More</span>
+                </div>
+              </div>
+            </section>
+
+            {/* Recent Activity */}
+            <section className="detail-activity-section">
+              <h3 className="detail-section-title">Recent Activity</h3>
+              {recentActivity.length > 0 ? (
+                <div className="detail-activity-list">
+                  {recentActivity.slice(0, 5).map((log) => (
+                    <div key={log.id} className="detail-activity-item">
+                      <div className="activity-date">
+                        <span className="date-day">{new Date(log.timestamp).getDate()}</span>
+                        <span className="date-month">{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short' })}</span>
+                      </div>
+                      <div className="activity-info">
+                        <div className="activity-title">
+                          {log.amount ? `${log.amount} ${log.unit || getUnitLabel()}` : 'Completed'}
+                        </div>
+                        <div className="activity-time">{formatActivityTime(log.timestamp)}</div>
+                      </div>
+                      <div className="activity-amount">+{formatCurrency(log.totalEarnings || 0)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="activity-empty">
+                  <div className="empty-icon">
+                    <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                  </div>
+                  <p className="empty-title">No activity yet</p>
+                  <p className="empty-subtitle">Complete this habit to start tracking</p>
+                </div>
+              )}
+              {habitLogs.length > 5 && (
+                <button className="view-history-btn" onClick={() => navigate('/activity', { state: { habitId: habit.id } })}>
+                  View Full History
+                </button>
+              )}
+            </section>
+          </>
+        )}
+
+        {/* ========== INSIGHTS TAB ========== */}
+        {activeTab === 'insights' && (
+          <>
+            {/* Goal Progress Section */}
+            {habit.goal && (
+              <GoalSection habit={habit} logs={habitLogs} />
+            )}
+
+            {/* Insights Accordion */}
+            <section className="insights-accordion-section">
+              <h3 className="detail-section-title">Insights</h3>
+
+              {/* Milestone Accordion */}
+              <div className={`accordion-item ${expandedInsight === 'milestone' ? 'expanded' : ''}`}>
+                <button
+                  className="accordion-header"
+                  onClick={() => setExpandedInsight(expandedInsight === 'milestone' ? null : 'milestone')}
+                >
+                  <div className="accordion-header-left">
+                    <span className="accordion-icon milestone">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                      </svg>
+                    </span>
+                    <span className="accordion-title">Next Milestone</span>
+                  </div>
+                  <div className="accordion-header-right">
+                    <span className="accordion-preview">{formatCurrency(insights.milestone.target)}</span>
+                    <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </div>
+                </button>
+                <div className="accordion-content">
+                  {insights.milestone.reached ? (
+                    <p className="insight-message">{insights.milestone.message}</p>
+                  ) : (
+                    <>
+                      <div className="milestone-progress-container">
+                        <div className="milestone-progress-bar">
+                          <div className="milestone-progress-fill" style={{ width: `${insights.milestone.progress}%` }} />
+                        </div>
+                        <div className="milestone-progress-text">
+                          <span>{formatCurrency(insights.milestone.current)}</span>
+                          <span>{formatCurrency(insights.milestone.target)}</span>
+                        </div>
+                      </div>
+                      <p className="insight-message">{insights.milestone.message}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Maturity Accordion */}
+              <div className={`accordion-item ${expandedInsight === 'maturity' ? 'expanded' : ''}`}>
+                <button
+                  className="accordion-header"
+                  onClick={() => setExpandedInsight(expandedInsight === 'maturity' ? null : 'maturity')}
+                >
+                  <div className="accordion-header-left">
+                    <span className={`accordion-icon maturity ${insights.maturity.stage}`}>
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                      </svg>
+                    </span>
+                    <span className="accordion-title">Habit Stage</span>
+                  </div>
+                  <div className="accordion-header-right">
+                    <span className="accordion-preview">{insights.maturity.title}</span>
+                    <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </div>
+                </button>
+                <div className="accordion-content">
+                  <p className="maturity-description">{insights.maturity.description}</p>
+                  {insights.maturity.nextStage && (
+                    <div className="maturity-progress-container">
+                      <div className="maturity-progress-bar">
+                        <div className="maturity-progress-fill" style={{ width: `${insights.maturity.progress}%` }} />
+                      </div>
+                      <p className="maturity-next">{insights.maturity.daysUntilNext} days until {insights.maturity.nextStage}</p>
+                    </div>
+                  )}
+                  <p className="insight-advice">{insights.maturity.insight}</p>
+                </div>
+              </div>
+
+              {/* Calibration Accordion */}
+              <div className={`accordion-item ${expandedInsight === 'calibration' ? 'expanded' : ''}`}>
+                <button
+                  className="accordion-header"
+                  onClick={() => setExpandedInsight(expandedInsight === 'calibration' ? null : 'calibration')}
+                >
+                  <div className="accordion-header-left">
+                    <span className={`accordion-icon calibration ${insights.calibration.status}`}>
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                      </svg>
+                    </span>
+                    <span className="accordion-title">Difficulty</span>
+                  </div>
+                  <div className="accordion-header-right">
+                    <span className="accordion-preview">{insights.calibration.title}</span>
+                    <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </div>
+                </button>
+                <div className="accordion-content">
+                  <p className="insight-message">{insights.calibration.message}</p>
+                  {insights.calibration.suggestion && (
+                    <p className="insight-suggestion">{insights.calibration.suggestion}</p>
+                  )}
+                  <button className="calibration-info-link" onClick={() => setShowCalibrationInfo(true)}>
+                    Learn more about calibration
+                  </button>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+      </div>
+
+      {/* Calendar Day Detail Modal */}
+      {selectedCalendarDay && (
+        <div className="modal-overlay" onClick={() => setSelectedCalendarDay(null)}>
+          <div className="calendar-day-modal" onClick={e => e.stopPropagation()}>
+            <div className="calendar-day-modal-header">
+              <h3>{selectedCalendarDay.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedCalendarDay(null)}>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
-            <p className="insight-message">{insights.calibration.message}</p>
-            {insights.calibration.suggestion && (
-              <p className="insight-suggestion">{insights.calibration.suggestion}</p>
-            )}
-          </div>
-        </section>
-
-        {/* Recent Activity */}
-        <section className="detail-activity-section">
-          <h3 className="detail-section-title">Recent Activity</h3>
-          {recentActivity.length > 0 ? (
-            <div className="detail-activity-list">
-              {recentActivity.slice(0, 5).map((log) => (
-                <div key={log.id} className="detail-activity-item">
-                  <div className="activity-date">
-                    <span className="date-day">{new Date(log.timestamp).getDate()}</span>
-                    <span className="date-month">{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short' })}</span>
+            <div className="calendar-day-modal-content">
+              {getLogsForDay(selectedCalendarDay.date).map((log, idx) => (
+                <div key={idx} className="calendar-day-log">
+                  <div className="calendar-log-time">
+                    {new Date(log.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                   </div>
-                  <div className="activity-info">
-                    <div className="activity-title">
+                  <div className="calendar-log-details">
+                    <span className="calendar-log-amount">
                       {log.amount ? `${log.amount} ${log.unit || getUnitLabel()}` : 'Completed'}
-                    </div>
-                    <div className="activity-time">{formatActivityTime(log.timestamp)}</div>
+                    </span>
+                    <span className="calendar-log-earnings">+{formatCurrency(log.totalEarnings || 0)}</span>
                   </div>
-                  <div className="activity-amount">+{formatCurrency(log.totalEarnings || 0)}</div>
                 </div>
               ))}
+              <div className="calendar-day-summary">
+                <span>Total:</span>
+                <span className="calendar-day-total">
+                  +{formatCurrency(getLogsForDay(selectedCalendarDay.date).reduce((sum, log) => sum + (log.totalEarnings || 0), 0))}
+                </span>
+              </div>
             </div>
-          ) : (
-            <div className="activity-empty">
-              <p>No activity logged yet</p>
-            </div>
-          )}
-          {habitLogs.length > 5 && (
-            <button className="view-history-btn" onClick={() => navigate('/activity', { state: { habitId: habit.id } })}>
-              View Full History
-            </button>
-          )}
-        </section>
-
-        {/* Action Buttons */}
-        <section className="actions-section">
-          <button className="action-btn edit" onClick={handleEdit}>
-            Edit Habit
-          </button>
-          <button className="action-btn pause" onClick={handlePause}>
-            Pause Habit
-          </button>
-          <button className="action-btn delete" onClick={handleDelete}>
-            Delete Habit
-          </button>
-        </section>
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Pause Confirmation Modal */}
       {showPauseConfirm && (

@@ -1,0 +1,615 @@
+/* ===== Goal Section - Glassmorphic Design ===== */
+
+.goal-section {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  margin: 0 16px 16px;
+  border-radius: 28px;
+  padding: 20px;
+  box-shadow:
+    0 20px 40px rgba(100, 130, 160, 0.12),
+    0 8px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.goal-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.goal-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2c4a6e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.edit-goal-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-goal-btn:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.edit-goal-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===== Top Row: Ring + Stats ===== */
+.goal-top-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ===== Progress Ring ===== */
+.goal-progress-ring-container {
+  flex-shrink: 0;
+}
+
+.goal-ring-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.goal-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.goal-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 8;
+}
+
+.goal-ring-progress {
+  fill: none;
+  stroke: url(#goalGradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease-out;
+}
+
+.goal-ring-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.goal-ring-percent {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a3a5c;
+  line-height: 1;
+}
+
+.goal-ring-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+/* ===== Quick Stats Row ===== */
+.goal-quick-stats {
+  display: flex;
+  justify-content: space-around;
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.quick-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.quick-stat .stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.quick-stat .stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2c4a6e;
+}
+
+.quick-stat.current .stat-value {
+  color: #3b82f6;
+}
+
+.quick-stat.goal .stat-value {
+  color: #22c55e;
+}
+
+/* ===== Week View Container ===== */
+.week-view-container {
+  margin-bottom: 14px;
+}
+
+.week-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.week-view-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.6);
+}
+
+.week-view-summary {
+  font-size: 11px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+.week-view-summary.below {
+  color: rgba(44, 74, 110, 0.5);
+}
+
+/* ===== Day Dots Grid ===== */
+.day-dots-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.day-dot-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.day-dot-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.4);
+  text-transform: uppercase;
+}
+
+.day-dot-label.today {
+  color: #3b82f6;
+}
+
+.day-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
+}
+
+.day-dot.completed {
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  border-color: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.day-dot.completed svg {
+  color: white;
+}
+
+.day-dot.partial {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.day-dot.future {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px dashed rgba(44, 74, 110, 0.15);
+}
+
+.day-dot-value {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.6);
+  margin-top: 2px;
+}
+
+.day-dot.completed .day-dot-value {
+  color: #16a34a;
+}
+
+/* ===== Week Bars (Alternative Viz) ===== */
+.week-bars-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 80px;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  position: relative;
+}
+
+.week-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 6px;
+}
+
+.week-bar-track {
+  width: 20px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.week-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+  border-radius: 10px;
+  transition: height 0.3s ease-out;
+}
+
+.week-bar-fill.at-goal {
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+}
+
+.week-bar-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+}
+
+.week-bar-label.today {
+  color: #3b82f6;
+}
+
+.week-goal-line {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* ===== Today's Progress ===== */
+.today-progress-section {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  margin-bottom: 14px;
+}
+
+.today-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.today-progress-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.today-progress-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.today-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.today-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease-out;
+}
+
+.today-remaining {
+  font-size: 11px;
+  color: rgba(30, 64, 175, 0.7);
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* ===== Earnings Impact ===== */
+.earnings-impact {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(74, 222, 128, 0.08) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.earnings-impact-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #166534;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0 0 8px;
+}
+
+.earnings-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.earnings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.earnings-label {
+  font-size: 12px;
+  color: rgba(22, 101, 52, 0.7);
+}
+
+.earnings-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.earnings-row.gap .earnings-label,
+.earnings-row.gap .earnings-value {
+  color: #dc2626;
+}
+
+.earnings-value .annual {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+/* ===== Edit Goal Modal ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 58, 92, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: goalFadeIn 0.2s ease;
+}
+
+@keyframes goalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.edit-goal-modal {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: goalSlideUp 0.3s ease;
+  box-shadow:
+    0 24px 48px rgba(100, 130, 160, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@keyframes goalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.edit-goal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 1;
+  border-radius: 24px 24px 0 0;
+}
+
+.edit-goal-modal-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a3a5c;
+  margin: 0;
+}
+
+.modal-close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 10px;
+  color: rgba(44, 74, 110, 0.6);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #2c4a6e;
+}
+
+.modal-close-btn:active {
+  transform: scale(0.95);
+}
+
+/* GoalSetup content inside modal */
+.edit-goal-modal .goal-setup {
+  padding: 20px;
+}
+
+.edit-goal-modal .goal-setup-header {
+  display: none; /* Hide duplicate header since modal has its own */
+}
+
+.edit-goal-modal .suggested-goals {
+  margin-bottom: 16px;
+}
+
+.edit-goal-modal .suggested-goals-buttons {
+  gap: 6px;
+}
+
+.edit-goal-modal .suggested-goal-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+  min-width: 70px;
+  border-radius: 8px;
+}
+
+.edit-goal-modal .goal-input-section {
+  margin-bottom: 16px;
+}
+
+.edit-goal-modal .goal-input-wrapper {
+  padding: 8px 10px;
+}
+
+.edit-goal-modal .goal-input {
+  font-size: 15px;
+}
+
+.edit-goal-modal .goal-period-select {
+  padding: 10px;
+  font-size: 14px;
+}
+
+.edit-goal-modal .earnings-projection {
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.edit-goal-modal .projection-amount {
+  font-size: 18px;
+}
+
+.edit-goal-modal .projection-row.annual .projection-amount {
+  font-size: 20px;
+}
+
+.edit-goal-modal .goal-continue-btn {
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+/* ===== Mobile Adjustments ===== */
+@media (max-width: 390px) {
+  .goal-section {
+    margin: 0 12px 12px;
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  .goal-ring-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+
+  .goal-ring-percent {
+    font-size: 28px;
+  }
+
+  .goal-quick-stats {
+    padding: 12px;
+  }
+
+  .quick-stat .stat-value {
+    font-size: 14px;
+  }
+
+  .day-dot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .day-dot-label {
+    font-size: 10px;
+  }
+
+  .week-bar-track {
+    width: 16px;
+    height: 40px;
+  }
+}

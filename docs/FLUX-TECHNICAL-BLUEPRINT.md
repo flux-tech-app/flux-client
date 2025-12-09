@@ -2,7 +2,7 @@
 
 **Architecture, Stack & Implementation**
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 8, 2025
 
 ---
 
@@ -22,9 +22,10 @@ For timeline, see FLUX-ROADMAP.md.
 3. [Target Architecture](#3-target-architecture)
 4. [Data Models](#4-data-models)
 5. [Key Algorithms](#5-key-algorithms)
-6. [API Integrations](#6-api-integrations)
-7. [Security Considerations](#7-security-considerations)
-8. [Development Workflow](#8-development-workflow)
+6. [Goal Algorithms](#6-goal-algorithms)
+7. [API Integrations](#7-api-integrations)
+8. [Security Considerations](#8-security-considerations)
+9. [Development Workflow](#9-development-workflow)
 
 ---
 
@@ -43,9 +44,8 @@ For timeline, see FLUX-ROADMAP.md.
 ┌─────────────────────────────────────────────────────────────┐
 │                    STATE MANAGEMENT                          │
 ├─────────────────────────────────────────────────────────────┤
-│  HabitContext (habits, logs, transfers, user)               │
+│  HabitContext (behaviors, logs, transfers, goals)           │
 │  NavigationContext (page transitions)                        │
-│  FluxChatContext (AI chat state)                            │
 └────────────────────────────┬────────────────────────────────┘
                              │
               ┌──────────────┼──────────────┐
@@ -59,7 +59,7 @@ For timeline, see FLUX-ROADMAP.md.
 
 ### Architecture Principles
 
-1. **Single Source of Truth** - All habit data flows through HabitContext
+1. **Single Source of Truth** - All behavior data flows through HabitContext
 2. **Client-First for MVT** - localStorage persistence, no backend required
 3. **Mobile-First Design** - Touch interactions, responsive layouts
 4. **Offline Capable** - App functions without network (except AI features)
@@ -74,7 +74,7 @@ For timeline, see FLUX-ROADMAP.md.
 | Layer | Technology | Notes |
 |-------|------------|-------|
 | Framework | React 18 | Vite build system |
-| State | React Context | HabitContext, NavigationContext, FluxChatContext |
+| State | React Context | HabitContext, NavigationContext |
 | Styling | CSS Modules | CSS variables for theming |
 | Persistence | localStorage | Client-side only |
 | Hosting | Vercel | Automatic deployments |
@@ -87,25 +87,28 @@ flux-2.0/
 ├── src/
 │   ├── components/
 │   │   ├── common/          # Shared UI components
-│   │   ├── habits/          # Habit-related components
+│   │   ├── behaviors/       # Behavior-related components
 │   │   ├── portfolio/       # Portfolio views
+│   │   ├── goals/           # Goal setup and progress
 │   │   ├── activity/        # Activity feed
-│   │   └── chat/            # AI chat components
+│   │   └── GoalSetup/       # Goal configuration component
 │   ├── contexts/
 │   │   ├── HabitContext.jsx
-│   │   ├── NavigationContext.jsx
-│   │   └── FluxChatContext.jsx
+│   │   └── NavigationContext.jsx
 │   ├── pages/
 │   │   ├── Home/
 │   │   ├── Portfolio/
 │   │   ├── Indices/
 │   │   ├── Activity/
 │   │   ├── Settings/
-│   │   └── HabitDetail/
+│   │   ├── Onboarding/
+│   │   └── BehaviorDetail/
 │   ├── utils/
-│   │   ├── calculations.js  # Money & score calculations
-│   │   ├── patterns.js      # Pattern recognition
-│   │   └── formatters.js    # Display formatting
+│   │   ├── HABIT_LIBRARY.js  # Behavior definitions with goal configs
+│   │   ├── calculations.js   # Money & score calculations
+│   │   ├── patterns.js       # Pattern recognition
+│   │   ├── goals.js          # Goal progress & projections
+│   │   └── formatters.js     # Display formatting
 │   ├── styles/
 │   │   └── variables.css    # Theme variables
 │   ├── App.jsx
@@ -120,7 +123,7 @@ flux-2.0/
 **HabitContext.jsx** - Central state management
 ```javascript
 {
-  habits: [...],           // All habit configurations
+  habits: [...],           // All behavior configurations with goals
   logs: [...],             // Activity log entries
   pendingBalance: number,  // Current week earnings
   portfolioBalance: number, // Total transferred
@@ -134,16 +137,6 @@ flux-2.0/
 {
   direction: 'forward' | 'back',
   setDirection: function
-}
-```
-
-**FluxChatContext.jsx** - AI chat state
-```javascript
-{
-  isOpen: boolean,
-  openChat: function,
-  closeChat: function,
-  toggleChat: function
 }
 ```
 
@@ -193,27 +186,101 @@ flux-2.0/
 
 ## 4. Data Models
 
-### Habit Model
+### Behavior Model
 
 ```javascript
 {
   id: string,              // UUID
   ticker: string,          // e.g., "$RUN", "$GYM"
   name: string,            // Display name
-  category: string,        // FITNESS | FINANCIAL | PRODUCTIVITY | WELLNESS
+  libraryId: string,       // Reference to HABIT_LIBRARY
   rateType: string,        // BINARY | DURATION | DISTANCE | COUNT
   rateAmount: number,      // Dollar amount per unit
-  rateUnit: string,        // "session" | "minute" | "mile" | "rep"
-  isNegative: boolean,     // true for quit behaviors
+  rateUnit: string,        // "session" | "minute" | "mile" | "step"
+  isPassBehavior: boolean, // true for avoidance behaviors
   createdAt: timestamp,
   
-  // Pattern Recognition (calculated)
+  // User-set goal (REQUIRED at setup)
+  goal: {
+    amount: number,        // Target value (e.g., 15, 10000, 30)
+    period: string,        // 'day' | 'week' | 'month'
+    setAt: timestamp       // When goal was created/updated
+  },
+  
+  // Pattern Recognition (calculated, not stored directly)
   baseline: {
-    frequency: number,     // Average logs per 14 days
-    typicalGap: number,    // Average days between logs
+    frequency: number,     // Logs per 14-day period
+    typicalGap: number,    // Median days between logs
     gapVariance: number,   // Consistency measure
     avgUnits: number,      // Average units per log
-    status: string         // "building" | "emerging" | "established"
+    avgPerPeriod: {        // Avg units normalized to common periods
+      day: number,
+      week: number,
+      month: number
+    },
+    status: string,        // 'building' | 'emerging' | 'established'
+    lastRatchet: timestamp | null  // When baseline last increased
+  }
+}
+```
+
+### HABIT_LIBRARY.js Structure
+
+```javascript
+// Example entries with goal configuration
+{
+  id: 'running',
+  ticker: '$RUN',
+  name: 'Running',
+  description: 'Track your runs by distance',
+  rateType: 'DISTANCE',
+  rateUnit: 'mile',
+  rateOptions: [
+    { label: '$0.50/mile', value: 0.50, description: 'Light commitment' },
+    { label: '$1.00/mile', value: 1.00, description: 'Recommended' },
+    { label: '$2.00/mile', value: 2.00, description: 'High stakes' }
+  ],
+  
+  // Goal configuration
+  goalConfig: {
+    unit: 'miles',                    // Display unit for goals
+    defaultPeriod: 'week',            // Pre-selected period
+    suggestedGoals: [
+      { label: '5-10 miles/week', amount: 7.5, period: 'week' },
+      { label: '10-20 miles/week', amount: 15, period: 'week' },
+      { label: '20-30 miles/week', amount: 25, period: 'week' },
+      { label: '30+ miles/week', amount: 35, period: 'week' }
+    ],
+    defaultGoal: { amount: 10, period: 'week' }
+  }
+}
+
+// Pass behavior example (avoidance - lower is better)
+{
+  id: 'takeout',
+  ticker: '$TAKEOUT',
+  name: 'Takeout',
+  description: 'Track when you pass on ordering takeout',
+  rateType: 'BINARY',
+  rateUnit: 'pass',
+  isPassBehavior: true,
+  rateOptions: [
+    { label: '$5/pass', value: 5, description: 'Light commitment' },
+    { label: '$7/pass', value: 7, description: 'Recommended' },
+    { label: '$10/pass', value: 10, description: 'High stakes' }
+  ],
+  
+  goalConfig: {
+    unit: 'orders',                    // What you're avoiding
+    defaultPeriod: 'week',
+    isAvoidance: true,                 // Lower is better
+    suggestedGoals: [
+      { label: 'Max 3x/week', amount: 3, period: 'week' },
+      { label: 'Max 2x/week', amount: 2, period: 'week' },
+      { label: 'Max 1x/week', amount: 1, period: 'week' },
+      { label: 'None (0/week)', amount: 0, period: 'week' }
+    ],
+    defaultGoal: { amount: 2, period: 'week' }
   }
 }
 ```
@@ -223,14 +290,14 @@ flux-2.0/
 ```javascript
 {
   id: string,              // UUID
-  habitId: string,         // Reference to habit
+  habitId: string,         // Reference to behavior
   timestamp: timestamp,    // When logged
-  units: number,           // Duration/distance/count
+  units: number,           // Duration/distance/count (1 for binary)
   earned: number,          // Dollar amount earned
   notes: string,           // Optional user notes
   
-  // For negative behaviors (slips)
-  isSlip: boolean,         // true if logging a failure
+  // For Pass behaviors
+  isPass: boolean,         // true if this was a "Pass" action
 }
 ```
 
@@ -241,7 +308,7 @@ flux-2.0/
   id: string,              // UUID
   date: timestamp,         // Friday transfer date
   amount: number,          // Total transferred
-  breakdown: [             // Per-habit breakdown
+  breakdown: [             // Per-behavior breakdown
     { habitId: string, amount: number }
   ],
   status: string           // "pending" | "completed" | "failed"
@@ -339,12 +406,21 @@ function calculateBaseline(logs) {
     gaps.push(daysBetween(sortedLogs[i-1].timestamp, sortedLogs[i].timestamp));
   }
   
+  const avgUnits = average(logs.map(l => l.units));
+  const frequency = logs.length / 14;  // Logs per 14-day period
+  
   return {
-    frequency: logs.length / 14,  // Logs per 14-day period
+    frequency: frequency,
     typicalGap: median(gaps),
     gapVariance: standardDeviation(gaps),
-    avgUnits: average(logs.map(l => l.units)),
-    status: getBaselineStatus(logs.length)
+    avgUnits: avgUnits,
+    avgPerPeriod: {
+      day: avgUnits * frequency / 14,
+      week: avgUnits * frequency / 2,
+      month: avgUnits * frequency * 2.14
+    },
+    status: getBaselineStatus(logs.length),
+    lastRatchet: null
   };
 }
 
@@ -359,14 +435,9 @@ function getBaselineStatus(logCount) {
 
 ```javascript
 function calculateEarnings(habit, log) {
-  // Negative behaviors (slips) don't earn
-  if (habit.isNegative && log.isSlip) {
-    return 0;
-  }
-  
   switch (habit.rateType) {
     case 'BINARY':
-      return habit.rateAmount;  // Flat rate per session
+      return habit.rateAmount;  // Flat rate per session/pass
     case 'DURATION':
       return habit.rateAmount * log.units;  // $ per minute
     case 'DISTANCE':
@@ -406,59 +477,403 @@ function processWeeklyTransfer(habits, logs, currentWeekStart) {
 }
 ```
 
-### Behavior-Level Index Calculation
+---
+
+## 6. Goal Algorithms
+
+### Goal Progress Calculation
 
 ```javascript
-function calculateBehaviorIndex(behaviorId, allUserData) {
-  // Filter to users with this behavior and minimum logs
-  const eligibleUsers = allUserData.filter(u => 
-    u.behaviors[behaviorId] && 
-    u.behaviors[behaviorId].logs.length >= 10
-  );
+/**
+ * Calculate goal progress for a behavior
+ * @param {Object} habit - Behavior with goal and baseline
+ * @param {Array} logs - All logs for this behavior
+ * @returns {Object} Goal progress metrics
+ */
+function calculateGoalProgress(habit, logs) {
+  const { goal, baseline } = habit;
   
-  // Require minimum 50 users for valid index
-  if (eligibleUsers.length < 50) {
-    return { valid: false, reason: 'insufficient_users' };
+  // Goal is required, but check for safety
+  if (!goal) {
+    console.warn('Behavior missing required goal:', habit.id);
+    return { mode: 'error', message: 'Goal not set' };
   }
   
-  // Calculate each user's performance ratio
-  const performanceRatios = eligibleUsers.map(u => {
-    const behavior = u.behaviors[behaviorId];
-    const recentFrequency = getRecentFrequency(behavior.logs);
-    const baseline = behavior.baseline.frequency;
-    return recentFrequency / baseline;
-  });
+  // Baseline not established yet
+  if (!baseline || baseline.status === 'building') {
+    return {
+      mode: 'calibrating',
+      goal: goal,
+      message: 'Building baseline...'
+    };
+  }
   
-  // Index = average of all ratios × 100
-  const indexValue = average(performanceRatios) * 100;
+  // Normalize baseline to goal's period
+  const baselineInPeriod = normalizeToPeriod(
+    baseline.avgUnits,
+    'week',  // baseline is typically calculated per week
+    goal.period
+  );
+  
+  // Calculate recent performance in goal's period
+  const recentPerformance = calculateRecentPerformance(logs, goal.period);
+  
+  // Calculate gap and progress
+  const gap = goal.amount - baselineInPeriod;
+  const currentGap = goal.amount - recentPerformance;
+  
+  // Progress: 0% at baseline, 100% at goal
+  let progressPercent = 0;
+  if (gap > 0) {
+    const progressFromBaseline = recentPerformance - baselineInPeriod;
+    progressPercent = Math.max(0, Math.min(100, (progressFromBaseline / gap) * 100));
+  } else {
+    // Baseline already at or above goal
+    progressPercent = 100;
+  }
   
   return {
-    valid: true,
-    value: Math.round(indexValue * 10) / 10,
-    userCount: eligibleUsers.length,
-    updatedAt: new Date()
+    mode: 'growth',
+    goal: goal,
+    baseline: baselineInPeriod,
+    current: recentPerformance,
+    gap: currentGap,
+    progressPercent: Math.round(progressPercent),
+    trend: calculateTrend(logs, goal.period),
+    atOrAboveGoal: recentPerformance >= goal.amount
   };
 }
 
-function calculateUserPercentile(userId, behaviorId, allUserData) {
-  const userRatio = getUserPerformanceRatio(userId, behaviorId);
-  const allRatios = getAllPerformanceRatios(behaviorId, allUserData);
-  
-  const belowCount = allRatios.filter(r => r < userRatio).length;
-  return Math.round((belowCount / allRatios.length) * 100);
+/**
+ * Normalize a value from one period to another
+ */
+function normalizeToPeriod(value, fromPeriod, toPeriod) {
+  const daysMap = { day: 1, week: 7, month: 30 };
+  const fromDays = daysMap[fromPeriod];
+  const toDays = daysMap[toPeriod];
+  return value * (toDays / fromDays);
 }
+
+/**
+ * Calculate recent performance in a given period
+ */
+function calculateRecentPerformance(logs, period) {
+  const daysMap = { day: 1, week: 7, month: 30 };
+  const periodDays = daysMap[period];
+  
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - periodDays);
+  
+  const recentLogs = logs.filter(l => new Date(l.timestamp) >= cutoff);
+  
+  // Sum units for measurable behaviors, count for binary
+  const totalUnits = recentLogs.reduce((sum, log) => sum + (log.units || 1), 0);
+  
+  return totalUnits;
+}
+
+/**
+ * Calculate trend (recent period vs previous period)
+ */
+function calculateTrend(logs, period) {
+  const daysMap = { day: 1, week: 7, month: 30 };
+  const periodDays = daysMap[period];
+  
+  const now = new Date();
+  const periodStart = new Date(now);
+  periodStart.setDate(periodStart.getDate() - periodDays);
+  const prevPeriodStart = new Date(periodStart);
+  prevPeriodStart.setDate(prevPeriodStart.getDate() - periodDays);
+  
+  const currentPeriodLogs = logs.filter(l => {
+    const d = new Date(l.timestamp);
+    return d >= periodStart && d <= now;
+  });
+  
+  const prevPeriodLogs = logs.filter(l => {
+    const d = new Date(l.timestamp);
+    return d >= prevPeriodStart && d < periodStart;
+  });
+  
+  const currentTotal = currentPeriodLogs.reduce((sum, l) => sum + (l.units || 1), 0);
+  const prevTotal = prevPeriodLogs.reduce((sum, l) => sum + (l.units || 1), 0);
+  
+  if (prevTotal === 0) return { direction: 'neutral', percent: 0 };
+  
+  const percentChange = ((currentTotal - prevTotal) / prevTotal) * 100;
+  
+  return {
+    direction: percentChange > 5 ? 'up' : percentChange < -5 ? 'down' : 'neutral',
+    percent: Math.round(percentChange)
+  };
+}
+```
+
+### Goal Financial Projections
+
+```javascript
+/**
+ * Calculate financial projections for a goal
+ * @param {Object} habit - Behavior with goal and rate
+ * @returns {Object} Financial projections
+ */
+function calculateGoalProjections(habit) {
+  const { goal, rateAmount, baseline } = habit;
+  
+  if (!goal) return null;
+  
+  // Calculate earnings at goal
+  const goalPerWeek = normalizeToPeriod(goal.amount, goal.period, 'week');
+  const earningsAtGoal = goalPerWeek * rateAmount;
+  
+  // Calculate earnings at baseline (if available)
+  let earningsAtBaseline = 0;
+  let gap = 0;
+  
+  if (baseline && baseline.status !== 'building') {
+    const baselinePerWeek = baseline.avgUnits * (7 / 14); // baseline is per 14 days
+    earningsAtBaseline = baselinePerWeek * rateAmount;
+    gap = earningsAtGoal - earningsAtBaseline;
+  }
+  
+  return {
+    atGoal: {
+      weekly: earningsAtGoal,
+      monthly: earningsAtGoal * 4.33,
+      yearly: earningsAtGoal * 52
+    },
+    atBaseline: {
+      weekly: earningsAtBaseline,
+      monthly: earningsAtBaseline * 4.33,
+      yearly: earningsAtBaseline * 52
+    },
+    gap: {
+      weekly: gap,
+      monthly: gap * 4.33,
+      yearly: gap * 52
+    },
+    capturePercent: earningsAtGoal > 0 
+      ? Math.round((earningsAtBaseline / earningsAtGoal) * 100) 
+      : 100
+  };
+}
+
+/**
+ * Calculate portfolio-level goal projections
+ */
+function calculatePortfolioGoalProjections(habits) {
+  let totalAtBaseline = 0;
+  let totalAtGoal = 0;
+  
+  habits.forEach(habit => {
+    const projections = calculateGoalProjections(habit);
+    if (projections) {
+      totalAtBaseline += projections.atBaseline.weekly;
+      totalAtGoal += projections.atGoal.weekly;
+    }
+  });
+  
+  return {
+    atBaseline: {
+      weekly: totalAtBaseline,
+      monthly: totalAtBaseline * 4.33,
+      yearly: totalAtBaseline * 52
+    },
+    atGoal: {
+      weekly: totalAtGoal,
+      monthly: totalAtGoal * 4.33,
+      yearly: totalAtGoal * 52
+    },
+    potential: {
+      weekly: totalAtGoal - totalAtBaseline,
+      monthly: (totalAtGoal - totalAtBaseline) * 4.33,
+      yearly: (totalAtGoal - totalAtBaseline) * 52
+    },
+    capturePercent: totalAtGoal > 0 
+      ? Math.round((totalAtBaseline / totalAtGoal) * 100) 
+      : 100
+  };
+}
+```
+
+### Baseline Ratchet Detection
+
+```javascript
+/**
+ * Check if baseline should ratchet up
+ * Minimum 4 weeks between ratchets
+ * @param {Object} habit - Behavior with baseline
+ * @param {Array} logs - All logs for this behavior
+ * @returns {Object} Ratchet recommendation
+ */
+function checkBaselineRatchet(habit, logs) {
+  const { baseline, goal } = habit;
+  
+  // Only ratchet if baseline is established
+  if (!baseline || baseline.status !== 'established') {
+    return { shouldRatchet: false, reason: 'Baseline not established' };
+  }
+  
+  // Don't ratchet more than once per 4 weeks
+  if (baseline.lastRatchet) {
+    const weeksSinceRatchet = daysBetween(baseline.lastRatchet, new Date()) / 7;
+    if (weeksSinceRatchet < 4) {
+      return { 
+        shouldRatchet: false, 
+        reason: 'Too soon since last ratchet',
+        weeksUntilEligible: Math.ceil(4 - weeksSinceRatchet)
+      };
+    }
+  }
+  
+  // Get performance over last 4 weeks
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+  const recentLogs = logs.filter(l => new Date(l.timestamp) >= fourWeeksAgo);
+  
+  // Calculate weekly averages for last 4 weeks
+  const weeklyTotals = [0, 0, 0, 0];
+  recentLogs.forEach(log => {
+    const daysAgo = daysBetween(new Date(log.timestamp), new Date());
+    const weekIndex = Math.floor(daysAgo / 7);
+    if (weekIndex < 4) {
+      weeklyTotals[weekIndex] += log.units || 1;
+    }
+  });
+  
+  // Ratchet threshold: 15% above baseline
+  const baselinePerWeek = baseline.avgUnits * (7 / 14);
+  const threshold = baselinePerWeek * 1.15;
+  
+  // Count weeks above threshold
+  const weeksAboveThreshold = weeklyTotals.filter(w => w >= threshold).length;
+  
+  // Need at least 3 of 4 weeks above threshold
+  if (weeksAboveThreshold >= 3) {
+    const recentAvg = weeklyTotals.reduce((a, b) => a + b, 0) / 4;
+    
+    // New baseline: weighted average (30% old, 70% recent)
+    const newBaseline = (baselinePerWeek * 0.3) + (recentAvg * 0.7);
+    
+    return {
+      shouldRatchet: true,
+      oldBaseline: baselinePerWeek,
+      newBaseline: newBaseline,
+      improvement: Math.round(((newBaseline - baselinePerWeek) / baselinePerWeek) * 100),
+      weeksAboveThreshold: weeksAboveThreshold
+    };
+  }
+  
+  return {
+    shouldRatchet: false,
+    reason: `Only ${weeksAboveThreshold} of 4 weeks above threshold`,
+    threshold: threshold,
+    weeklyTotals: weeklyTotals
+  };
+}
+
+/**
+ * Apply baseline ratchet
+ */
+function applyBaselineRatchet(habit, newBaselineValue) {
+  return {
+    ...habit,
+    baseline: {
+      ...habit.baseline,
+      avgUnits: newBaselineValue * (14 / 7), // Convert back to 14-day format
+      lastRatchet: new Date().toISOString()
+    }
+  };
+}
+
+// Helper function
+function daysBetween(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return Math.abs(Math.floor((d2 - d1) / (1000 * 60 * 60 * 24)));
+}
+```
+
+### HabitContext Goal Methods
+
+```javascript
+// Add to HabitContext.jsx
+
+// Set or update goal for a behavior (goals are required)
+const setHabitGoal = (habitId, goal) => {
+  if (!goal || !goal.amount || !goal.period) {
+    console.warn('Invalid goal:', goal);
+    return;
+  }
+  
+  setHabits(prev => prev.map(habit => {
+    if (habit.id === habitId) {
+      return {
+        ...habit,
+        goal: {
+          amount: goal.amount,
+          period: goal.period,
+          setAt: new Date().toISOString()
+        }
+      };
+    }
+    return habit;
+  }));
+};
+
+// Check and apply baseline ratchet
+const checkAndApplyRatchet = (habitId) => {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return null;
+  
+  const habitLogs = logs.filter(l => l.habitId === habitId);
+  const ratchetResult = checkBaselineRatchet(habit, habitLogs);
+  
+  if (ratchetResult.shouldRatchet) {
+    setHabits(prev => prev.map(h => {
+      if (h.id === habitId) {
+        return applyBaselineRatchet(h, ratchetResult.newBaseline);
+      }
+      return h;
+    }));
+  }
+  
+  return ratchetResult;
+};
+
+// Get goal progress for a behavior
+const getGoalProgress = (habitId) => {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return null;
+  
+  const habitLogs = logs.filter(l => l.habitId === habitId);
+  return calculateGoalProgress(habit, habitLogs);
+};
+
+// Get financial projections for a behavior
+const getGoalProjections = (habitId) => {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return null;
+  
+  return calculateGoalProjections(habit);
+};
+
+// Get portfolio-level projections
+const getPortfolioProjections = () => {
+  return calculatePortfolioGoalProjections(habits);
+};
 ```
 
 ---
 
-## 6. API Integrations
+## 7. API Integrations
 
 ### Anthropic Claude API (Phase 1)
 
 **Use Cases:**
-- Contextual insights on habit performance
+- Contextual insights on behavior performance
 - Pattern observations
-- Coaching suggestions
+- Goal coaching suggestions
 - Optional chat exploration
 
 **Implementation:**
@@ -509,7 +924,7 @@ async function getFluxInsight(habitData, userContext) {
 
 ---
 
-## 7. Security Considerations
+## 8. Security Considerations
 
 ### MVT Phase (localStorage)
 
@@ -538,15 +953,15 @@ async function getFluxInsight(habitData, userContext) {
 
 ---
 
-## 8. Development Workflow
+## 9. Development Workflow
 
 ### Git Workflow
 
 ```
 main (production)
   └── develop (integration)
-       ├── feature/habit-library
-       ├── feature/pattern-recognition
+       ├── feature/goals-setup
+       ├── feature/goal-progress
        └── fix/money-calculation
 ```
 
@@ -585,6 +1000,7 @@ npm run dev
 - Test critical flows on mobile device
 - Verify money calculations with edge cases
 - Check data persistence across sessions
+- Test goal setup and progress display
 
 **Automated Testing (Phase 4+):**
 - Unit tests for calculations (Jest)
@@ -602,6 +1018,9 @@ npm run dev
 | Supabase over custom backend | Faster development, built-in auth, real-time |
 | Stripe Treasury over alternatives | Best docs, ecosystem integration, FDIC included |
 | Vercel over alternatives | Free tier, automatic deploys, edge functions |
+| Goals required at setup | Ensures aspirational targets from day one |
+| Min 4 weeks between ratchets | Prevents baseline from chasing user too aggressively |
+| Goals don't affect Flux Score | Score measures health; goals measure aspiration |
 
 ---
 

@@ -74,13 +74,19 @@ export function HabitProvider({ children }) {
   
   /**
    * Add a habit from the library
-   * @param {Object} habitConfig - { libraryId, rate (optional custom rate) }
+   * @param {Object} habitConfig - { libraryId, rate (optional custom rate), goal (required) }
    */
   const addHabit = (habitConfig) => {
     const libraryHabit = getHabitById(habitConfig.libraryId);
-    
+
     if (!libraryHabit) {
       console.error('Habit not found in library:', habitConfig.libraryId);
+      return null;
+    }
+
+    // Validate goal is provided
+    if (!habitConfig.goal || !habitConfig.goal.amount || !habitConfig.goal.period) {
+      console.error('Goal is required when adding a habit');
       return null;
     }
 
@@ -94,7 +100,7 @@ export function HabitProvider({ children }) {
     const newHabit = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       libraryId: habitConfig.libraryId,
-      
+
       // Copy from library
       name: libraryHabit.name,
       ticker: libraryHabit.ticker,
@@ -102,15 +108,30 @@ export function HabitProvider({ children }) {
       rateType: libraryHabit.rateType,
       unit: libraryHabit.unit,
       unitPlural: libraryHabit.unitPlural,
-      
+
       // Custom rate or default
       rate: habitConfig.rate ?? libraryHabit.defaultRate,
-      
+
+      // User-set goal (REQUIRED)
+      goal: {
+        amount: habitConfig.goal.amount,
+        period: habitConfig.goal.period,
+        setAt: Date.now()
+      },
+
       // Timestamps
       createdAt: new Date().toISOString(),
-      
+
       // Pattern recognition (populated after logs)
-      baseline: null
+      baseline: {
+        frequency: 0,
+        typicalGap: 0,
+        gapVariance: 0,
+        avgUnits: 0,
+        avgPerPeriod: 0,
+        status: 'building',
+        lastRatchet: null
+      }
     };
 
     setHabits(prev => [...prev, newHabit]);
@@ -119,14 +140,16 @@ export function HabitProvider({ children }) {
 
   /**
    * Add multiple habits at once (used during onboarding)
-   * @param {Array} habitConfigs - Array of { libraryId, rate }
+   * @param {Array} habitConfigs - Array of { libraryId, rate, goal }
    */
   const addHabits = (habitConfigs) => {
     const newHabits = habitConfigs
       .filter(config => {
         const libraryHabit = getHabitById(config.libraryId);
         const exists = habits.find(h => h.libraryId === config.libraryId);
-        return libraryHabit && !exists;
+        // Also validate goal is provided
+        const hasValidGoal = config.goal && config.goal.amount && config.goal.period;
+        return libraryHabit && !exists && hasValidGoal;
       })
       .map(config => {
         const libraryHabit = getHabitById(config.libraryId);
@@ -140,16 +163,80 @@ export function HabitProvider({ children }) {
           unit: libraryHabit.unit,
           unitPlural: libraryHabit.unitPlural,
           rate: config.rate ?? libraryHabit.defaultRate,
+          // User-set goal (REQUIRED)
+          goal: {
+            amount: config.goal.amount,
+            period: config.goal.period,
+            setAt: Date.now()
+          },
           createdAt: new Date().toISOString(),
-          baseline: null
+          // Pattern recognition baseline
+          baseline: {
+            frequency: 0,
+            typicalGap: 0,
+            gapVariance: 0,
+            avgUnits: 0,
+            avgPerPeriod: 0,
+            status: 'building',
+            lastRatchet: null
+          }
         };
       });
 
     if (newHabits.length > 0) {
       setHabits(prev => [...prev, ...newHabits]);
     }
-    
+
     return newHabits;
+  };
+
+  /**
+   * Update a habit's goal
+   * @param {string} habitId - The habit ID to update
+   * @param {Object} newGoal - { amount, period }
+   */
+  const updateHabitGoal = (habitId, newGoal) => {
+    if (!newGoal || !newGoal.amount || !newGoal.period) {
+      console.error('Invalid goal provided');
+      return;
+    }
+
+    setHabits(prev =>
+      prev.map(habit =>
+        habit.id === habitId
+          ? {
+              ...habit,
+              goal: {
+                amount: newGoal.amount,
+                period: newGoal.period,
+                setAt: Date.now()
+              }
+            }
+          : habit
+      )
+    );
+  };
+
+  /**
+   * Ratchet a habit's baseline up
+   * @param {string} habitId - The habit ID to update
+   * @param {number} newBaselineValue - The new avgPerPeriod value
+   */
+  const ratchetBaseline = (habitId, newBaselineValue) => {
+    setHabits(prev =>
+      prev.map(habit =>
+        habit.id === habitId
+          ? {
+              ...habit,
+              baseline: {
+                ...habit.baseline,
+                avgPerPeriod: newBaselineValue,
+                lastRatchet: Date.now()
+              }
+            }
+          : habit
+      )
+    );
   };
 
   /**
@@ -611,6 +698,8 @@ export function HabitProvider({ children }) {
     addHabit,
     addHabits,
     updateHabit,
+    updateHabitGoal,
+    ratchetBaseline,
     deleteHabit,
     isHabitAdded,
     

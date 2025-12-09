@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useHabits } from '../../context/HabitContext';
 import { HABIT_LIBRARY, getHabitById, formatRate, getRateLabel, RATE_TYPES } from '../../utils/HABIT_LIBRARY';
 import HabitIcon from '../../utils/HabitIcons';
+import GoalSetup from '../GoalSetup/GoalSetup';
 import './AddHabitFlow.css';
 
 /**
  * Add Habit Flow (Post-Onboarding)
- * 
+ *
  * Step 1: Select from library (excluding already-added habits)
- * Step 2: Customize rate and rate type
+ * Step 2: Customize rate
+ * Step 3: Set goal (NEW)
  */
 export default function AddHabitFlow({ onComplete, onClose }) {
   const { isHabitAdded } = useHabits();
@@ -18,6 +20,7 @@ export default function AddHabitFlow({ onComplete, onClose }) {
   const [selectedRate, setSelectedRate] = useState(null);
   const [customRate, setCustomRate] = useState('');
   const [useCustomRate, setUseCustomRate] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
   const [direction, setDirection] = useState(1);
 
   // Filter out already-added habits
@@ -44,12 +47,16 @@ export default function AddHabitFlow({ onComplete, onClose }) {
     setSelectedRate(habit.defaultRate);
     setUseCustomRate(false);
     setCustomRate('');
+    setSelectedGoal(null);
     setDirection(1);
     setStep(2);
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step === 3) {
+      setDirection(-1);
+      setStep(2);
+    } else if (step === 2) {
       setDirection(-1);
       setStep(1);
     } else {
@@ -57,24 +64,37 @@ export default function AddHabitFlow({ onComplete, onClose }) {
     }
   };
 
-  const handleConfirm = () => {
-    if (!selectedHabit) return;
-    
+  const handleRateConfirm = () => {
+    setDirection(1);
+    setStep(3);
+  };
+
+  const handleGoalSet = (goal) => {
+    setSelectedGoal(goal);
+    handleConfirm(goal);
+  };
+
+  const handleConfirm = (goal) => {
+    if (!selectedHabit || !goal) return;
+
     const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
-    
+
     onComplete?.({
       libraryId: selectedHabit.id,
-      rate: rate
+      rate: rate,
+      goal: goal
     });
   };
+
+  const effectiveRate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
 
   return (
     <div className="add-habit-flow">
       {/* Progress indicator */}
       <div className="flow-progress">
-        {[1, 2].map((s) => (
-          <div 
-            key={s} 
+        {[1, 2, 3].map((s) => (
+          <div
+            key={s}
             className={`progress-dot ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
           />
         ))}
@@ -94,7 +114,7 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               transition={{ type: 'tween', duration: 0.25 }}
               className="flow-step"
             >
-              <StepSelectHabit 
+              <StepSelectHabit
                 habits={availableHabits}
                 onSelect={handleHabitSelect}
               />
@@ -121,7 +141,27 @@ export default function AddHabitFlow({ onComplete, onClose }) {
                 onCustomRateChange={setCustomRate}
                 onUseCustomRateToggle={setUseCustomRate}
                 onBack={handleBack}
-                onConfirm={handleConfirm}
+                onConfirm={handleRateConfirm}
+              />
+            </motion.div>
+          )}
+
+          {step === 3 && selectedHabit && (
+            <motion.div
+              key="step3"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: 'tween', duration: 0.25 }}
+              className="flow-step"
+            >
+              <StepGoal
+                habit={selectedHabit}
+                selectedRate={effectiveRate}
+                onBack={handleBack}
+                onGoalSet={handleGoalSet}
               />
             </motion.div>
           )}
@@ -153,7 +193,7 @@ function StepSelectHabit({ habits, onSelect }) {
       <p className="step-subtitle">
         Select a habit to add to your portfolio
       </p>
-      
+
       <div className="habit-list">
         {habits.map((habit) => (
           <motion.button
@@ -181,7 +221,7 @@ function StepSelectHabit({ habits, onSelect }) {
             </div>
           </motion.button>
         ))}
-        
+
         {/* Request Habit Option */}
         <div className="request-habit-card">
           <div className="request-habit-icon">
@@ -205,21 +245,21 @@ function StepSelectHabit({ habits, onSelect }) {
 /**
  * Step 2: Customize Rate
  */
-function StepCustomize({ 
-  habit, 
+function StepCustomize({
+  habit,
   selectedRate,
   customRate,
   useCustomRate,
   onRateSelect,
   onCustomRateChange,
   onUseCustomRateToggle,
-  onBack, 
-  onConfirm 
+  onBack,
+  onConfirm
 }) {
   // Rough weekly projection
   const getWeeklyEstimate = () => {
     const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
-    
+
     if (habit.rateType === RATE_TYPES.BINARY) {
       return rate * 5; // 5 completions per week
     } else if (habit.rateType === RATE_TYPES.DURATION) {
@@ -270,7 +310,7 @@ function StepCustomize({
           {habit.rateOptions.map((rate, index) => {
             const isSelected = !useCustomRate && selectedRate === rate;
             const label = getRateLabel(index);
-            
+
             // Format rate
             let rateDisplay;
             if (rate < 0.01) {
@@ -278,7 +318,7 @@ function StepCustomize({
             } else {
               rateDisplay = `$${rate.toFixed(2)}`;
             }
-            
+
             return (
               <button
                 key={rate}
@@ -312,11 +352,11 @@ function StepCustomize({
             }}
           >
             <span>{useCustomRate ? 'Using Custom Rate' : 'Use Custom Rate'}</span>
-            <svg 
-              className="toggle-icon" 
-              width="20" 
-              height="20" 
-              fill="currentColor" 
+            <svg
+              className="toggle-icon"
+              width="20"
+              height="20"
+              fill="currentColor"
               viewBox="0 0 20 20"
             >
               {useCustomRate ? (
@@ -361,14 +401,47 @@ function StepCustomize({
         </div>
       </div>
 
-      {/* Confirm button */}
-      <button 
+      {/* Continue button */}
+      <button
         className="confirm-button"
         onClick={onConfirm}
         disabled={!canConfirm}
       >
-        Add to Portfolio
+        Set Goal
       </button>
+    </div>
+  );
+}
+
+/**
+ * Step 3: Set Goal
+ */
+function StepGoal({ habit, selectedRate, onBack, onGoalSet }) {
+  return (
+    <div className="step-goal">
+      <button className="back-link" onClick={onBack}>
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+        Back
+      </button>
+
+      {/* Habit header */}
+      <div className="customize-header">
+        <div className="customize-icon-container">
+          <HabitIcon habitId={habit.id} size={36} />
+        </div>
+        <div className="customize-title-group">
+          <span className="customize-ticker">${habit.ticker}</span>
+          <span className="customize-name">{habit.name}</span>
+        </div>
+      </div>
+
+      <GoalSetup
+        habitLibraryData={habit}
+        selectedRate={selectedRate}
+        onGoalSet={onGoalSet}
+      />
     </div>
   );
 }

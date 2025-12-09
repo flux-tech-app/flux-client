@@ -20,9 +20,10 @@ export default function Onboarding({ onComplete }) {
   const { addHabits } = useHabits();
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Track selected habits and their rates
+  // Track selected habits, their rates, and goals
   const [selectedHabits, setSelectedHabits] = useState([]);
   const [habitRates, setHabitRates] = useState({});
+  const [habitGoals, setHabitGoals] = useState({});
 
   const totalSteps = 5;
 
@@ -61,17 +62,26 @@ export default function Onboarding({ onComplete }) {
     }));
   };
 
+  // Step 4: Set goals
+  const handleGoalChange = (libraryId, goal) => {
+    setHabitGoals(prev => ({
+      ...prev,
+      [libraryId]: goal
+    }));
+  };
+
   // Final step: Create habits and complete
   const handleComplete = () => {
-    // Build habit configs
+    // Build habit configs with rates and goals
     const habitConfigs = selectedHabits.map(libraryId => ({
       libraryId,
-      rate: habitRates[libraryId] // undefined will use default
+      rate: habitRates[libraryId], // undefined will use default
+      goal: habitGoals[libraryId] // Required - should always be set at this point
     }));
 
     // Add all habits
     addHabits(habitConfigs);
-    
+
     // Complete onboarding
     onComplete();
   };
@@ -113,19 +123,22 @@ export default function Onboarding({ onComplete }) {
       )}
       
       {currentStep === 3 && (
-        <SetRates 
+        <SetRates
           selectedHabits={selectedHabits}
           habitRates={habitRates}
+          habitGoals={habitGoals}
           onRateChange={handleRateChange}
+          onGoalChange={handleGoalChange}
           onContinue={handleNext}
           onBack={handleBack}
         />
       )}
       
       {currentStep === 4 && (
-        <Ready 
+        <Ready
           selectedHabits={selectedHabits}
           habitRates={habitRates}
+          habitGoals={habitGoals}
           onComplete={handleComplete}
           onBack={handleBack}
         />

@@ -631,6 +631,11 @@
   transform: none;
 }
 
+/* ========== Step 3: Goal Setting ========== */
+.step-goal {
+  padding-bottom: 24px;
+}
+
 /* Mobile adjustments */
 @media (max-width: 390px) {
   .flow-step {
