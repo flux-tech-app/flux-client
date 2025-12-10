@@ -103,7 +103,6 @@ export function HabitProvider({ children }) {
 
       // Copy from library
       name: libraryHabit.name,
-      ticker: libraryHabit.ticker,
       icon: libraryHabit.icon,
       rateType: libraryHabit.rateType,
       unit: libraryHabit.unit,
@@ -157,7 +156,6 @@ export function HabitProvider({ children }) {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${config.libraryId}`,
           libraryId: config.libraryId,
           name: libraryHabit.name,
-          ticker: libraryHabit.ticker,
           icon: libraryHabit.icon,
           rateType: libraryHabit.rateType,
           unit: libraryHabit.unit,

@@ -247,7 +247,7 @@ export default function Account() {
         const config = habit._config;
         delete habit._config; // Remove temp config
         
-        logCounts[habit.ticker] = 0;
+        logCounts[habit.name] = 0;
         
         // Determine log probability based on pattern
         let logProbability;
@@ -302,7 +302,7 @@ export default function Account() {
           });
 
           totalEarnings += earnings;
-          logCounts[habit.ticker]++;
+          logCounts[habit.name]++;
         }
       });
 
@@ -337,10 +337,10 @@ export default function Account() {
       // SUMMARY
       // ========================================
       const habitSummary = Object.entries(logCounts)
-        .map(([ticker, count]) => {
+        .map(([name, count]) => {
           let status = 'Active';
           if (count < 10) status = `Building (${10 - count} more needed)`;
-          return `• $${ticker}: ${count} logs - ${status}`;
+          return `• ${name}: ${count} logs - ${status}`;
         })
         .join('\n');
 

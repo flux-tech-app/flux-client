@@ -1,4 +1,4 @@
-/* Log Habit Sheet */
+/* Log Habit Sheet - Glassmorphic Design */
 .log-habit-sheet {
   padding: 8px 20px 24px;
 }
@@ -6,8 +6,11 @@
 .log-sheet-title {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
   margin: 0 0 4px;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .log-sheet-subtitle {
@@ -34,22 +37,25 @@
 .search-input {
   width: 100%;
   padding: 12px 40px 12px 40px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
   font-size: 18px;
-  color: #111827;
-  background: white;
+  color: #1a3a5c;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.2s;
 }
 
 .search-input:hover {
-  border-color: #d1d5db;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  background: #f9fafb;
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-input::placeholder {
@@ -88,27 +94,35 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
   width: 100%;
+  box-shadow:
+    0 4px 16px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .habit-log-item:hover:not(:disabled) {
-  border-color: #3b82f6;
-  background: #f9fafb;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(100, 130, 160, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .habit-log-item:active:not(:disabled) {
-  background: #f3f4f6;
+  transform: scale(0.98);
 }
 
 .habit-log-item.logged {
-  background: #f0fdf4;
-  border-color: #86efac;
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.25);
   cursor: default;
 }
 
@@ -144,16 +158,9 @@
   flex-direction: column;
 }
 
-.habit-log-ticker {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  font-family: 'SF Mono', 'Menlo', monospace;
-}
-
 .habit-log-name {
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   color: #111827;
 }
 
@@ -240,9 +247,15 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: #f9fafb;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   margin-bottom: 24px;
+  box-shadow:
+    0 8px 24px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .log-habit-icon-container {
@@ -264,13 +277,6 @@
 .log-habit-info {
   display: flex;
   flex-direction: column;
-}
-
-.log-habit-ticker {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-  font-family: 'SF Mono', 'Menlo', monospace;
 }
 
 .log-habit-name {
@@ -296,20 +302,22 @@
   flex-direction: column;
   align-items: center;
   padding: 12px 8px;
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .rate-selection-btn:hover {
-  border-color: #93c5fd;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .rate-selection-btn.selected {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .rate-selection-btn .rate-label {
@@ -398,9 +406,15 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: #f9fafb;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   margin-bottom: 24px;
+  box-shadow:
+    0 8px 24px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .log-habit-icon {
@@ -411,13 +425,6 @@
 .log-habit-info {
   display: flex;
   flex-direction: column;
-}
-
-.log-habit-ticker {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6b7280;
-  font-family: 'SF Mono', 'Menlo', monospace;
 }
 
 .log-habit-name {
@@ -452,16 +459,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;
-  color: #374151;
+  color: #2c4a6e;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .stepper-button:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.7);
+  transform: scale(1.05);
 }
 
 .stepper-button:active:not(:disabled) {
@@ -469,25 +479,30 @@
 }
 
 .stepper-button:disabled {
-  color: #d1d5db;
+  color: rgba(44, 74, 110, 0.3);
   cursor: not-allowed;
 }
 
 .stepper-input {
   width: 100px;
   height: 56px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
   font-size: 28px;
   font-weight: 600;
   text-align: center;
-  color: #111827;
+  color: #1a3a5c;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .stepper-input:focus {
-  border-color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Hide number input spinners */
@@ -504,10 +519,16 @@
 /* Log Confirmation Section (for per-day habits) */
 .log-confirmation-section {
   padding: 24px;
-  background: #f9fafb;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
   margin-bottom: 24px;
   text-align: center;
+  box-shadow:
+    0 8px 24px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .log-confirmation-text {
@@ -526,8 +547,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 16px;
   margin-bottom: 24px;
 }
 
@@ -546,30 +570,37 @@
 .log-confirm-button {
   width: 100%;
   padding: 16px;
-  background: #22c55e;
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   font-size: 16px;
   font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 52px;
+  box-shadow:
+    0 8px 24px rgba(34, 197, 94, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .log-confirm-button:hover:not(:disabled) {
-  background: #16a34a;
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px rgba(34, 197, 94, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .log-confirm-button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .log-confirm-button:disabled {
-  background: #9ca3af;
+  background: rgba(156, 163, 175, 0.5);
+  box-shadow: none;
   cursor: not-allowed;
 }
 

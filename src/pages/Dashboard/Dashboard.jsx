@@ -437,9 +437,6 @@ export default function Dashboard() {
                 {/* Tooltip */}
                 <div className={`star-tooltip ${activeTooltip === habit.id ? 'visible' : ''}`}>
                   <div className="tooltip-name">{habit.name}</div>
-                  <div className="tooltip-category" style={{ color: DEFAULT_STAR_COLOR }}>
-                    ${habit.ticker}
-                  </div>
                   <div className="tooltip-stats">
                     <div className="tooltip-stat">
                       <div className="tooltip-stat-value">{habit.fluxScore}</div>
@@ -530,7 +527,6 @@ export default function Dashboard() {
             >
               <div className="performer-badge">Top Performer</div>
               <div className="performer-content">
-                <div className="performer-ticker">${stats.topHabit.ticker}</div>
                 <div className="performer-name">{stats.topHabit.name}</div>
               </div>
               <div className="performer-stats">

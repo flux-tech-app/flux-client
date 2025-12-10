@@ -30,8 +30,7 @@ export default function LogHabitSheet({ actionType, onClose, onLogComplete }) {
   // Apply search filter
   const searchedHabits = searchQuery.trim()
     ? filteredHabits.filter(habit =>
-        habit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        habit.ticker.toLowerCase().includes(searchQuery.toLowerCase())
+        habit.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : filteredHabits;
 
@@ -143,7 +142,6 @@ export default function LogHabitSheet({ actionType, onClose, onLogComplete }) {
               <HabitIcon habitId={selectedHabit.libraryId} size={48} />
             </div>
             <div className="log-habit-info">
-              <span className="log-habit-ticker">${selectedHabit.ticker}</span>
               <span className="log-habit-name">{selectedHabit.name}</span>
             </div>
           </div>
@@ -342,7 +340,6 @@ export default function LogHabitSheet({ actionType, onClose, onLogComplete }) {
                   <HabitIcon habitId={habit.libraryId} size={28} />
                 </div>
                 <div className="habit-log-info">
-                  <span className="habit-log-ticker">${habit.ticker}</span>
                   <span className="habit-log-name">{habit.name}</span>
                 </div>
               </div>

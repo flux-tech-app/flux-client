@@ -106,7 +106,7 @@ export default function Home() {
     // Set smart default based on rate type
     if (habit.rateType === 'BINARY') {
       setLogValue('1')
-    } else if (habit.ticker === 'WALK') {
+    } else if (habit.libraryId === 'walking') {
       setLogValue('5000') // Default 5000 steps
     } else if (habit.rateType === 'DURATION') {
       setLogValue('30') // Default 30 minutes
@@ -158,7 +158,7 @@ export default function Home() {
     let increment = 1
     
     // Smart increments based on habit type
-    if (selectedHabit?.ticker === 'WALK') {
+    if (selectedHabit?.libraryId === 'walking') {
       increment = delta > 0 ? 1000 : -1000
     } else if (selectedHabit?.rateType === 'DURATION') {
       increment = delta > 0 ? 5 : -5 // 5 minute increments
@@ -267,8 +267,6 @@ export default function Home() {
                     >
                       <div className="habit-card-main">
                         <div className="habit-card-left">
-                          <span className="habit-ticker">${habit.ticker}</span>
-                          <span className="habit-ticker-divider">·</span>
                           <span className="habit-name">{habit.name}</span>
                         </div>
                         <div className="habit-card-right">
@@ -337,7 +335,6 @@ export default function Home() {
                 <div className="log-modal-header">
                   <span className="log-habit-icon">{selectedHabit.icon || '📌'}</span>
                   <div className="log-habit-info">
-                    <span className="log-habit-ticker">${selectedHabit.ticker}</span>
                     <span className="log-habit-name">{selectedHabit.name}</span>
                   </div>
                 </div>
@@ -364,7 +361,7 @@ export default function Home() {
                         value={logValue}
                         onChange={(e) => setLogValue(e.target.value)}
                         min="0"
-                        step={selectedHabit.ticker === 'WALK' ? '1000' : '1'}
+                        step={selectedHabit.libraryId === 'walking' ? '1000' : '1'}
                       />
                       <button 
                         className="stepper-button"

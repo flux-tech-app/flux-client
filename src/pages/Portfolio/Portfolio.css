@@ -453,7 +453,7 @@
 
 .holding-item {
   display: grid;
-  grid-template-columns: 70px 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 12px;
   align-items: center;
   padding: 14px 12px;
@@ -487,12 +487,15 @@
   color: rgba(44, 74, 110, 0.35);
 }
 
-/* Ticker */
-.holding-ticker {
+/* Name */
+.holding-name {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: #2c4a6e;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Middle Section - Rank Badge */
@@ -712,6 +715,6 @@
   }
 
   .holding-item {
-    grid-template-columns: 60px 1fr auto;
+    grid-template-columns: 1fr auto auto;
   }
 }

@@ -635,16 +635,11 @@
   flex: 1;
 }
 
-.performer-ticker {
-  font-size: 20px;
-  font-weight: 700;
+.performer-name {
+  font-size: 17px;
+  font-weight: 600;
   color: white;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-}
-
-.performer-name {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .performer-stats {

@@ -63,11 +63,11 @@ ChartJS.register(
 );
 
 export default function Portfolio() {
-  const { 
-    habits, 
-    logs, 
-    getTransferredBalance, 
-    getPendingBalance, 
+  const {
+    habits,
+    logs,
+    getTransferredBalance,
+    getPendingBalance,
     getWeekEarnings,
     calculateFluxScore,
     getPortfolioFluxScore
@@ -267,7 +267,7 @@ export default function Portfolio() {
         <section className="portfolio-value-section">
           <div className="value-label">Total Portfolio Value</div>
           <div className="portfolio-value">{formatCurrency(animatedBalance)}</div>
-          
+
           {/* Pending Transfer */}
           {hasHabits && pendingBalance > 0 && (
             <div className="pending-transfer">
@@ -332,8 +332,8 @@ export default function Portfolio() {
                   transition={{ delay: index * 0.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {/* Ticker */}
-                  <span className="holding-ticker">${holding.ticker}</span>
+                  {/* Name */}
+                  <span className="holding-name">{holding.name}</span>
 
                   {/* Rank Badge */}
                   <div className="holding-middle">

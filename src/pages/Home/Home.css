@@ -286,7 +286,7 @@
   transform: none;
 }
 
-/* Main row: ticker, name, status */
+/* Main row: name, status */
 .habit-card-main {
   display: flex;
   align-items: center;
@@ -302,22 +302,9 @@
   min-width: 0;
 }
 
-.habit-ticker {
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: 700;
-  color: #3b82f6;
-  flex-shrink: 0;
-}
-
-.habit-ticker-divider {
-  color: #d1d5db;
-  font-weight: 400;
-}
-
 .habit-name {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   color: #111827;
   white-space: nowrap;
   overflow: hidden;
@@ -469,13 +456,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.log-habit-ticker {
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: 700;
-  color: #3b82f6;
 }
 
 .log-habit-name {

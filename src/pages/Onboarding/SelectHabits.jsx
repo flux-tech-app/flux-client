@@ -60,7 +60,6 @@ export default function SelectHabits({
                     </div>
                     <div className="habit-select-info">
                       <span className="habit-select-name">{habit.name}</span>
-                      <span className="habit-select-ticker">${habit.ticker}</span>
                     </div>
                   </div>
                   
@@ -107,7 +106,6 @@ export default function SelectHabits({
                     </div>
                     <div className="habit-select-info">
                       <span className="habit-select-name">{habit.name}</span>
-                      <span className="habit-select-ticker">${habit.ticker}</span>
                     </div>
                   </div>
                   

@@ -102,7 +102,6 @@ export default function SetRates({
               <HabitIcon habitId={habit.id} size={36} />
             </div>
             <div className="goal-habit-info">
-              <span className="goal-habit-ticker">${habit.ticker}</span>
               <span className="goal-habit-name">{habit.name}</span>
             </div>
           </div>
@@ -143,7 +142,6 @@ export default function SetRates({
                   </div>
                   <div className="rate-card-info">
                     <span className="rate-card-name">{habit.name}</span>
-                    <span className="rate-card-ticker">${habit.ticker}</span>
                   </div>
                 </div>
 

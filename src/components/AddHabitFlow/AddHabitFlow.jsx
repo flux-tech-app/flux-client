@@ -207,7 +207,6 @@ function StepSelectHabit({ habits, onSelect }) {
                 <HabitIcon habitId={habit.id} size={24} />
               </div>
               <div className="habit-option-info">
-                <span className="habit-option-ticker">${habit.ticker}</span>
                 <span className="habit-option-name">{habit.name}</span>
               </div>
             </div>
@@ -295,7 +294,6 @@ function StepCustomize({
           <HabitIcon habitId={habit.id} size={36} />
         </div>
         <div className="customize-title-group">
-          <span className="customize-ticker">${habit.ticker}</span>
           <span className="customize-name">{habit.name}</span>
         </div>
       </div>
@@ -432,7 +430,6 @@ function StepGoal({ habit, selectedRate, onBack, onGoalSet }) {
           <HabitIcon habitId={habit.id} size={36} />
         </div>
         <div className="customize-title-group">
-          <span className="customize-ticker">${habit.ticker}</span>
           <span className="customize-name">{habit.name}</span>
         </div>
       </div>
