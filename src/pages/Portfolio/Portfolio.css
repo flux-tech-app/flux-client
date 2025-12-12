@@ -168,6 +168,315 @@
   color: rgba(44, 74, 110, 0.5);
 }
 
+/* Section Label */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 20px 20px 12px;
+}
+
+/* Movers Scroll Container */
+.movers-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 16px 16px;
+}
+
+.movers-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mover Card - Glassmorphic */
+.mover-card {
+  flex: 0 0 auto;
+  width: 150px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: 20px;
+  padding: 16px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 8px 24px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mover-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px rgba(100, 130, 160, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mover-card:active {
+  transform: scale(0.98);
+}
+
+.mover-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.mover-card.positive::before {
+  background: #3b82f6;
+}
+
+.mover-card.negative::before {
+  background: #ef4444;
+}
+
+.mover-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mover-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  font-size: 16px;
+}
+
+.mover-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a5f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.mover-earnings {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a3a5c;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.mover-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.mover-change svg {
+  width: 10px;
+  height: 10px;
+}
+
+.mover-change.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.mover-change.negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+/* Sparkline */
+.sparkline-container {
+  height: 24px;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.spark-bar {
+  flex: 1;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 3px;
+  min-height: 4px;
+  transition: height 0.3s ease;
+}
+
+.spark-bar.active {
+  background: rgba(59, 130, 246, 0.35);
+}
+
+.spark-bar.highlight {
+  background: #3b82f6;
+}
+
+.spark-bar.down {
+  background: #ef4444;
+}
+
+.mover-footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: rgba(44, 74, 110, 0.5);
+  font-weight: 500;
+}
+
+/* Holdings Section - Flat Style (like Indices) */
+.holdings-section-flat {
+  padding: 0 20px;
+  margin-top: 8px;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0 8px;
+}
+
+.section-title-flat {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.holdings-count-flat {
+  font-size: 11px;
+  color: rgba(44, 74, 110, 0.4);
+  font-weight: 500;
+}
+
+.holdings-list-flat {
+  display: flex;
+  flex-direction: column;
+}
+
+.holding-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 16px;
+  border-bottom: 1px solid rgba(44, 74, 110, 0.08);
+}
+
+.holding-row:last-child {
+  border-bottom: none;
+}
+
+.holding-row:active {
+  opacity: 0.6;
+}
+
+.holding-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.holding-name-flat {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a3a5c;
+  margin-bottom: 2px;
+}
+
+.holding-rank-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #10b981;
+}
+
+.holding-center {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Flux Score Ring */
+.flux-score-ring {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flux-ring-svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.flux-ring-bg {
+  stroke: rgba(59, 130, 246, 0.15);
+}
+
+.flux-ring-progress {
+  stroke: #3b82f6;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.flux-score-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a3a5c;
+  z-index: 1;
+}
+
+.holding-value-section {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.holding-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a3a5c;
+  line-height: 1.2;
+}
+
+.holding-label {
+  font-size: 11px;
+  color: rgba(44, 74, 110, 0.5);
+  margin-top: 2px;
+}
+
+.holding-chevron {
+  width: 16px;
+  height: 16px;
+  color: rgba(44, 74, 110, 0.25);
+  flex-shrink: 0;
+}
+
 /* Growth Section - Glassmorphic Card */
 .growth-section {
   background: rgba(255, 255, 255, 0.25);

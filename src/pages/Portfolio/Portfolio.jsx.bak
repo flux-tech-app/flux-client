@@ -5,7 +5,6 @@ import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { getNextTransferDate } from '../../utils/calculations';
 import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
-import CalibratingFingerprint from '../../components/CalibratingFingerprint';
 import './Portfolio.css';
 
 // Animated counter hook - counts up from 0 to target value
@@ -78,16 +77,16 @@ export default function Portfolio() {
 
           // This week's data
           const thisWeekLogs = habitLogs.filter(log => {
-            if (!log.timestamp) return false;
-            return new Date(log.timestamp) >= startOfThisWeek;
+            if (!log.date) return false;
+            return new Date(log.date) >= startOfThisWeek;
           });
           const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
           const thisWeekLogCount = thisWeekLogs.length;
 
           // Last week's data
           const lastWeekLogs = habitLogs.filter(log => {
-            if (!log.timestamp) return false;
-            const logDate = new Date(log.timestamp);
+            if (!log.date) return false;
+            const logDate = new Date(log.date);
             return logDate >= startOfLastWeek && logDate < startOfThisWeek;
           });
           const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
@@ -111,8 +110,8 @@ export default function Portfolio() {
 
             const dayEarnings = habitLogs
               .filter(log => {
-                if (!log.timestamp) return false;
-                const logDate = new Date(log.timestamp);
+                if (!log.date) return false;
+                const logDate = new Date(log.date);
                 return logDate >= date && logDate < nextDate;
               })
               .reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
@@ -128,6 +127,7 @@ export default function Portfolio() {
             sparklineData
           };
         })
+        .filter(habit => habit.thisWeekEarnings > 0 || habit.thisWeekLogCount > 0)
         .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
     } catch (error) {
       console.error('Error calculating weekly movers:', error);
@@ -139,14 +139,12 @@ export default function Portfolio() {
 
   // Calculate total earned for a habit
   const getHabitTotalEarned = (habitId) => {
-    if (!logs) return 0;
-    const habitLogs = logs.filter(log => log && log.habitId === habitId);
+    const habitLogs = logs.filter(log => log.habitId === habitId);
     return habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
   };
 
   // Get holdings data with Flux Scores
   const getHoldingsData = () => {
-    if (!habits) return [];
     return habits
       .map(habit => {
         const fluxScoreData = calculateFluxScore(habit.id);
@@ -163,7 +161,7 @@ export default function Portfolio() {
   };
 
   const holdings = getHoldingsData();
-  const hasHabits = habits && habits.length > 0;
+  const hasHabits = habits.length > 0;
 
   return (
     <div className="portfolio-page">
@@ -205,10 +203,14 @@ export default function Portfolio() {
           )}
         </section>
 
-        {/* Weekly Movers */}
+        {/* Weekly Movers Section */}
         {hasHabits && weeklyMovers.length > 0 && (
-          <>
-            <div className="section-label">This Week</div>
+          <section className="movers-section">
+            <div className="movers-header">
+              <div className="movers-title">This Week's Movers</div>
+              <span className="movers-count">{weeklyMovers.length} active</span>
+            </div>
+
             <div className="movers-scroll">
               {weeklyMovers.map((mover, index) => {
                 const isPositive = mover.changePercent >= 0;
@@ -225,6 +227,9 @@ export default function Portfolio() {
                     whileTap={{ scale: 0.97 }}
                   >
                     <div className="mover-card-header">
+                      <div className="mover-icon">
+                        <span>{mover.icon || '📊'}</span>
+                      </div>
                       <div className="mover-name">{mover.name}</div>
                     </div>
 
@@ -269,86 +274,57 @@ export default function Portfolio() {
                 );
               })}
             </div>
-          </>
+          </section>
         )}
 
         {/* Holdings Section */}
         {hasHabits ? (
-          <div className="holdings-section-flat">
-            <div className="section-header-row">
-              <span className="section-title-flat">Holdings</span>
-              <span className="holdings-count-flat">{holdings.length} behaviors</span>
+          <section className="holdings-section">
+            <div className="holdings-header">
+              <span className="holdings-title">Holdings</span>
+              <div className="holdings-header-right">
+                <span className="random-data-badge">Random Rankings</span>
+                <span className="holdings-count">{holdings.length} habits</span>
+              </div>
             </div>
 
-            <div className="holdings-list-flat">
+            <div className="holdings-list">
               {holdings.map((holding, index) => (
                 <motion.div
                   key={holding.id}
-                  className="holding-row"
+                  className={`holding-item ${holding.fluxScoreStatus === 'building' ? 'inactive' : ''}`}
                   onClick={() => navigate(`/habit/${holding.id}`)}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {/* Name + Top % for active */}
-                  <div className="holding-info">
-                    <div className="holding-name-flat">{holding.name}</div>
-                    {holding.fluxScoreStatus === 'active' && (
-                      <div className="holding-rank-text">
-                        {(() => {
-                          const rankPercent = Math.floor(Math.random() * 40 + 10);
-                          return `Top ${rankPercent}%`;
-                        })()}
-                      </div>
-                    )}
-                  </div>
+                  {/* Name */}
+                  <span className="holding-name">{holding.name}</span>
 
-                  {/* Center: Calibration Animation or Flux Score Ring */}
-                  <div className="holding-center">
-                    {holding.fluxScoreStatus === 'building' ? (
-                      <CalibratingFingerprint logsNeeded={holding.logsNeeded} size="compact" />
-                    ) : (
-                      <div className="flux-score-ring">
-                        <svg viewBox="0 0 36 36" className="flux-ring-svg">
-                          <circle
-                            className="flux-ring-bg"
-                            cx="18"
-                            cy="18"
-                            r="15"
-                            fill="none"
-                            strokeWidth="3"
-                          />
-                          <circle
-                            className="flux-ring-progress"
-                            cx="18"
-                            cy="18"
-                            r="15"
-                            fill="none"
-                            strokeWidth="3"
-                            strokeDasharray={`${(holding.fluxScore || 75) * 0.94} 94`}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span className="flux-score-value">{holding.fluxScore || 75}</span>
-                      </div>
+                  {/* Rank Badge */}
+                  <div className="holding-middle">
+                    {holding.fluxScoreStatus === 'active' ? (() => {
+                      const rankPercent = Math.floor(Math.random() * 40 + 10);
+                      return (
+                        <span className={`holding-rank ${rankPercent <= 20 ? 'top-performer' : ''}`}>
+                          Top {rankPercent}%
+                        </span>
+                      );
+                    })() : (
+                      <span className="holding-rank inactive">{holding.logsNeeded} more logs needed</span>
                     )}
                   </div>
 
                   {/* Earnings */}
-                  <div className="holding-value-section">
-                    <div className="holding-value">{formatCurrency(holding.totalEarned)}</div>
-                    <div className="holding-label">earned</div>
+                  <div className="holding-earnings">
+                    <div className="holding-earnings-value">{formatCurrency(holding.totalEarned)}</div>
+                    <div className="holding-earnings-label">earned</div>
                   </div>
-
-                  {/* Chevron */}
-                  <svg className="holding-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
                 </motion.div>
               ))}
             </div>
-          </div>
+          </section>
         ) : (
           <section className="empty-state-section">
             <div className="empty-icon">

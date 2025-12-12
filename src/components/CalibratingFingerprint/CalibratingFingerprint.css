@@ -76,6 +76,37 @@
   font-size: 11px;
 }
 
+/* Compact size - for inline list rows (32px) */
+.calibrating-fingerprint.compact {
+  flex-direction: row;
+  gap: 0;
+}
+
+.calibrating-fingerprint.compact .fingerprint-container {
+  width: 32px;
+  height: 32px;
+}
+
+.calibrating-fingerprint.compact .fp-ring:nth-child(1) { width: 6px; height: 6px; }
+.calibrating-fingerprint.compact .fp-ring:nth-child(2) { width: 11px; height: 11px; }
+.calibrating-fingerprint.compact .fp-ring:nth-child(3) { width: 16px; height: 16px; }
+.calibrating-fingerprint.compact .fp-ring:nth-child(4) { width: 21px; height: 21px; }
+.calibrating-fingerprint.compact .fp-ring:nth-child(5) { width: 26px; height: 26px; }
+.calibrating-fingerprint.compact .fp-ring:nth-child(6) { width: 30px; height: 30px; }
+
+.calibrating-fingerprint.compact .fp-ring {
+  border-width: 1.5px;
+}
+
+.calibrating-fingerprint.compact .fp-center-dot {
+  width: 4px;
+  height: 4px;
+}
+
+.calibrating-fingerprint.compact .days-badge {
+  display: none;
+}
+
 /* Fingerprint container */
 .fingerprint-container {
   width: 120px;
