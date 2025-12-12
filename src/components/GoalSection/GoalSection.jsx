@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { calculateGoalData } from '../../utils/goalCalculations';
 import { getHabitById } from '../../utils/HABIT_LIBRARY';
 import { formatCurrency } from '../../utils/formatters';
+import { getCalibrationStatus } from '../../utils/calibrationStatus';
 import GoalSetup from '../GoalSetup/GoalSetup';
 import { useHabits } from '../../context/HabitContext';
 import Button from '../Button';
@@ -52,7 +53,7 @@ export default function GoalSection({ habit, logs }) {
         </Button>
       </div>
 
-      {/* Top Row: Ring + Stats side by side */}
+      {/* Top Row: Ring + Metrics Bar Chart side by side */}
       <div className="goal-top-row">
         {/* Progress Ring */}
         <div className="goal-progress-ring-container">
@@ -85,27 +86,8 @@ export default function GoalSection({ habit, logs }) {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="goal-quick-stats">
-          <div className="quick-stat">
-            <span className="stat-label">Baseline</span>
-            <span className="stat-value">
-              {formatStatValue(goalData, 'baseline', habit)}
-            </span>
-          </div>
-          <div className="quick-stat current">
-            <span className="stat-label">Current</span>
-            <span className="stat-value">
-              {formatStatValue(goalData, 'current', habit)}
-            </span>
-          </div>
-          <div className="quick-stat goal">
-            <span className="stat-label">Goal</span>
-            <span className="stat-value">
-              {formatStatValue(goalData, 'goal', habit)}
-            </span>
-          </div>
-        </div>
+        {/* Metrics Bar Chart */}
+        <MetricsBarChart goalData={goalData} habit={habit} logs={logs} />
       </div>
 
       {/* Current Week View */}
@@ -116,35 +98,19 @@ export default function GoalSection({ habit, logs }) {
         <TodayProgress goalData={goalData} habit={habit} />
       )}
 
-      {/* Earnings Impact */}
+      {/* Compact Inline Earnings */}
       {goalData.earnings && (
-        <div className="earnings-impact">
-          <h4 className="earnings-impact-title">Earnings Impact</h4>
-          <div className="earnings-comparison">
-            <div className="earnings-row">
-              <span className="earnings-label">At Goal</span>
-              <span className="earnings-value">
-                {formatCurrency(goalData.earnings.atGoal.weekly)}/wk
-                <span className="annual">({formatCurrency(goalData.earnings.atGoal.annual)}/yr)</span>
-              </span>
-            </div>
-            <div className="earnings-row">
-              <span className="earnings-label">Current</span>
-              <span className="earnings-value">
-                {formatCurrency(goalData.earnings.current.weekly)}/wk
-                <span className="annual">({formatCurrency(goalData.earnings.current.annual)}/yr)</span>
-              </span>
-            </div>
-            {goalData.earnings.gap.weekly > 0 && (
-              <div className="earnings-row gap">
-                <span className="earnings-label">Gap</span>
-                <span className="earnings-value">
-                  {formatCurrency(goalData.earnings.gap.weekly)}/wk
-                  <span className="annual">({formatCurrency(goalData.earnings.gap.annual)}/yr)</span>
-                </span>
-              </div>
-            )}
-          </div>
+        <div className="earnings-inline">
+          {goalData.earnings.gap.weekly > 0 ? (
+            <span>
+              Potential: <span className="earnings-inline-value">+{formatCurrency(goalData.earnings.gap.weekly)}/wk</span> at goal
+              <span className="earnings-inline-annual"> (+{formatCurrency(goalData.earnings.gap.annual)}/yr)</span>
+            </span>
+          ) : (
+            <span>
+              On track for <span className="earnings-inline-value">{formatCurrency(goalData.earnings.current.weekly)}/wk</span>
+            </span>
+          )}
         </div>
       )}
 
@@ -214,6 +180,98 @@ function formatStatValue(goalData, type, habit) {
 
   const formatted = value < 10 ? value.toFixed(1) : Math.round(value).toLocaleString();
   return `${formatted}${period}`;
+}
+
+/**
+ * Get raw numeric value for bar width calculations
+ */
+function getRawValue(goalData, type) {
+  switch (goalData.type) {
+    case 'BINARY':
+      if (type === 'baseline') return goalData.baselineFrequency || 0;
+      if (type === 'current') return goalData.currentFrequency || 0;
+      return goalData.goalFrequency || 1;
+    case 'DURATION':
+      if (type === 'baseline') return goalData.baselineDaily || 0;
+      if (type === 'current') return goalData.currentDaily || 0;
+      return goalData.goalDaily || 1;
+    case 'DISTANCE':
+      if (type === 'baseline') return goalData.baselineWeekly || 0;
+      if (type === 'current') return goalData.currentWeekly || 0;
+      return goalData.goalWeekly || 1;
+    case 'COUNT':
+      if (type === 'baseline') return goalData.baselineDaily || 0;
+      if (type === 'current') return goalData.currentDaily || 0;
+      return goalData.goalDaily || 1;
+    default:
+      return type === 'goal' ? 1 : 0;
+  }
+}
+
+/**
+ * Metrics Bar Chart - Horizontal bars showing baseline, current, goal
+ */
+function MetricsBarChart({ goalData, habit, logs }) {
+  const baseline = getRawValue(goalData, 'baseline');
+  const current = getRawValue(goalData, 'current');
+  const goal = getRawValue(goalData, 'goal');
+
+  // Use centralized calibration status (log-based per blueprint)
+  const calibrationStatus = getCalibrationStatus(logs);
+  const isBaselineCalibrating = !habit.baseline?.avgPerPeriod && calibrationStatus.isCalibrating;
+
+  // Calculate percentages relative to goal (goal = 100%)
+  const maxValue = Math.max(goal, current, isBaselineCalibrating ? 0 : baseline) || 1;
+  const baselinePercent = isBaselineCalibrating ? 0 : Math.min(100, (baseline / maxValue) * 100);
+  const currentPercent = Math.min(100, (current / maxValue) * 100);
+  const goalPercent = (goal / maxValue) * 100;
+
+  return (
+    <div className="metrics-bar-chart">
+      <div className={`metric-bar-row baseline ${isBaselineCalibrating ? 'calibrating' : ''}`}>
+        <span className="metric-bar-label">Baseline</span>
+        <div className="metric-bar-track">
+          {isBaselineCalibrating ? (
+            <div className="metric-bar-calibrating">
+              <span className="calibrating-dot"></span>
+              <span className="calibrating-dot"></span>
+              <span className="calibrating-dot"></span>
+            </div>
+          ) : (
+            <div
+              className="metric-bar-fill baseline"
+              style={{ width: `${baselinePercent}%` }}
+            />
+          )}
+        </div>
+        <span className="metric-bar-value calibrating-text">
+          {isBaselineCalibrating ? 'Calibrating' : formatStatValue(goalData, 'baseline', habit)}
+        </span>
+      </div>
+
+      <div className="metric-bar-row current">
+        <span className="metric-bar-label">Current</span>
+        <div className="metric-bar-track">
+          <div
+            className="metric-bar-fill current"
+            style={{ width: `${currentPercent}%` }}
+          />
+        </div>
+        <span className="metric-bar-value">{formatStatValue(goalData, 'current', habit)}</span>
+      </div>
+
+      <div className="metric-bar-row goal">
+        <span className="metric-bar-label">Goal</span>
+        <div className="metric-bar-track">
+          <div
+            className="metric-bar-fill goal"
+            style={{ width: `${goalPercent}%` }}
+          />
+        </div>
+        <span className="metric-bar-value">{formatStatValue(goalData, 'goal', habit)}</span>
+      </div>
+    </div>
+  );
 }
 
 /**

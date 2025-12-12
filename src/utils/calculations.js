@@ -1,5 +1,14 @@
 // Flux 2.0 - Calculation Utilities
 
+import {
+  MIN_LOGS_FOR_FLUX,
+  LOGS_FOR_ESTABLISHED,
+  FLUX_WEIGHTS,
+  RECENT_WINDOW_DAYS,
+  DEFAULT_TYPICAL_GAP,
+  MIN_GAP_VARIANCE,
+} from './constants';
+
 /**
  * Calculate total portfolio value from all logs
  */
@@ -389,4 +398,175 @@ export function formatActivityTime(timestamp) {
     });
     return `${dateStr} at ${timeStr}`;
   }
+}
+
+// =============================================================================
+// FLUX SCORE CALCULATION (Blueprint-specified 5-component formula)
+// =============================================================================
+
+/**
+ * Calculate baseline metrics from logs
+ * Returns null if insufficient data
+ */
+export function calculateBaseline(logs) {
+  if (!logs || logs.length < MIN_LOGS_FOR_FLUX) {
+    return null;
+  }
+
+  const sortedLogs = [...logs].sort(
+    (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+  );
+
+  // Calculate gaps between consecutive logs
+  const gaps = [];
+  for (let i = 1; i < sortedLogs.length; i++) {
+    const gap = (new Date(sortedLogs[i].timestamp) - new Date(sortedLogs[i - 1].timestamp))
+      / (1000 * 60 * 60 * 24);
+    gaps.push(gap);
+  }
+
+  // Calculate typical gap (average days between logs)
+  const typicalGap = gaps.length > 0
+    ? gaps.reduce((sum, g) => sum + g, 0) / gaps.length
+    : DEFAULT_TYPICAL_GAP;
+
+  // Calculate frequency (logs per week)
+  const firstLog = new Date(sortedLogs[0].timestamp);
+  const lastLog = new Date(sortedLogs[sortedLogs.length - 1].timestamp);
+  const totalDays = Math.max(1, (lastLog - firstLog) / (1000 * 60 * 60 * 24));
+  const frequency = (logs.length / totalDays) * 7;
+
+  // Calculate average units
+  const avgUnits = logs.reduce((sum, log) => sum + (log.value || log.units || 1), 0) / logs.length;
+
+  return {
+    typicalGap: Math.max(typicalGap, MIN_GAP_VARIANCE),
+    frequency,
+    avgUnits,
+    logCount: logs.length,
+  };
+}
+
+/**
+ * Calculate the Flux Score using the 5-component formula from the blueprint
+ *
+ * Components (100 points total):
+ *   - Frequency Trend (30 pts): Recent frequency vs baseline
+ *   - Consistency (25 pts): Gap variance between logs
+ *   - Recency (20 pts): Days since last log
+ *   - Volume/Intensity (15 pts): Recent avg units vs baseline
+ *   - Data Maturity (10 pts): logs.length / 30
+ *
+ * @param {Array} logs - Array of habit log entries
+ * @param {Object} baseline - Pre-calculated baseline (optional, will calculate if not provided)
+ * @returns {Object} { score, status, components } or { score: null, status: 'building' }
+ */
+export function calculateFluxScore(logs, baseline = null) {
+  if (!logs || logs.length < MIN_LOGS_FOR_FLUX) {
+    return {
+      score: null,
+      status: 'building',
+      components: null,
+      logsNeeded: MIN_LOGS_FOR_FLUX - (logs?.length || 0),
+    };
+  }
+
+  // Calculate or use provided baseline
+  const baselineData = baseline || calculateBaseline(logs);
+  if (!baselineData) {
+    return {
+      score: null,
+      status: 'building',
+      components: null,
+      logsNeeded: MIN_LOGS_FOR_FLUX - logs.length,
+    };
+  }
+
+  const sortedLogs = [...logs].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  // 1. FREQUENCY TREND (30 points)
+  // Compare recent 7-day frequency to baseline
+  const now = new Date();
+  const recentStart = new Date(now);
+  recentStart.setDate(recentStart.getDate() - RECENT_WINDOW_DAYS);
+
+  const recentLogs = logs.filter(log => new Date(log.timestamp) >= recentStart);
+  const recentFrequency = (recentLogs.length / RECENT_WINDOW_DAYS) * 7;
+
+  const frequencyRatio = baselineData.frequency > 0
+    ? Math.min(1, recentFrequency / baselineData.frequency)
+    : 1;
+  const frequencyScore = FLUX_WEIGHTS.FREQUENCY * frequencyRatio;
+
+  // 2. CONSISTENCY (25 points)
+  // Calculate gap variance and apply exponential decay
+  const recentGaps = [];
+  for (let i = 1; i < Math.min(sortedLogs.length, 10); i++) {
+    const gap = (new Date(sortedLogs[i - 1].timestamp) - new Date(sortedLogs[i].timestamp))
+      / (1000 * 60 * 60 * 24);
+    recentGaps.push(gap);
+  }
+
+  let gapVariance = 0;
+  if (recentGaps.length > 1) {
+    const avgGap = recentGaps.reduce((sum, g) => sum + g, 0) / recentGaps.length;
+    gapVariance = recentGaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / recentGaps.length;
+    gapVariance = Math.sqrt(gapVariance); // Standard deviation
+  }
+
+  const consistencyScore = FLUX_WEIGHTS.CONSISTENCY *
+    Math.exp(-gapVariance / Math.max(baselineData.typicalGap, MIN_GAP_VARIANCE));
+
+  // 3. RECENCY (20 points)
+  // Days since last log, exponential decay
+  const lastLogDate = new Date(sortedLogs[0].timestamp);
+  const daysSinceLog = (now - lastLogDate) / (1000 * 60 * 60 * 24);
+
+  const recencyScore = FLUX_WEIGHTS.RECENCY *
+    Math.exp(-daysSinceLog / Math.max(baselineData.typicalGap, MIN_GAP_VARIANCE));
+
+  // 4. VOLUME/INTENSITY (15 points)
+  // Recent average units vs baseline
+  const recentAvgUnits = recentLogs.length > 0
+    ? recentLogs.reduce((sum, log) => sum + (log.value || log.units || 1), 0) / recentLogs.length
+    : 0;
+
+  const volumeRatio = baselineData.avgUnits > 0
+    ? Math.min(1, recentAvgUnits / baselineData.avgUnits)
+    : 1;
+  const volumeScore = FLUX_WEIGHTS.VOLUME * volumeRatio;
+
+  // 5. DATA MATURITY (10 points)
+  // logs.length / 30, capped at 1
+  const maturityRatio = Math.min(1, logs.length / LOGS_FOR_ESTABLISHED);
+  const maturityScore = FLUX_WEIGHTS.MATURITY * maturityRatio;
+
+  // Total score
+  const totalScore = frequencyScore + consistencyScore + recencyScore + volumeScore + maturityScore;
+
+  // Determine status
+  let status;
+  if (logs.length < MIN_LOGS_FOR_FLUX) {
+    status = 'building';
+  } else if (logs.length < LOGS_FOR_ESTABLISHED) {
+    status = 'emerging';
+  } else {
+    status = 'established';
+  }
+
+  return {
+    score: Math.round(totalScore),
+    status,
+    components: {
+      frequency: Math.round(frequencyScore * 10) / 10,
+      consistency: Math.round(consistencyScore * 10) / 10,
+      recency: Math.round(recencyScore * 10) / 10,
+      volume: Math.round(volumeScore * 10) / 10,
+      maturity: Math.round(maturityScore * 10) / 10,
+    },
+    baseline: baselineData,
+    daysSinceLog: Math.round(daysSinceLog * 10) / 10,
+  };
 }

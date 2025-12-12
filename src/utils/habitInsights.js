@@ -4,6 +4,9 @@
  * No AI required - deterministic logic + templates
  */
 
+import { MIN_LOGS_FOR_FLUX, LOGS_FOR_ESTABLISHED } from './constants';
+import { getCalibrationStatus } from './calibrationStatus';
+
 /**
  * Calculate days since habit creation
  */
@@ -80,35 +83,39 @@ export const calculateMilestone = (habit, logs) => {
 /**
  * Difficulty Calibration
  * Is the habit right-sized for the user?
+ * Uses log count thresholds per blueprint (10 logs minimum)
  */
 export const assessDifficulty = (habit, logs) => {
   const daysActive = getDaysActive(habit);
+  const calibrationStatus = getCalibrationStatus(logs);
   const completionRate = getCompletionRate(habit, logs, Math.min(30, daysActive));
-  
-  // Need at least 14 days of data for meaningful calibration
-  if (daysActive < 14) {
+
+  // Need at least MIN_LOGS_FOR_FLUX (10) logs for meaningful calibration
+  if (calibrationStatus.isCalibrating) {
     return {
       status: 'evaluating',
       icon: '📊',
       title: 'Gathering Data',
-      message: `${14 - daysActive} more days until calibration assessment`,
+      message: calibrationStatus.message,
       suggestion: null,
-      completionRate: completionRate
+      completionRate: completionRate,
+      logCount: calibrationStatus.logCount
     };
   }
-  
-  // Mastered - too easy
-  if (completionRate >= 95 && daysActive >= 60) {
+
+  // Mastered - too easy (at least 30 logs for established baseline)
+  if (completionRate >= 95 && calibrationStatus.isEstablished) {
     return {
       status: 'mastered',
       icon: '🎯',
       title: 'Ready for More',
-      message: `Above 95% for ${daysActive} days - this habit is locked in`,
+      message: `Above 95% with ${calibrationStatus.logCount} logs - this habit is locked in`,
       suggestion: 'Consider increasing frequency or transfer amount to grow your challenge',
-      completionRate: completionRate
+      completionRate: completionRate,
+      logCount: calibrationStatus.logCount
     };
   }
-  
+
   // Struggling - too hard
   if (completionRate < 70) {
     return {
@@ -117,10 +124,11 @@ export const assessDifficulty = (habit, logs) => {
       title: 'Needs Adjustment',
       message: `${completionRate}% completion rate suggests this might be too ambitious`,
       suggestion: 'Consider reducing frequency or lowering the transfer amount',
-      completionRate: completionRate
+      completionRate: completionRate,
+      logCount: calibrationStatus.logCount
     };
   }
-  
+
   // Slightly challenging but manageable
   if (completionRate >= 70 && completionRate < 80) {
     return {
@@ -129,10 +137,11 @@ export const assessDifficulty = (habit, logs) => {
       title: 'Challenging',
       message: `${completionRate}% completion - pushing yourself appropriately`,
       suggestion: 'This is a growth zone. Stick with it or adjust if needed.',
-      completionRate: completionRate
+      completionRate: completionRate,
+      logCount: calibrationStatus.logCount
     };
   }
-  
+
   // Well calibrated
   return {
     status: 'calibrated',
@@ -140,7 +149,8 @@ export const assessDifficulty = (habit, logs) => {
     title: 'Well Calibrated',
     message: `${completionRate}% completion rate is sustainable and challenging`,
     suggestion: null,
-    completionRate: completionRate
+    completionRate: completionRate,
+    logCount: calibrationStatus.logCount
   };
 };
 

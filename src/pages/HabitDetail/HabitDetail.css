@@ -306,21 +306,11 @@
   margin-bottom: 12px;
 }
 
-/* ===== Chart Section - Glassmorphic Card ===== */
+/* ===== Chart Section - Transparent (blends with background) ===== */
 .habit-detail-page .detail-chart-section {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-top: 1px solid rgba(255, 255, 255, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
   margin: 0 16px 16px;
-  border-radius: 28px;
-  padding: 24px 20px;
-  box-shadow:
-    0 20px 40px rgba(100, 130, 160, 0.12),
-    0 8px 16px rgba(100, 130, 160, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  padding: 0 4px;
 }
 
 .habit-detail-page .detail-chart-header {
@@ -506,21 +496,11 @@
   transform: scale(0.95);
 }
 
-/* ===== Calendar Heatmap - Glassmorphic Card ===== */
+/* ===== Calendar Heatmap - Transparent (blends with background) ===== */
 .habit-detail-page .calendar-section {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-top: 1px solid rgba(255, 255, 255, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
   margin: 0 16px 16px;
-  border-radius: 28px;
-  padding: 24px 20px;
-  box-shadow:
-    0 20px 40px rgba(100, 130, 160, 0.12),
-    0 8px 16px rgba(100, 130, 160, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  padding: 0 4px;
 }
 
 .habit-detail-page .calendar-header {

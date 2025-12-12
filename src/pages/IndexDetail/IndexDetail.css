@@ -609,6 +609,137 @@
   margin-top: 2px;
 }
 
+.idx-habit-stat-value.idx-calibrating {
+  color: rgba(44, 74, 110, 0.4);
+  font-size: 16px;
+}
+
+/* Empty State */
+.idx-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.idx-empty-icon {
+  color: rgba(44, 74, 110, 0.3);
+  margin-bottom: 16px;
+}
+
+.idx-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a3a5c;
+  margin: 0 0 8px;
+}
+
+.idx-empty-text {
+  font-size: 14px;
+  color: rgba(44, 74, 110, 0.6);
+  margin: 0;
+  max-width: 280px;
+}
+
+/* Calibrating state in performance card */
+.idx-perf-calibrating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.idx-perf-calibrating-msg {
+  font-size: 12px;
+  color: rgba(44, 74, 110, 0.6);
+  margin-top: 4px;
+}
+
+/* Delta value colors */
+.idx-delta-value.positive {
+  color: #16a34a;
+}
+
+.idx-delta-value.negative {
+  color: #dc2626;
+}
+
+/* Add habit CTA section */
+.idx-add-habit-section {
+  margin: 0 16px 16px;
+}
+
+.idx-add-habit-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+}
+
+.idx-add-habit-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  border-radius: 12px;
+  color: white;
+}
+
+.idx-add-habit-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.idx-add-habit-content {
+  flex: 1;
+}
+
+.idx-add-habit-content h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a3a5c;
+  margin: 0 0 4px;
+}
+
+.idx-add-habit-content p {
+  font-size: 12px;
+  color: rgba(44, 74, 110, 0.6);
+  margin: 0;
+}
+
+.idx-add-habit-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.idx-add-habit-btn:active {
+  transform: scale(0.98);
+}
+
+/* Make habit card clickable */
+.idx-habit-card {
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.idx-habit-card:active {
+  transform: scale(0.98);
+}
+
 /* Leaderboard Section */
 .idx-leaderboard-section {
   background: rgba(255, 255, 255, 0.25);

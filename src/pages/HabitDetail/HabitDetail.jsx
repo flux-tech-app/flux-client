@@ -15,6 +15,8 @@ import {
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
+import { getCalibrationStatus } from '../../utils/calibrationStatus';
+import { calculateFluxScore } from '../../utils/calculations';
 import BackButton from '../../components/BackButton';
 import GoalSection from '../../components/GoalSection/GoalSection';
 import CalibratingFingerprint from '../../components/CalibratingFingerprint';
@@ -234,27 +236,41 @@ export default function HabitDetail() {
     });
   }, [habitLogs]);
 
-  // Check if habit is new (insufficient data for meaningful insights)
+  // Get calibration status from centralized utility (log-based per blueprint)
+  const calibrationStatus = useMemo(() => {
+    return getCalibrationStatus(habitLogs);
+  }, [habitLogs]);
+
+  // Calculate Flux Score using the blueprint 5-component formula
+  const fluxScoreData = useMemo(() => {
+    return calculateFluxScore(habitLogs);
+  }, [habitLogs]);
+
+  // Derive habitDataStatus from calibration for UI compatibility
   const habitDataStatus = useMemo(() => {
-    const uniqueDaysLogged = new Set(habitLogs.map(log => {
-      const d = new Date(log.timestamp);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    })).size;
+    const logCount = calibrationStatus.logCount;
 
-    const daysSinceCreation = stats.daysSinceCreation;
-
-    if (uniqueDaysLogged === 0) {
-      return { status: 'no_data', message: 'Complete this habit to start tracking your progress' };
-    } else if (uniqueDaysLogged < 3) {
-      return { status: 'minimal', message: `${3 - uniqueDaysLogged} more day${3 - uniqueDaysLogged > 1 ? 's' : ''} of data needed to see trends`, daysLogged: uniqueDaysLogged };
-    } else if (uniqueDaysLogged < 7 || daysSinceCreation < 7) {
-      return { status: 'building', message: 'Building your habit profile...', daysLogged: uniqueDaysLogged };
-    } else if (uniqueDaysLogged < 14) {
-      return { status: 'emerging', message: 'Patterns are starting to emerge', daysLogged: uniqueDaysLogged };
+    if (logCount === 0) {
+      return {
+        status: 'no_data',
+        message: 'Complete this habit to start tracking your progress',
+        logCount
+      };
+    } else if (calibrationStatus.isCalibrating) {
+      return {
+        status: 'building',
+        message: calibrationStatus.message,
+        logCount
+      };
+    } else if (calibrationStatus.isEmerging) {
+      return {
+        status: 'emerging',
+        message: 'Baseline emerging',
+        logCount
+      };
     }
-    return { status: 'sufficient', daysLogged: uniqueDaysLogged };
-  }, [habitLogs, stats.daysSinceCreation]);
+    return { status: 'sufficient', logCount };
+  }, [calibrationStatus]);
 
   // Get recent activity (last 10 logs)
   const recentActivity = useMemo(() => {
@@ -586,20 +602,26 @@ export default function HabitDetail() {
     const labels = chartData.map(d => d.label);
     const values = chartData.map(d => chartType === 'fluxScore' ? d.fluxScore : d.cumulativeEarnings);
 
+    // Blue for Flux Score, Green for Earnings
+    const isFlux = chartType === 'fluxScore';
+    const lineColor = isFlux ? '#3b82f6' : '#22c55e';
+    const gradientColorStart = isFlux ? 'rgba(59, 130, 246, 0.2)' : 'rgba(34, 197, 94, 0.2)';
+    const gradientColorEnd = isFlux ? 'rgba(59, 130, 246, 0)' : 'rgba(34, 197, 94, 0)';
+
     return {
       labels,
       datasets: [{
-        label: chartType === 'fluxScore' ? 'Flux Score' : 'Earnings',
+        label: isFlux ? 'Flux Score' : 'Earnings',
         data: values,
-        borderColor: '#3b82f6',
+        borderColor: lineColor,
         backgroundColor: (context) => {
           const chart = context.chart;
           const {ctx, chartArea} = chart;
           if (!chartArea) return null;
 
           const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
-          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+          gradient.addColorStop(0, gradientColorStart);
+          gradient.addColorStop(1, gradientColorEnd);
           return gradient;
         },
         borderWidth: 2.5,
@@ -607,7 +629,7 @@ export default function HabitDetail() {
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#3b82f6',
+        pointHoverBackgroundColor: lineColor,
         pointHoverBorderColor: '#fff',
         pointHoverBorderWidth: 2,
       }]
@@ -777,7 +799,7 @@ export default function HabitDetail() {
               </div>
               <div className="hero-section-right">
                 <CalibratingFingerprint
-                  daysRemaining={14 - (habitDataStatus.daysLogged || 0)}
+                  logsNeeded={calibrationStatus.logsNeeded}
                   size="hero"
                 />
               </div>
@@ -804,7 +826,7 @@ export default function HabitDetail() {
                       strokeWidth="7"
                       strokeLinecap="round"
                       strokeDasharray={2 * Math.PI * 44}
-                      strokeDashoffset={2 * Math.PI * 44 * (1 - stats.hss / 100)}
+                      strokeDashoffset={2 * Math.PI * 44 * (1 - (fluxScoreData.score || 0) / 100)}
                       transform="rotate(-90 50 50)"
                     />
                     <defs>
@@ -815,7 +837,7 @@ export default function HabitDetail() {
                     </defs>
                   </svg>
                   <div className="flux-ring-value">
-                    <span className="flux-number">{stats.hss}</span>
+                    <span className="flux-number">{fluxScoreData.score || 0}</span>
                     <span className="flux-label">Flux</span>
                   </div>
                 </div>
@@ -904,7 +926,7 @@ export default function HabitDetail() {
                   </div>
                   <p className="chart-empty-message">{habitDataStatus.message}</p>
                 </div>
-              ) : chartType === 'fluxScore' && habitDataStatus.status !== 'sufficient' ? (
+              ) : chartType === 'fluxScore' && calibrationStatus.isCalibrating ? (
                 <div className="chart-calibrating-state">
                   <div className="chart-calibrating-icon">
                     <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -913,7 +935,7 @@ export default function HabitDetail() {
                     </svg>
                   </div>
                   <p className="chart-calibrating-message">Flux Score calibrating</p>
-                  <p className="chart-calibrating-submessage">{14 - (habitDataStatus.daysLogged || 0)} more days of data needed</p>
+                  <p className="chart-calibrating-submessage">{calibrationStatus.message}</p>
                 </div>
               ) : (
                 <>
@@ -941,6 +963,11 @@ export default function HabitDetail() {
                 ))}
               </div>
             </section>
+
+            {/* Goal Progress Section */}
+            {habit.goal && (
+              <GoalSection habit={habit} logs={habitLogs} />
+            )}
 
             {/* Weekly Summary Card */}
             <section className="weekly-summary-section">
@@ -1097,11 +1124,6 @@ export default function HabitDetail() {
         {/* ========== INSIGHTS TAB ========== */}
         {activeTab === 'insights' && (
           <>
-            {/* Goal Progress Section */}
-            {habit.goal && (
-              <GoalSection habit={habit} logs={habitLogs} />
-            )}
-
             {/* Insights Accordion */}
             <section className="insights-accordion-section">
               <h3 className="detail-section-title">Insights</h3>
@@ -1328,7 +1350,7 @@ export default function HabitDetail() {
               Difficulty calibration analyzes your completion rate to determine if this habit is set at the right level for you.
             </p>
             <ul className="info-modal-list">
-              <li><strong>Evaluating:</strong> Still gathering data (first 14 days)</li>
+              <li><strong>Building:</strong> Still gathering data (first 10 logs)</li>
               <li><strong>Struggling:</strong> Below 70% - consider making it easier</li>
               <li><strong>Challenging:</strong> 70-80% - a healthy growth zone</li>
               <li><strong>Well Calibrated:</strong> 80-95% - sustainable and challenging</li>

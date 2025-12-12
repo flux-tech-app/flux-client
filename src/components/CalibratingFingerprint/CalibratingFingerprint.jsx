@@ -1,9 +1,11 @@
 import React from 'react';
 import './CalibratingFingerprint.css';
 
-const CalibratingFingerprint = ({ daysRemaining, size = 'large' }) => {
-  const displayDays = Math.max(0, daysRemaining);
+const CalibratingFingerprint = ({ logsNeeded, daysRemaining, size = 'large' }) => {
+  // Support both logsNeeded (new) and daysRemaining (legacy) props
+  const displayCount = Math.max(0, logsNeeded ?? daysRemaining ?? 0);
   const isCompact = size === 'compact' || size === 'hero';
+  const unit = logsNeeded !== undefined ? 'log' : 'day';
 
   return (
     <div className={`calibrating-fingerprint ${size}`}>
@@ -26,10 +28,10 @@ const CalibratingFingerprint = ({ daysRemaining, size = 'large' }) => {
         </svg>
         <span className="days-badge-text">
           {isCompact
-            ? `${displayDays} days left`
-            : displayDays === 1
-              ? '1 more day of data needed'
-              : `${displayDays} more days of data needed`}
+            ? `${displayCount} ${unit}${displayCount === 1 ? '' : 's'} left`
+            : displayCount === 1
+              ? `1 more ${unit} needed`
+              : `${displayCount} more ${unit}s needed`}
         </span>
       </div>
     </div>

@@ -263,7 +263,8 @@ export default function DevTools() {
       '• All habits\n' +
       '• All activity logs\n' +
       '• All transfer history\n' +
-      '• User profile\n\n' +
+      '• User profile\n' +
+      '• Index demo data\n\n' +
       'This cannot be undone!'
     );
 
@@ -274,6 +275,7 @@ export default function DevTools() {
     localStorage.removeItem('flux_transfers');
     localStorage.removeItem('flux_user');
     localStorage.removeItem('flux_last_transfer');
+    localStorage.removeItem('flux_index_demo_data');
 
     alert('All data cleared. Reloading app...');
     window.location.reload();

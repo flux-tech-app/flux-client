@@ -14,12 +14,11 @@ export default function Indices() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [indexData, setIndexData] = useState(null);
 
-  // Load or generate index data on mount
+  // Load index data on mount (don't auto-generate)
   useEffect(() => {
-    if (!hasIndexData()) {
-      generateDefaultIndexData();
+    if (hasIndexData()) {
+      setIndexData(getIndexData());
     }
-    setIndexData(getIndexData());
   }, []);
 
   // Get LOG behaviors from library
@@ -67,8 +66,23 @@ export default function Indices() {
           </button>
         </header>
 
+        {/* Empty State when no index data */}
+        {!indexData && (
+          <div className="indices-empty-state">
+            <div className="indices-empty-icon">
+              <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <h3 className="indices-empty-title">No Index Data</h3>
+            <p className="indices-empty-text">
+              Community index data hasn't been loaded. Use Developer Tools to generate example data.
+            </p>
+          </div>
+        )}
+
         {/* Your Indices Section */}
-        {userIndices.length > 0 && (
+        {indexData && userIndices.length > 0 && (
           <div className="indices-section">
             <div className="section-header-row">
               <span className="section-title">Your Indices</span>
@@ -114,6 +128,7 @@ export default function Indices() {
         )}
 
         {/* Discover Indices Section */}
+        {indexData && (
         <div className="indices-section">
           <div className="section-header-row">
             <span className="section-title">Discover Indices</span>
@@ -152,8 +167,10 @@ export default function Indices() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Pass Behavior Indices Coming Soon */}
+        {indexData && (
         <div className="indices-section">
           <div className="section-header-row">
             <span className="section-title">Pass Indices</span>
@@ -163,6 +180,7 @@ export default function Indices() {
             <span>Avoidance behavior indices are in development.</span>
           </div>
         </div>
+        )}
       </div>
 
       {/* Info Modal */}

@@ -223,6 +223,35 @@
   color: #bbb;
 }
 
+/* Empty State */
+.indices-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.indices-empty-icon {
+  color: rgba(44, 74, 110, 0.3);
+  margin-bottom: 16px;
+}
+
+.indices-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a3a5c;
+  margin: 0 0 8px;
+}
+
+.indices-empty-text {
+  font-size: 14px;
+  color: rgba(44, 74, 110, 0.6);
+  margin: 0;
+  max-width: 280px;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
