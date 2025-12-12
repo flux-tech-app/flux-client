@@ -132,16 +132,12 @@ export default function Navigation({ onCreateHabit, onLog, onPass }) {
           </motion.button>
         </div>
 
-        {/* Account */}
-        <Link to="/account" className={`nav-item ${isActive('/account') ? 'active' : ''}`}>
-          <svg className="nav-icon" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-              clipRule="evenodd"
-            />
+        {/* Indices */}
+        <Link to="/indices" className={`nav-item ${isActive('/indices') ? 'active' : ''}`}>
+          <svg className="nav-icon" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 13h2v8H3v-8zm4-5h2v13H7V8zm4-5h2v18h-2V3zm4 8h2v10h-2V11zm4-3h2v13h-2V8z" />
           </svg>
-          <span>Account</span>
+          <span>Indices</span>
         </Link>
       </nav>
     </>

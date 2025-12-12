@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
+import Button from '../../components/Button';
 import './AddHabit.css';
 
 export default function AddHabit() {
@@ -101,18 +102,19 @@ export default function AddHabit() {
           {/* Header */}
           <header className="add-header">
             <div className="header-left">
-              <button className="back-button" onClick={handleCancel}>
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
                 Cancel
-              </button>
+              </Button>
             </div>
             <div className="header-title">Add Position</div>
-            <button 
-              className="save-button" 
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleSubmit}
               disabled={!isValid}
             >
               Create
-            </button>
+            </Button>
           </header>
 
           {/* Form Content */}

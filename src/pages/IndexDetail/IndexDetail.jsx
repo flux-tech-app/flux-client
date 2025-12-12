@@ -1,87 +1,201 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useHabits } from '../../context/HabitContext';
+import BackButton from '../../components/BackButton';
 import './IndexDetail.css';
 
 export default function IndexDetail() {
   const navigate = useNavigate();
   const { indexId } = useParams();
-  const [selectedPeriod, setSelectedPeriod] = useState('1W');
-  const [showInfoModal, setShowInfoModal] = useState(false);
+  const { habits, logs } = useHabits();
+  const [selectedPeriod, setSelectedPeriod] = useState('1M');
 
-  // Mock data - would be fetched based on indexId
+  // Mock index data - would be fetched based on indexId
   const indexData = {
-    name: 'Exercise Index',
-    value: '68.2%',
-    change: '+2.4%',
-    changeAmount: '+1.6pp',
-    changePositive: true,
-    participants: 1247,
-    userScore: '82.5%',
-    percentile: '87th',
-    percentileLabel: 'Strong',
-    high: { value: '70.8%', date: 'Nov 8' },
-    low: { value: '64.3%', date: 'Oct 29' },
-    avgDifficulty: '3.2',
-    activeHabits: '2,891',
-    description: 'The Exercise Index tracks completion rates across all physical activity habits on Flux. This includes cardio, strength training, sports, and active recovery activities.',
-    subcategories: ['Cardio', 'Strength', 'Flexibility', 'Sports', 'Active Recovery']
+    cardio: {
+      name: 'Cardio Index',
+      category: 'Fitness',
+      description: 'Running, cycling, swimming, etc.',
+      value: 71.3,
+      change: 1.8,
+      participants: 847,
+      userScore: 78.2,
+      percentile: 16,
+      deltaFromIndex: 6.9,
+      aheadOf: 713,
+      logsPerWeek: { user: 4.2, index: 3.1 },
+      avgGap: { user: 1.8, index: 2.4 },
+      consistency: { user: 94, index: 76 },
+      distribution: { top: 15, strong: 32, building: 35, starting: 18 },
+      insight: "Your cardio consistency (1.8 day avg gap) beats 84% of users. The index shows most users have 3-4 day gaps between sessions."
+    },
+    exercise: {
+      name: 'Exercise Index',
+      category: 'Fitness',
+      description: 'All physical activity habits',
+      value: 68.2,
+      change: 2.4,
+      participants: 1247,
+      userScore: 82.5,
+      percentile: 13,
+      deltaFromIndex: 14.3,
+      aheadOf: 1085,
+      logsPerWeek: { user: 5.1, index: 3.8 },
+      avgGap: { user: 1.4, index: 2.1 },
+      consistency: { user: 91, index: 72 },
+      distribution: { top: 12, strong: 28, building: 38, starting: 22 },
+      insight: "You're in the top tier for exercise consistency. Your multi-habit approach puts you ahead of 87% of single-habit trackers."
+    },
+    mindfulness: {
+      name: 'Mindfulness Index',
+      category: 'Mental Health',
+      description: 'Meditation, journaling, breathing',
+      value: 54.7,
+      change: -0.8,
+      participants: 623,
+      userScore: 62.1,
+      percentile: 24,
+      deltaFromIndex: 7.4,
+      aheadOf: 473,
+      logsPerWeek: { user: 3.2, index: 2.4 },
+      avgGap: { user: 2.2, index: 3.1 },
+      consistency: { user: 78, index: 61 },
+      distribution: { top: 10, strong: 25, building: 40, starting: 25 },
+      insight: "Mindfulness habits have high drop-off rates. Your 78% consistency beats most users who struggle to maintain daily practice."
+    }
   };
 
+  const data = indexData[indexId] || indexData.exercise;
   const periods = ['1W', '1M', '3M', '6M', '1Y', 'All'];
 
+  // Find user's related habit for this index
+  const relatedHabit = habits.find(h => {
+    if (indexId === 'cardio') return ['running', 'cycling', 'swimming'].includes(h.libraryId);
+    if (indexId === 'mindfulness') return ['meditation', 'journal'].includes(h.libraryId);
+    return ['running', 'gym', 'pushups'].includes(h.libraryId);
+  });
+
+  const habitLogs = relatedHabit ? logs.filter(l => l.habitId === relatedHabit.id) : [];
+  const totalEarned = habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
+
   return (
-    <div className="index-detail-page">
-      <div className="index-detail-container">
+    <div className="idx-detail-page">
+      <div className="idx-detail-container">
         {/* Header */}
-        <header className="detail-header">
-          <button className="back-button" onClick={() => navigate('/indices')}>
-            <svg className="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h1 className="header-title">{indexData.name}</h1>
-          <button className="info-button" onClick={() => setShowInfoModal(true)}>
-            <svg className="info-icon" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-            </svg>
-          </button>
+        <header className="idx-header">
+          <BackButton />
+          <div className="idx-header-content">
+            <div className="idx-header-title">{data.name}</div>
+            <div className="idx-header-subtitle">{data.category} · {data.description}</div>
+          </div>
+          <div className="idx-live-badge">
+            <span className="idx-live-dot"></span>
+            Live
+          </div>
         </header>
 
-        {/* Index Value Section */}
-        <div className="index-value-section">
-          <div className="index-value-large">{indexData.value}</div>
-          <div className={`index-change-large ${indexData.changePositive ? 'positive' : 'negative'}`}>
-            <svg className="change-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points={indexData.changePositive ? "23 6 13.5 15.5 8.5 10.5 1 18" : "23 18 13.5 8.5 8.5 13.5 1 6"}></polyline>
-            </svg>
-            {indexData.change} ({indexData.changeAmount})
+        {/* Index Hero */}
+        <div className="idx-hero-section">
+          <div className="idx-hero-row">
+            <div className="idx-hero-main">
+              <div className="idx-hero-label">{data.name}</div>
+              <div className="idx-hero-value-row">
+                <div className="idx-hero-value">{data.value.toFixed(1)}</div>
+                <div className={`idx-hero-change ${data.change >= 0 ? 'positive' : 'negative'}`}>
+                  <svg className="idx-change-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d={data.change >= 0 ? "M5 10l7-7m0 0l7 7m-7-7v18" : "M19 14l-7 7m0 0l-7-7m7 7V3"}/>
+                  </svg>
+                  {data.change >= 0 ? '+' : ''}{data.change.toFixed(1)}%
+                </div>
+              </div>
+              <div className="idx-hero-meta">Avg Flux Score across all trackers · 30d</div>
+            </div>
+            <div className="idx-hero-participants">
+              <div className="idx-participants-number">{data.participants}</div>
+              <div className="idx-participants-label">tracking</div>
+            </div>
           </div>
-          <div className="period-label">This week • {indexData.participants.toLocaleString()} participants</div>
+        </div>
+
+        {/* Your Performance Card */}
+        <div className="idx-performance-card">
+          <div className="idx-perf-header">
+            <div className="idx-perf-label">Your {data.name.replace(' Index', '')} Flux Score</div>
+            <div className="idx-perf-badge">Top {data.percentile}%</div>
+          </div>
+          <div className="idx-perf-main">
+            <div className="idx-perf-score">{data.userScore.toFixed(1)}</div>
+            <div className="idx-perf-delta">
+              <div className="idx-delta-value">+{data.deltaFromIndex.toFixed(1)}</div>
+              <div className="idx-delta-label">above index</div>
+            </div>
+          </div>
+          <div className="idx-perf-context">Ahead of {data.aheadOf.toLocaleString()} users</div>
         </div>
 
         {/* Chart Section */}
-        <div className="chart-section">
-          <div className="chart-container">
-            <svg className="chart-svg" viewBox="0 0 360 280" preserveAspectRatio="none">
+        <div className="idx-chart-section">
+          <div className="idx-chart-header">
+            <div className="idx-chart-title">Performance</div>
+            <span className="idx-random-badge">Random Data</span>
+          </div>
+
+          <div className="idx-chart-wrapper">
+            <svg className="idx-chart-svg" viewBox="0 0 320 140" preserveAspectRatio="none">
+              {/* Grid lines */}
+              <line x1="0" y1="35" x2="320" y2="35" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
+              <line x1="0" y1="70" x2="320" y2="70" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
+              <line x1="0" y1="105" x2="320" y2="105" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
+
+              {/* Index line (dashed, gray) */}
+              <path
+                d="M 10 80 L 50 85 L 90 78 L 130 82 L 170 75 L 210 80 L 250 72 L 290 68 L 310 65"
+                fill="none"
+                stroke="rgba(44, 74, 110, 0.3)"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
+
+              {/* User line with fill */}
               <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#3b82f6', stopOpacity: 0 }} />
+                <linearGradient id="idxUserGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25"/>
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
                 </linearGradient>
               </defs>
-              
-              <path className="chart-area" d="M 20 200 L 70 175 L 120 160 L 170 180 L 220 165 L 270 150 L 320 130 L 340 120 L 340 280 L 20 280 Z"></path>
-              <path className="chart-line" d="M 20 200 L 70 175 L 120 160 L 170 180 L 220 165 L 270 150 L 320 130 L 340 120"></path>
-              <circle className="chart-dot" cx="340" cy="120" r="6"></circle>
+              <path
+                d="M 10 70 L 50 65 L 90 60 L 130 68 L 170 55 L 210 50 L 250 45 L 290 38 L 310 35 L 310 140 L 10 140 Z"
+                fill="url(#idxUserGradient)"
+              />
+              <path
+                d="M 10 70 L 50 65 L 90 60 L 130 68 L 170 55 L 210 50 L 250 45 L 290 38 L 310 35"
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <circle cx="310" cy="35" r="4" fill="#3b82f6"/>
             </svg>
           </div>
 
-          {/* Time Period Selector */}
-          <div className="time-period">
+          <div className="idx-chart-legend">
+            <div className="idx-legend-item">
+              <div className="idx-legend-line dashed"></div>
+              <span>{data.name} (all users)</span>
+            </div>
+            <div className="idx-legend-item">
+              <div className="idx-legend-line solid"></div>
+              <span>You</span>
+            </div>
+          </div>
+
+          {/* Time Period Toggles */}
+          <div className="idx-time-toggles">
             {periods.map(period => (
               <button
                 key={period}
-                className={`period-button ${selectedPeriod === period ? 'active' : ''}`}
+                className={`idx-time-toggle ${selectedPeriod === period ? 'active' : ''}`}
                 onClick={() => setSelectedPeriod(period)}
               >
                 {period}
@@ -90,115 +204,137 @@ export default function IndexDetail() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-label">High</div>
-            <div className="stat-value">{indexData.high.value}</div>
-            <div className="stat-sublabel">{indexData.high.date}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Low</div>
-            <div className="stat-value">{indexData.low.value}</div>
-            <div className="stat-sublabel">{indexData.low.date}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Avg Difficulty</div>
-            <div className="stat-value">{indexData.avgDifficulty}</div>
-            <div className="stat-sublabel">Out of 5</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Active Habits</div>
-            <div className="stat-value">{indexData.activeHabits}</div>
-            <div className="stat-sublabel">Being tracked</div>
-          </div>
-        </div>
-
-        {/* Performance Comparison Section */}
-        <div className="comparison-section">
-          <div className="comparison-header">
-            <svg className="comparison-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <polyline points="17 11 19 13 23 9"></polyline>
-            </svg>
-            Your Performance
-          </div>
-
-          <div className="comparison-row">
-            <span className="comparison-label">Your Success Rate</span>
-            <span className="comparison-value">{indexData.userScore}</span>
-          </div>
-
-          <div className="comparison-bar-container">
-            <div className="comparison-bar-fill" style={{ width: indexData.userScore }}></div>
-            <div className="comparison-marker" style={{ left: indexData.value }}></div>
-          </div>
-
-          <div className="percentile-badge-large">
-            <div className="percentile-info">
-              <div className="percentile-icon-large">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"></path>
-                </svg>
-              </div>
-              <div className="percentile-text">
-                <div className="percentile-label-large">Your Percentile</div>
-                <div className="percentile-value-large">{indexData.percentile}</div>
+        {/* Quick Stats */}
+        <div className="idx-stats-section">
+          <div className="idx-stats-title">Your Stats vs Index</div>
+          <div className="idx-stats-grid">
+            <div className="idx-stat-item">
+              <div className="idx-stat-value">{data.logsPerWeek.user}</div>
+              <div className="idx-stat-label">Your logs/wk</div>
+              <div className={`idx-stat-compare ${data.logsPerWeek.user > data.logsPerWeek.index ? 'above' : 'below'}`}>
+                Index: {data.logsPerWeek.index}
               </div>
             </div>
-            <div className="percentile-badge-text">{indexData.percentileLabel}</div>
+            <div className="idx-stat-item">
+              <div className="idx-stat-value">{data.avgGap.user}d</div>
+              <div className="idx-stat-label">Your avg gap</div>
+              <div className={`idx-stat-compare ${data.avgGap.user < data.avgGap.index ? 'above' : 'below'}`}>
+                Index: {data.avgGap.index}d
+              </div>
+            </div>
+            <div className="idx-stat-item">
+              <div className="idx-stat-value">{data.consistency.user}%</div>
+              <div className="idx-stat-label">Consistency</div>
+              <div className={`idx-stat-compare ${data.consistency.user > data.consistency.index ? 'above' : 'below'}`}>
+                Index: {data.consistency.index}%
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Category Info Section */}
-        <div className="category-info">
-          <div className="info-header">About {indexData.name}</div>
-          <div className="info-text">{indexData.description}</div>
-          <div className="subcategories">
-            {indexData.subcategories.map(sub => (
-              <span key={sub} className="subcategory-chip">{sub}</span>
-            ))}
+        {/* Distribution */}
+        <div className="idx-distribution-section">
+          <div className="idx-dist-title">Population Distribution</div>
+          <div className="idx-distribution-bar">
+            <div className="idx-dist-segment top" style={{ width: `${data.distribution.top}%` }}>
+              {data.percentile <= data.distribution.top && (
+                <div className="idx-you-marker" style={{ left: `${(data.percentile / data.distribution.top) * 100}%` }}>
+                  <div className="idx-you-label">YOU</div>
+                  <div className="idx-you-arrow"></div>
+                </div>
+              )}
+            </div>
+            <div className="idx-dist-segment strong" style={{ width: `${data.distribution.strong}%` }}></div>
+            <div className="idx-dist-segment building" style={{ width: `${data.distribution.building}%` }}></div>
+            <div className="idx-dist-segment starting" style={{ width: `${data.distribution.starting}%` }}></div>
+          </div>
+          <div className="idx-dist-labels">
+            <span>Top {data.distribution.top}%</span>
+            <span>Strong {data.distribution.strong}%</span>
+            <span>Building {data.distribution.building}%</span>
+            <span>Starting {data.distribution.starting}%</span>
+          </div>
+        </div>
+
+        {/* Insight */}
+        <div className="idx-insight-card">
+          <div className="idx-insight-header">
+            <svg className="idx-insight-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span className="idx-insight-title">Pattern Insight</span>
+          </div>
+          <div className="idx-insight-text">{data.insight}</div>
+        </div>
+
+        {/* Your Habit Section */}
+        {relatedHabit && (
+          <div className="idx-habit-section">
+            <div className="idx-habit-title">Your Related Habit</div>
+            <div className="idx-habit-card">
+              <div className="idx-habit-header">
+                <div className="idx-habit-icon">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                </div>
+                <div className="idx-habit-info">
+                  <h3>{relatedHabit.name}</h3>
+                  <p>{relatedHabit.rateType === 'BINARY' ? 'Fixed rate' : 'Variable rate'} · ${relatedHabit.rate.toFixed(2)}/{relatedHabit.unit}</p>
+                </div>
+              </div>
+              <div className="idx-habit-stats">
+                <div className="idx-habit-stat">
+                  <div className="idx-habit-stat-value">{data.userScore.toFixed(1)}</div>
+                  <div className="idx-habit-stat-label">Flux Score</div>
+                </div>
+                <div className="idx-habit-stat">
+                  <div className="idx-habit-stat-value">{habitLogs.length}</div>
+                  <div className="idx-habit-stat-label">Total Logs</div>
+                </div>
+                <div className="idx-habit-stat">
+                  <div className="idx-habit-stat-value">${totalEarned.toFixed(0)}</div>
+                  <div className="idx-habit-stat-label">Earned</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard Teaser */}
+        <div className="idx-leaderboard-section">
+          <div className="idx-leaderboard-header">
+            <span className="idx-leaderboard-title">{data.name.replace(' Index', '')} Leaderboard</span>
+            <span className="idx-leaderboard-link">View all</span>
+          </div>
+          <div className="idx-leaderboard-list">
+            <div className="idx-leaderboard-row">
+              <span className="idx-lb-rank">1</span>
+              <div className="idx-lb-avatar">🏆</div>
+              <span className="idx-lb-name">Anonymous</span>
+              <span className="idx-lb-score">94.2</span>
+            </div>
+            <div className="idx-leaderboard-row">
+              <span className="idx-lb-rank">2</span>
+              <div className="idx-lb-avatar">🥈</div>
+              <span className="idx-lb-name">Anonymous</span>
+              <span className="idx-lb-score">91.8</span>
+            </div>
+            <div className="idx-leaderboard-row">
+              <span className="idx-lb-rank">3</span>
+              <div className="idx-lb-avatar">🥉</div>
+              <span className="idx-lb-name">Anonymous</span>
+              <span className="idx-lb-score">89.3</span>
+            </div>
+            <div className="idx-leaderboard-row you">
+              <span className="idx-lb-rank">{Math.round(data.participants * (data.percentile / 100))}</span>
+              <div className="idx-lb-avatar">You</div>
+              <span className="idx-lb-name">You</span>
+              <span className="idx-lb-score">{data.userScore.toFixed(1)}</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Info Modal */}
-      {showInfoModal && (
-        <div className="modal-overlay" onClick={() => setShowInfoModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">About {indexData.name}</h3>
-              <button className="modal-close" onClick={() => setShowInfoModal(false)}>
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              {/* Placeholder Notice */}
-              <div className="placeholder-notice">
-                <svg className="placeholder-icon" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                <span>Placeholder data - Indices feature coming in Phase 2</span>
-              </div>
-
-              {/* Info Text */}
-              <p className="modal-info-text">{indexData.description}</p>
-              
-              {/* Subcategories */}
-              <div className="modal-subcategories-label">Included Categories:</div>
-              <div className="subcategories">
-                {indexData.subcategories.map(sub => (
-                  <span key={sub} className="subcategory-chip">{sub}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

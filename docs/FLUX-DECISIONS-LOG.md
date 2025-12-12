@@ -2,7 +2,7 @@
 
 **Key Product & Business Decisions**
 
-**Last Updated:** December 4, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -118,9 +118,9 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 - Enables distinct "Avoidance Indices" category for future development
 
 **User Flow:**
-1. Press FAB → Select "Log" or "Pass"
+1. Press FAB â†’ Select "Log" or "Pass"
 2. Smart input with predictive autocomplete shows active behaviors
-3. Select behavior → Rate selection → Done
+3. Select behavior â†’ Rate selection â†’ Done
 
 **Alternatives Considered:**
 - Keep "No X" framing - rejected as awkward and confusing
@@ -293,21 +293,24 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 
 ---
 
-### Stripe Treasury for Banking Infrastructure
-**Date:** November 2025  
-**Decision:** Use Stripe Treasury (Banking-as-a-Service) rather than building proprietary banking infrastructure.  
+### BaaS Provider for Banking Infrastructure
+**Date:** November 2025 (Updated December 2025)  
+**Decision:** Use Banking-as-a-Service (BaaS) provider for consumer savings accounts rather than building proprietary banking infrastructure. Provider selection in progress.  
 **Rationale:**
-- Lower complexity and faster launch
-- FDIC insurance included
-- Trusted brand for users
-- Well-documented API
+- Lower complexity and faster launch than proprietary solution
+- FDIC insurance through partner banks
 - Reduces regulatory burden
 
-**Alternatives Considered:**
-- Proprietary banking (like Acorns) - rejected as too complex/expensive
-- Different BaaS provider - Stripe preferred for ecosystem integration
+**Critical Update (December 2025):**
+Stripe Treasury was initially selected but discovered to only support B2B use cases, not consumer-facing accounts. Flux requires consumer savings accounts.
 
-**Status:** Active
+**Alternatives Under Evaluation:**
+- **Unit** - Explicitly supports consumer banking, strong post-Synapse reputation
+- **Treasury Prime** - Bank-direct model, consumer + commercial support
+- **Synctera** - Consumer banking, strong compliance focus
+- Proprietary banking (like Acorns) - rejected as too complex/expensive
+
+**Status:** Under Review (BaaS provider selection required)
 
 ---
 
@@ -365,6 +368,7 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 
 | Question | Context | Target Date |
 |----------|---------|-------------|
+| **BaaS provider selection?** | Unit vs. Treasury Prime vs. Synctera for consumer savings accounts | Before Phase 4 |
 | Minimum users per behavior for valid index? | Statistical validity threshold | Phase 6 |
 | Negative behavior deductions? | Deduct from pending for slips | Post-MVT review |
 | App integration priority? | Strava, Apple Health, etc. | Phase 5+ |
@@ -385,6 +389,7 @@ For current business model, see FLUX-BUSINESS-BLUEPRINT.md.
 | Bloomberg positioning | Pre-Dec 2025 | Morningstar positioning | Dec 2025 |
 | 15-habit library | Dec 2025 | 23-behavior library with Log/Pass | Dec 4, 2025 |
 | "No X" habit framing | Pre-Dec 2025 | Log/Pass dual-action system | Dec 4, 2025 |
+| Stripe Treasury (BaaS) | Nov 2025 | BaaS provider TBD (Unit/Treasury Prime/Synctera) | Dec 11, 2025 |
 
 ---
 

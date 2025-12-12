@@ -1,0 +1,140 @@
+.settings-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    #f8f9fa 0%,
+    #fbfbfc 40%,
+    #ffffff 100%
+  );
+  padding-bottom: 100px;
+}
+
+.settings-container {
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+/* Header */
+.settings-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, #f8f9fa 0%, #f8f9fa 80%, transparent 100%);
+  padding: 16px 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-title {
+  font-size: 20px;
+  font-weight: 700;
+  flex: 1;
+  text-align: left;
+  margin: 0;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.settings-header .header-spacer {
+  width: 44px;
+}
+
+.menu-button {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(44, 74, 110, 0.7);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #2c4a6e;
+}
+
+/* Settings Section */
+.settings-section {
+  margin: 0 20px 24px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+/* Settings Item */
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(44, 74, 110, 0.08);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+}
+
+.settings-item:active {
+  opacity: 0.6;
+}
+
+.settings-item.disabled {
+  cursor: default;
+}
+
+.settings-item.disabled:active {
+  opacity: 1;
+}
+
+.item-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a3a5c;
+}
+
+.settings-item.disabled .item-label {
+  color: rgba(44, 74, 110, 0.5);
+}
+
+.item-value {
+  font-size: 15px;
+  color: rgba(44, 74, 110, 0.6);
+}
+
+.item-value.coming-soon {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(44, 74, 110, 0.4);
+  background: rgba(44, 74, 110, 0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.chevron {
+  color: rgba(44, 74, 110, 0.3);
+  flex-shrink: 0;
+}
+
+/* Version Info */
+.version-info {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(44, 74, 110, 0.4);
+  padding: 24px;
+}

@@ -1,5 +1,6 @@
 import { HABIT_LIBRARY, formatRate, ACTION_TYPES, getHabitsByActionType } from '../../utils/HABIT_LIBRARY';
 import HabitIcon from '../../utils/HabitIcons';
+import Button from '../../components/Button';
 import './Onboarding.css';
 
 /**
@@ -128,19 +129,21 @@ export default function SelectHabits({
 
       <div className="onboarding-footer">
         <div className="button-group">
-          <button className="secondary-button" onClick={onBack}>
+          <Button variant="secondary" size="lg" onClick={onBack} className="onboarding-back">
             Back
-          </button>
-          <button 
-            className="primary-button" 
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
             onClick={onContinue}
             disabled={!canContinue}
+            className="onboarding-continue"
           >
-            {canContinue 
-              ? `Continue with ${selectedHabits.length}` 
+            {canContinue
+              ? `Continue with ${selectedHabits.length}`
               : 'Select at least 1'
             }
-          </button>
+          </Button>
         </div>
       </div>
     </div>

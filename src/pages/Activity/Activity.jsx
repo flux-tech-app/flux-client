@@ -1,20 +1,17 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
-import BackButton from '../../components/BackButton';
+import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Activity.css';
 
 export default function Activity() {
-  const navigate = useNavigate();
-  const { logs, habits, transfers, getHabitStats, updateLog, deleteLog } = useHabits();
+  const { logs, habits, getHabitStats, updateLog, deleteLog } = useHabits();
   const chatLogs = []; // Placeholder for future chat feature
-  const [viewMode, setViewMode] = useState('habits'); // 'habits' | 'transfers'
   const [selectedFilter, setSelectedFilter] = useState('today');
-  const [expandedTransfers, setExpandedTransfers] = useState(new Set());
   const [selectedChat, setSelectedChat] = useState(null);
   const [editingLog, setEditingLog] = useState(null);
   const [deletingLog, setDeletingLog] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Helper functions
   const getDateHeader = (date) => {
@@ -36,19 +33,6 @@ export default function Activity() {
     return new Date(date).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-    });
-  };
-
-  // Toggle transfer breakdown
-  const toggleTransferBreakdown = (transferId) => {
-    setExpandedTransfers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(transferId)) {
-        newSet.delete(transferId);
-      } else {
-        newSet.add(transferId);
-      }
-      return newSet;
     });
   };
 
@@ -193,70 +177,25 @@ export default function Activity() {
     return Object.values(groups);
   }, [enrichedActivities]);
 
-  // Get transfer breakdown
-  const getTransferBreakdown = (transfer) => {
-    const transferDate = new Date(transfer.date);
-    const weekStart = new Date(transferDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const habitBreakdown = {};
-
-    logs.forEach(log => {
-      const logDate = new Date(log.timestamp);
-      if (logDate >= weekStart && logDate < transferDate) {
-        const habit = habits.find(h => h.id === log.habitId);
-        if (habit) {
-          if (!habitBreakdown[habit.id]) {
-            habitBreakdown[habit.id] = {
-              name: habit.name,
-              type: habit.type,
-              count: 0,
-              earnings: 0,
-            };
-          }
-          habitBreakdown[habit.id].count++;
-          habitBreakdown[habit.id].earnings += log.totalEarnings;
-        }
-      }
-    });
-
-    return Object.values(habitBreakdown).sort((a, b) => b.earnings - a.earnings);
-  };
-
-  // Format transfer date range
-  const getTransferDateRange = (transferDate) => {
-    const date = new Date(transferDate);
-    const weekStart = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  };
-
   return (
     <div className="activity-page">
-      {/* Header with Back Button */}
+      {/* Sidebar Menu */}
+      <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Header */}
       <header className="activity-header">
-        <BackButton />
+        <button className="menu-button" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <h1 className="activity-title">Activity</h1>
         <div className="header-spacer"></div>
       </header>
 
       <div className="activity-container">
-        {/* View Mode Toggle */}
-        <div className="segmented-control">
-          <button
-            className={`segment ${viewMode === 'habits' ? 'active' : ''}`}
-            onClick={() => setViewMode('habits')}
-          >
-            Logs
-          </button>
-          <button
-            className={`segment ${viewMode === 'transfers' ? 'active' : ''}`}
-            onClick={() => setViewMode('transfers')}
-          >
-            Transfers
-          </button>
-        </div>
-
         {/* HABIT ACTIVITY VIEW */}
-        {viewMode === 'habits' && (
-          <div className="habits-view">
+        <div className="habits-view">
             {/* Time Filter Chips */}
             <div className="date-tabs">
               <button
@@ -368,86 +307,6 @@ export default function Activity() {
               )}
             </div>
           </div>
-        )}
-
-        {/* TRANSFER ACTIVITY VIEW */}
-        {viewMode === 'transfers' && (
-          <div className="transfers-view">
-            {transfers.length === 0 ? (
-              <div className="empty-state">
-                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                </svg>
-                <h3>No transfers yet</h3>
-                <p>Weekly transfers will appear here</p>
-              </div>
-            ) : (
-              <div className="transfers-list">
-                {transfers.map(transfer => {
-                  const breakdown = getTransferBreakdown(transfer);
-                  const isExpanded = expandedTransfers.has(transfer.id);
-
-                  return (
-                    <div key={transfer.id} className={`transfer-card ${isExpanded ? 'expanded' : ''}`}>
-                      <div className="transfer-card-header">
-                        <div className="transfer-date-section">
-                          <div className="transfer-date-icon">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                          </div>
-                          <div className="transfer-date-info">
-                            <h3>{getTransferDateRange(transfer.date)}</h3>
-                            <p>{new Date(transfer.date).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit'
-                            })}</p>
-                          </div>
-                        </div>
-                        <div className="transfer-amount-section">
-                          <div className="transfer-amount-value">{formatCurrency(transfer.amount)}</div>
-                          <div className="transfer-amount-label">Transferred</div>
-                        </div>
-                      </div>
-
-                      <div className="transfer-meta">
-                        <div className="transfer-route">
-                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                          </svg>
-                          Checking → Savings
-                        </div>
-                        <button
-                          className="transfer-expand"
-                          onClick={() => toggleTransferBreakdown(transfer.id)}
-                        >
-                          {isExpanded ? 'Hide details' : 'View details'}
-                        </button>
-                      </div>
-
-                      {isExpanded && breakdown.length > 0 && (
-                        <div className="transfer-breakdown">
-                          <div className="transfer-breakdown-title">Breakdown</div>
-                          {breakdown.map((item, index) => (
-                            <div key={index} className="breakdown-row">
-                              <span className="breakdown-label">
-                                {item.name} ({item.count}×)
-                              </span>
-                              <span className="breakdown-value">{formatCurrency(item.earnings)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* MODALS */}

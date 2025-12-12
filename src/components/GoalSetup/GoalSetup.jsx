@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Button from '../Button';
 import './GoalSetup.css';
 
 /**
@@ -153,13 +154,15 @@ export default function GoalSetup({
         </div>
       )}
 
-      <button
-        className="goal-continue-btn"
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
         onClick={handleContinue}
         disabled={!isValidGoal}
       >
         Set Goal
-      </button>
+      </Button>
     </div>
   );
 }

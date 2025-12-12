@@ -16,6 +16,7 @@ import {
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { getNextTransferDate } from '../../utils/calculations';
+import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Portfolio.css';
 
 // Animated counter hook - counts up from 0 to target value
@@ -74,6 +75,7 @@ export default function Portfolio() {
   } = useHabits();
   const navigate = useNavigate();
   const [chartPeriod, setChartPeriod] = useState('1M');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const transferredBalance = getTransferredBalance();
   const weekEarnings = getWeekEarnings();
@@ -244,20 +246,21 @@ export default function Portfolio() {
 
   return (
     <div className="portfolio-page">
+      {/* Sidebar Menu */}
+      <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="portfolio-container">
         {/* Header */}
         <header className="portfolio-header">
-          <div className="app-logo">Flux</div>
+          <button className="menu-button" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <div className="header-actions">
-            <button className="icon-button" aria-label="Indices" onClick={() => navigate('/indices')}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-              </svg>
-            </button>
-            <button className="icon-button" aria-label="Activity" onClick={() => navigate('/activity')}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
+            <button className="icon-button" aria-label="Notifications" onClick={() => alert('Coming soon!')}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
           </div>

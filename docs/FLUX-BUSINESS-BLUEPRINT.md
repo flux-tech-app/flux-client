@@ -2,7 +2,7 @@
 
 **Business Model, Revenue Strategy & Market Positioning**
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -46,15 +46,15 @@ Flux is a behavioral intelligence platform that provides:
 
 ```
 User's Checking Account 
-    ↓ (Friday transfer when habits completed)
-User's Flux Account (Stripe Treasury, FDIC-insured)
-    ↓ (anytime user wants)
+    â†“ (Friday transfer when habits completed)
+User's Flux Account (BaaS provider TBD, FDIC-insured)
+    â†“ (anytime user wants)
 User's External Account (withdrawal)
 ```
 
 **What "Earn" Means:**
-- ✅ Correct: "Earn the right to transfer YOUR OWN money to savings"
-- ❌ Wrong: "Flux pays you money"
+- âœ… Correct: "Earn the right to transfer YOUR OWN money to savings"
+- âŒ Wrong: "Flux pays you money"
 
 **Why This Model Works:**
 - No payout liability (Flux doesn't pay from company funds)
@@ -64,12 +64,14 @@ User's External Account (withdrawal)
 
 ### Banking Architecture
 
-Flux uses **Stripe Treasury** (Banking-as-a-Service) to provide FDIC-insured accounts:
+Flux uses a Banking-as-a-Service (BaaS) provider to provide FDIC-insured consumer savings accounts:
 
-- **Custody:** Stripe Treasury holds and manages user funds
+> **Note:** BaaS provider selection in progress. Stripe Treasury was initially planned but only supports B2B use cases. Unit, Treasury Prime, and Synctera are under evaluation.
+
+- **Custody:** BaaS provider holds and manages user funds via partner banks
 - **Linking:** Plaid connects external checking accounts
-- **Transfers:** Stripe processes weekly transfers
-- **Protection:** Full FDIC insurance on deposits
+- **Transfers:** BaaS provider processes weekly transfers
+- **Protection:** FDIC insurance through partner banks
 - **Control:** Users can withdraw anytime
 
 ---
@@ -82,7 +84,7 @@ Flux uses **Stripe Treasury** (Banking-as-a-Service) to provide FDIC-insured acc
 
 | Value | Description |
 |-------|-------------|
-| Real Money Transfers | Complete habits → transfer your money to FDIC-insured Flux savings |
+| Real Money Transfers | Complete habits â†’ transfer your money to FDIC-insured Flux savings |
 | Pattern Recognition | No forced schedules - Flux learns your natural patterns |
 | Flux Score | Proprietary algorithm measuring habit quality, not just completion |
 | Savings Goals | Link habits directly to financial objectives (vacation, emergency fund) |
@@ -162,7 +164,7 @@ Direct habit-to-financial-goal mapping:
 **Premium Tier: "Flux Premium" - $3.99/month**
 
 Everything in Free, plus:
-- Real money transfers (Stripe Treasury)
+- Real money transfers (via BaaS provider)
 - Bank account linking (Plaid)
 - Detailed Flux Score breakdown
 - Historical indices access
@@ -231,7 +233,7 @@ Everything in Free, plus:
 - Expected lifetime: 16.8 months
 
 **LTV Calculation:**
-- Base: $3.99 × 16.8 = **$67.03**
+- Base: $3.99 Ã— 16.8 = **$67.03**
 - With 30% annual plans (improved retention): **$72.00**
 - Conservative estimate: **$65-72**
 
@@ -251,12 +253,12 @@ Everything in Free, plus:
 
 | Scenario | LTV | CAC | Ratio | Status |
 |----------|-----|-----|-------|--------|
-| Base case | $67 | $15 | 4.47:1 | ✅ Excellent |
-| Conservative | $55 | $15 | 3.67:1 | ✅ Good |
-| Higher CAC | $67 | $22 | 3.05:1 | ✅ Acceptable |
-| Worst case | $55 | $22 | 2.50:1 | ⚠️ Marginal |
+| Base case | $67 | $15 | 4.47:1 | âœ… Excellent |
+| Conservative | $55 | $15 | 3.67:1 | âœ… Good |
+| Higher CAC | $67 | $22 | 3.05:1 | âœ… Acceptable |
+| Worst case | $55 | $22 | 2.50:1 | âš ï¸ Marginal |
 
-**Payback Period:** $15 / $3.99 = 3.8 months ✅
+**Payback Period:** $15 / $3.99 = 3.8 months âœ…
 
 ### Operating Costs
 
@@ -312,15 +314,15 @@ Everything in Free, plus:
 
 | Feature | Flux | Habitica | Beeminder | Acorns | Qapital |
 |---------|------|----------|-----------|--------|---------|
-| Real Money Movement | ✅ Self-funded | ❌ Virtual | ⚠️ Lose stakes | ✅ Passive | ✅ Passive |
-| Active Habit Triggers | ✅ Yes | ✅ Yes | ✅ Yes | ❌ Spending | ⚠️ Rules |
-| Any Habit Type | ✅ Yes | ✅ Yes | ✅ Yes | ❌ N/A | ⚠️ Limited |
-| Pattern Recognition | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
-| Quality Scoring | ✅ Flux Score | ⚠️ Basic XP | ❌ No | ❌ No | ❌ No |
-| Behavioral Indices | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
-| Savings Goals | ✅ Habit→Goal | ❌ No | ❌ No | ⚠️ Generic | ✅ Yes |
-| FDIC Account | ✅ Stripe Treasury | ❌ No | ❌ No | ✅ Yes | ✅ Yes |
-| Positive Psychology | ✅ Earn | ⚠️ Gamified | ❌ Punish | ✅ Passive | ✅ Passive |
+| Real Money Movement | âœ… Self-funded | âŒ Virtual | âš ï¸ Lose stakes | âœ… Passive | âœ… Passive |
+| Active Habit Triggers | âœ… Yes | âœ… Yes | âœ… Yes | âŒ Spending | âš ï¸ Rules |
+| Any Habit Type | âœ… Yes | âœ… Yes | âœ… Yes | âŒ N/A | âš ï¸ Limited |
+| Pattern Recognition | âœ… Yes | âŒ No | âŒ No | âŒ No | âŒ No |
+| Quality Scoring | âœ… Flux Score | âš ï¸ Basic XP | âŒ No | âŒ No | âŒ No |
+| Behavioral Indices | âœ… Yes | âŒ No | âŒ No | âŒ No | âŒ No |
+| Savings Goals | âœ… Habitâ†’Goal | âŒ No | âŒ No | âš ï¸ Generic | âœ… Yes |
+| FDIC Account | âœ… Stripe Treasury | âŒ No | âŒ No | âœ… Yes | âœ… Yes |
+| Positive Psychology | âœ… Earn | âš ï¸ Gamified | âŒ Punish | âœ… Passive | âœ… Passive |
 
 ### The Market Gap
 
@@ -330,7 +332,7 @@ Everything in Free, plus:
 - Pattern recognition (not schedule enforcement)
 - Sophisticated quality scoring (not just streaks)
 - Behavioral indices (comparative data)
-- Savings goal allocation (habit → financial objective)
+- Savings goal allocation (habit â†’ financial objective)
 
 ---
 
@@ -386,9 +388,9 @@ Everything in Free, plus:
 
 | Partner | Role |
 |---------|------|
-| Stripe Treasury | Banking-as-a-Service, FDIC-insured accounts, fund custody |
+| BaaS Provider (TBD) | Banking-as-a-Service, FDIC-insured accounts, fund custody (Unit, Treasury Prime, or Synctera under evaluation) |
 | Plaid | Secure bank account connectivity for linking external accounts |
-| Stripe | Transfer processing |
+| Stripe | Payment processing (subscriptions)
 
 ### Development & Technical
 
@@ -579,7 +581,7 @@ These are optimization problems. First prove the core value proposition works.
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Banking integration complexity | Medium | Stripe Treasury reduces complexity vs. building proprietary |
+| Banking integration complexity | Medium | BaaS provider (Unit/Treasury Prime/Synctera) reduces complexity vs. proprietary |
 | Data quality gaming | Medium | Multi-layer prevention, reputation scoring, anomaly detection |
 | AI API costs exceed projections | Low | Monitor closely, optimize prompts, cap usage if needed |
 
@@ -606,7 +608,7 @@ These are optimization problems. First prove the core value proposition works.
 |----------|-----------|------|
 | $3.99/month pricing | Balance conversion volume with revenue; undercut competitors | Nov 2025 |
 | Unlimited habits on free tier | Real differentiation is financial accountability, not limits | Nov 2025 |
-| Stripe Treasury over proprietary banking | Lower complexity, faster launch, FDIC included | Nov 2025 |
+| BaaS provider (TBD) | Unit, Treasury Prime, Synctera under evaluation; Stripe Treasury B2B-only | Dec 2025 |
 | Pattern recognition over schedules | Better data quality, better UX, unique positioning | Dec 2025 |
 | Behavior-level indices (not categories) | More meaningful comparisons, requires minimum users per behavior | Dec 2025 |
 | Curated 15-habit library for MVT | Ensures index data quality, simplifies scope | Dec 2025 |

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getHabitById, getRateLabel } from '../../utils/HABIT_LIBRARY';
 import HabitIcon from '../../utils/HabitIcons';
 import GoalSetup from '../../components/GoalSetup/GoalSetup';
+import Button from '../../components/Button';
 import './Onboarding.css';
 
 /**
@@ -86,15 +87,19 @@ export default function SetRates({
       <div className="onboarding-screen">
         <div className="onboarding-content scrollable">
           {/* Back button */}
-          <button
-            className="goal-back-link"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveGoalSetup(null)}
+            leftIcon={
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            }
+            className="goal-back-btn"
           >
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
             Back to rates
-          </button>
+          </Button>
 
           {/* Habit header */}
           <div className="goal-habit-header">
@@ -220,15 +225,17 @@ export default function SetRates({
 
       <div className="onboarding-footer">
         <div className="button-group">
-          <button className="secondary-button" onClick={onBack}>
+          <Button variant="secondary" size="lg" onClick={onBack} className="onboarding-back">
             Back
-          </button>
-          <button
-            className={`primary-button ${!allGoalsSet ? 'incomplete' : ''}`}
+          </Button>
+          <Button
+            variant={allGoalsSet ? 'primary' : 'primary'}
+            size="lg"
             onClick={handleContinue}
+            className={`onboarding-continue ${!allGoalsSet ? 'incomplete-state' : ''}`}
           >
             {allGoalsSet ? 'Review & Finish' : `Set Goals (${selectedHabits.filter(id => habitGoals[id]).length}/${selectedHabits.length})`}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

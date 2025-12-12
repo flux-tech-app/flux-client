@@ -4,12 +4,9 @@
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    #e8eff4 0%,
-    #ecf2f6 20%,
-    #f0f5f8 40%,
-    #f4f7f9 60%,
-    #f7f9fb 80%,
-    #fafbfc 100%
+    #f8f9fa 0%,
+    #fbfbfc 40%,
+    #ffffff 100%
   );
   padding-bottom: 100px;
   position: relative;
@@ -83,6 +80,75 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+/* Calibrating Layout - Side by Side */
+.habit-detail-page .hero-section.calibrating {
+  padding: 20px 16px;
+  margin: 0 16px 24px;
+}
+
+.habit-detail-page .hero-calibrating-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.habit-detail-page .hero-section-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.habit-detail-page .hero-section-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.habit-detail-page .calibrating-earnings {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1a3a5c;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.habit-detail-page .calibrating-earnings-label {
+  font-size: 10px;
+  color: rgba(44, 74, 110, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.habit-detail-page .hero-status-inline {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.habit-detail-page .hero-status-inline .today-status,
+.habit-detail-page .hero-status-inline .paused-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.habit-detail-page .hero-status-inline .today-status {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+
+.habit-detail-page .hero-status-inline .paused-status {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
 }
 
 /* Flux Score Ring */
@@ -295,6 +361,42 @@
   color: rgba(44, 74, 110, 0.6);
   margin: 0;
   line-height: 1.5;
+}
+
+/* Chart Calibrating State */
+.habit-detail-page .chart-calibrating-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.habit-detail-page .chart-calibrating-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  color: #3b82f6;
+}
+
+.habit-detail-page .chart-calibrating-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 4px 0;
+}
+
+.habit-detail-page .chart-calibrating-submessage {
+  font-size: 13px;
+  color: rgba(44, 74, 110, 0.6);
+  margin: 0;
 }
 
 /* Chart Building Notice */

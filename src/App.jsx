@@ -22,10 +22,13 @@ import Dashboard from './pages/Dashboard';
 import AddHabit from './pages/AddHabit';
 import LogActivity from './pages/LogActivity';
 import Activity from './pages/Activity';
-import Account from './pages/Account';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import DevTools from './pages/DevTools';
 import HabitDetail from './pages/HabitDetail';
 import Indices from './pages/Indices';
 import IndexDetail from './pages/IndexDetail';
+import Transfers from './pages/Transfers';
 
 // Components
 import Navigation from './components/Navigation';
@@ -107,10 +110,14 @@ function AppRoutes() {
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
-        <Route path="/account" element={<Account />} />
+        <Route path="/account" element={<Navigate to="/profile" replace />} />
 
         {/* Secondary Pages */}
         <Route path="/activity" element={<Activity />} />
+        <Route path="/transfers" element={<Transfers />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/devtools" element={<DevTools />} />
 
         {/* Stacked Navigation Routes */}
         <Route path="/add" element={<AddHabit />} />

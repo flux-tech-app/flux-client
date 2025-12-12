@@ -2,12 +2,9 @@
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    #e8eff4 0%,
-    #ecf2f6 20%,
-    #f0f5f8 40%,
-    #f4f7f9 60%,
-    #f7f9fb 80%,
-    #fafbfc 100%
+    #f8f9fa 0%,
+    #fbfbfc 40%,
+    #ffffff 100%
   );
   padding-bottom: 24px; /* Reduced from 80px since no bottom nav */
 }
@@ -26,7 +23,7 @@
 .activity-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #e8eff4 0%, #e8eff4 80%, transparent 100%);
+  background: linear-gradient(180deg, #f8f9fa 0%, #f8f9fa 80%, transparent 100%);
   border-bottom: none;
   padding: 16px 20px;
   z-index: 10;
@@ -35,12 +32,31 @@
   gap: 12px;
 }
 
-.activity-header .back-button {
-  margin: 0;
-  padding: 0;
+.activity-header .header-spacer {
+  width: 44px;
+}
+
+.menu-button {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(44, 74, 110, 0.7);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #2c4a6e;
+}
+
+.menu-button:active {
+  transform: scale(0.95);
 }
 
 .activity-title {

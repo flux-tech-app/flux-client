@@ -1,3 +1,4 @@
+import Button from '../../components/Button';
 import './Onboarding.css';
 
 /**
@@ -79,12 +80,12 @@ export default function Welcome({ onContinue, onSkip }) {
       </div>
 
       <div className="onboarding-footer">
-        <button className="primary-button" onClick={onContinue}>
+        <Button variant="primary" size="lg" fullWidth onClick={onContinue}>
           Get Started
-        </button>
-        <button className="skip-button" onClick={onSkip}>
+        </Button>
+        <Button variant="ghost" size="sm" fullWidth onClick={onSkip} className="onboarding-skip">
           Skip intro
-        </button>
+        </Button>
       </div>
     </div>
   );

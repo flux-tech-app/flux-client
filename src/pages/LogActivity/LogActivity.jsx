@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
+import Button from '../../components/Button';
 import './LogActivity.css';
 
 export default function LogActivity() {
@@ -93,14 +94,13 @@ export default function LogActivity() {
   const isDurationBased = habit.rateType === 'duration';
 
   return (
-    <PageTransition>
       <div className="log-activity-page">
         <div className="log-activity-container">
           {/* Header */}
           <header className="log-header">
-            <button className="back-button" onClick={handleCancel}>
+            <Button variant="ghost" size="sm" onClick={handleCancel}>
               Cancel
-            </button>
+            </Button>
             <div className="header-title">
               {isBuildHabit ? 'Log Activity' : 'Log Resistance'}
             </div>
@@ -142,10 +142,10 @@ export default function LogActivity() {
                   <span className="unit-label">minutes</span>
                 </div>
                 <div className="quick-buttons">
-                  <button type="button" className="quick-btn" onClick={() => updateField('duration', 15)}>15</button>
-                  <button type="button" className="quick-btn" onClick={() => updateField('duration', 30)}>30</button>
-                  <button type="button" className="quick-btn" onClick={() => updateField('duration', 45)}>45</button>
-                  <button type="button" className="quick-btn" onClick={() => updateField('duration', 60)}>60</button>
+                  <Button variant="secondary" size="sm" onClick={() => updateField('duration', 15)}>15</Button>
+                  <Button variant="secondary" size="sm" onClick={() => updateField('duration', 30)}>30</Button>
+                  <Button variant="secondary" size="sm" onClick={() => updateField('duration', 45)}>45</Button>
+                  <Button variant="secondary" size="sm" onClick={() => updateField('duration', 60)}>60</Button>
                 </div>
               </div>
             )}
@@ -256,13 +256,12 @@ export default function LogActivity() {
             </div>
 
             {/* Submit Button */}
-            <button type="submit" className="log-button">
+            <Button type="submit" variant="success" size="lg" fullWidth>
               {isBuildHabit ? 'Log Activity' : 'Log Resistance'}
-            </button>
+            </Button>
 
           </form>
         </div>
       </div>
-    </PageTransition>
   );
 }

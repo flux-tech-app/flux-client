@@ -1,68 +1,65 @@
-/* Log Habit Sheet - Glassmorphic Design */
-.log-habit-sheet {
+/* Log Habit Sheet - Modern Minimal Design */
+.log-sheet {
   padding: 8px 20px 24px;
 }
 
-.log-sheet-title {
-  font-size: 22px;
+/* ==================== HEADER ==================== */
+.sheet-title {
+  font-size: 24px;
   font-weight: 700;
   margin: 0 0 4px;
-  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1a3a5c;
 }
 
-.log-sheet-subtitle {
+.sheet-subtitle {
   font-size: 15px;
   color: #6b7280;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
 }
 
-/* Search Input */
-.search-input-container {
+/* Back button positioning */
+.sheet-back-btn {
+  margin-bottom: 16px;
+  padding-left: 0 !important;
+}
+
+/* ==================== SEARCH ==================== */
+.search-wrapper {
   position: relative;
   margin-bottom: 16px;
 }
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #9ca3af;
   pointer-events: none;
 }
 
-.search-input {
+.search-field {
   width: 100%;
-  padding: 12px 40px 12px 40px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 14px;
-  font-size: 18px;
+  padding: 12px 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
   color: #1a3a5c;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 0.2s;
+  background: #fff;
+  transition: all 0.15s;
 }
 
-.search-input:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.search-input:focus {
+.search-field:focus {
   outline: none;
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(255, 255, 255, 0.6);
+  border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.search-input::placeholder {
+.search-field::placeholder {
   color: #9ca3af;
 }
 
-.clear-search-btn {
+.search-clear {
   position: absolute;
   right: 12px;
   top: 50%;
@@ -73,574 +70,399 @@
   cursor: pointer;
   padding: 4px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
+  transition: color 0.15s;
 }
 
-.clear-search-btn:hover {
+.search-clear:hover {
   color: #6b7280;
 }
 
-/* Habits List */
-.habits-log-list {
+/* ==================== HABIT LIST ==================== */
+.habit-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.habit-log-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-  width: 100%;
-  box-shadow:
-    0 4px 16px rgba(100, 130, 160, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.habit-log-item:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
-  box-shadow:
-    0 8px 24px rgba(100, 130, 160, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.habit-log-item:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.habit-log-item.logged {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.25);
-  cursor: default;
-}
-
-.habit-log-item:disabled {
-  opacity: 1; /* Keep visible but non-interactive */
-}
-
-.habit-log-left {
+.habit-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
 }
 
-.habit-log-icon-container {
-  width: 44px;
-  height: 44px;
+.habit-row:hover:not(:disabled) {
+  background: #fafafa;
+  border-color: #e5e7eb;
+}
+
+.habit-row:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.habit-row.completed {
+  background: rgba(34, 197, 94, 0.05);
+  border-color: rgba(34, 197, 94, 0.15);
+  cursor: default;
+}
+
+.habit-row-icon {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border-radius: 12px;
-  color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 10px;
   flex-shrink: 0;
 }
 
-.habit-log-icon {
-  font-size: 28px;
-  line-height: 1;
-}
-
-.habit-log-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.habit-log-name {
+.habit-row-name {
+  flex: 1;
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: #1a3a5c;
 }
 
-.habit-log-right {
+.habit-row-right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.habit-log-rate {
+.habit-row-rate {
   font-size: 14px;
   font-weight: 600;
   color: #22c55e;
 }
 
-.habit-log-item .chevron {
-  width: 20px;
-  height: 20px;
+.habit-row-chevron {
   color: #d1d5db;
 }
 
-.habit-logged-badge {
+.done-badge {
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
   background: #dcfce7;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   color: #15803d;
 }
 
-.habit-logged-badge svg {
+.done-badge svg {
   color: #22c55e;
 }
 
-/* Empty State */
-.empty-habits {
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.empty-habits p {
-  color: #6b7280;
-  font-size: 15px;
-}
-
-.empty-search {
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.empty-search p {
-  color: #6b7280;
-  font-size: 15px;
-}
-
-/* ========== Log Modal (when habit selected) ========== */
-.log-modal {
-  padding: 0;
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: #3b82f6;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 0;
-  margin-bottom: 20px;
-  cursor: pointer;
-}
-
-.back-button:hover {
-  color: #2563eb;
-}
-
-.log-modal-header {
+/* ==================== LOG MODAL ==================== */
+.log-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
-  margin-bottom: 24px;
-  box-shadow:
-    0 8px 24px rgba(100, 130, 160, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  gap: 14px;
+  margin-bottom: 28px;
 }
 
-.log-habit-icon-container {
-  width: 60px;
-  height: 60px;
+.log-header-icon {
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border-radius: 16px;
-  color: #3b82f6;
-}
-
-.log-habit-icon {
-  font-size: 48px;
-  line-height: 1;
-}
-
-.log-habit-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.log-habit-name {
-  font-size: 22px;
-  font-weight: 600;
-  color: #111827;
-}
-
-/* Rate Selection Section */
-.rate-selection-section {
-  margin-bottom: 20px;
-}
-
-.rate-selection-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.rate-selection-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.rate-selection-btn:hover {
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.rate-selection-btn.selected {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.rate-selection-btn .rate-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.rate-selection-btn .rate-amount {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.rate-selection-btn.selected .rate-amount {
-  color: #3b82f6;
-}
-
-/* Custom Rate Input */
-.custom-rate-input-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.currency-symbol {
-  font-size: 18px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.custom-rate-input {
-  flex: 1;
-  padding: 12px 14px;
-  border: 2px solid #3b82f6;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  background: #eff6ff;
-  transition: all 0.2s;
-}
-
-.custom-rate-input:focus {
-  outline: none;
-  border-color: #2563eb;
-}
-
-.custom-rate-input::placeholder {
-  color: #9ca3af;
-}
-
-.per-label {
-  font-size: 14px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-/* ========== Log Modal (when habit selected) ========== */
-.log-modal {
-  padding: 0;
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: #3b82f6;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 0;
-  margin-bottom: 20px;
-  cursor: pointer;
-}
-
-.back-button:hover {
-  color: #2563eb;
-}
-
-.log-modal-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
-  margin-bottom: 24px;
-  box-shadow:
-    0 8px 24px rgba(100, 130, 160, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.log-habit-icon {
-  font-size: 48px;
-  line-height: 1;
-}
-
-.log-habit-info {
+.log-header-info {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-.log-habit-name {
+.log-header-name {
   font-size: 22px;
-  font-weight: 600;
-  color: #111827;
+  font-weight: 700;
+  color: #1a3a5c;
+  margin: 0;
 }
 
-/* Log Input Section (for unit-based habits) */
-.log-input-section {
+.log-header-rate {
+  font-size: 14px;
+  font-weight: 500;
+  color: #22c55e;
+}
+
+/* ==================== QUANTITY INPUT ==================== */
+.log-quantity-section {
   margin-bottom: 24px;
 }
 
-.log-input-label {
+.log-label {
   display: block;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: #6b7280;
   margin-bottom: 12px;
 }
 
-.log-stepper {
+.quantity-input-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
 }
 
-.stepper-button {
+.quantity-btn {
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  color: #2c4a6e;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #3b82f6;
   cursor: pointer;
   transition: all 0.2s;
+  user-select: none;
+  box-shadow:
+    0 2px 8px rgba(100, 130, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.stepper-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.7);
-  transform: scale(1.05);
+.quantity-btn:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
 }
 
-.stepper-button:active:not(:disabled) {
-  transform: scale(0.95);
+.quantity-btn:active {
+  transform: scale(0.95) translateY(0);
 }
 
-.stepper-button:disabled {
-  color: rgba(44, 74, 110, 0.3);
-  cursor: not-allowed;
-}
-
-.stepper-input {
-  width: 100px;
+.quantity-input {
+  width: 120px;
   height: 56px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
   font-size: 28px;
   font-weight: 600;
   text-align: center;
   color: #1a3a5c;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  outline: none;
-  transition: all 0.2s;
+  background: #fff;
+  transition: all 0.15s;
 }
 
-.stepper-input:focus {
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(255, 255, 255, 0.6);
+.quantity-input:focus {
+  outline: none;
+  border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Hide number input spinners */
-.stepper-input::-webkit-outer-spin-button,
-.stepper-input::-webkit-inner-spin-button {
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-
-.stepper-input[type=number] {
+.quantity-input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Log Confirmation Section (for per-day habits) */
-.log-confirmation-section {
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 20px;
+/* ==================== BINARY CONFIRMATION ==================== */
+.log-binary-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px;
   margin-bottom: 24px;
-  text-align: center;
-  box-shadow:
-    0 8px 24px rgba(100, 130, 160, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-.log-confirmation-text {
-  font-size: 16px;
+.binary-check {
+  margin-bottom: 16px;
+}
+
+.binary-text {
+  font-size: 17px;
+  font-weight: 500;
   color: #374151;
+  text-align: center;
   margin: 0;
 }
 
-.log-confirmation-text strong {
-  color: #111827;
+/* ==================== RATE CUSTOMIZATION ==================== */
+.rate-section {
+  margin-bottom: 20px;
 }
 
-/* Earnings Preview */
-.earnings-preview-box {
+.rate-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rate-toggle:hover {
+  background: #f1f5f9;
+}
+
+.rate-toggle.expanded {
+  border-radius: 12px 12px 0 0;
+  border-bottom-color: transparent;
+}
+
+.rate-toggle-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.rate-toggle-icon {
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.rate-toggle.expanded .rate-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.rate-options-panel {
+  overflow: hidden;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+}
+
+.rate-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.rate-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rate-option-btn:hover {
+  border-color: #cbd5e1;
+}
+
+.rate-option-btn.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.rate-option-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rate-option-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.rate-option-btn.active .rate-option-value {
+  color: #3b82f6;
+}
+
+/* ==================== EARNINGS PREVIEW ==================== */
+.earnings-inline {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(34, 197, 94, 0.12);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: 16px;
-  margin-bottom: 24px;
+  background: #f0fdf4;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-.earnings-preview-label {
+.earnings-label {
   font-size: 14px;
+  font-weight: 500;
   color: #166534;
 }
 
-.earnings-preview-value {
-  font-size: 24px;
+.earnings-value {
+  font-size: 20px;
   font-weight: 700;
   color: #15803d;
 }
 
-/* Log Confirm Button */
-.log-confirm-button {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
-  border: none;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 52px;
-  box-shadow:
-    0 8px 24px rgba(34, 197, 94, 0.25),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+/* Confirm button is now using Button component */
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
 }
 
-.log-confirm-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow:
-    0 12px 32px rgba(34, 197, 94, 0.35),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+.empty-state p {
+  color: #6b7280;
+  font-size: 15px;
+  margin: 0;
 }
 
-.log-confirm-button:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-}
-
-.log-confirm-button:disabled {
-  background: rgba(156, 163, 175, 0.5);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-/* Loading Spinner */
-.logging-spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Mobile adjustments */
+/* ==================== MOBILE ==================== */
 @media (max-width: 390px) {
-  .log-habit-sheet {
+  .log-sheet {
     padding: 8px 16px 20px;
   }
-  
-  .log-sheet-title {
+
+  .sheet-title {
+    font-size: 22px;
+  }
+
+  .log-header-name {
     font-size: 20px;
   }
-  
-  .log-habit-icon {
-    font-size: 40px;
-  }
-  
-  .log-habit-name {
-    font-size: 20px;
-  }
-  
-  .stepper-input {
-    width: 80px;
+
+  .quantity-input {
+    width: 100px;
     height: 48px;
     font-size: 24px;
+  }
+
+  .quantity-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 }

@@ -1,3 +1,4 @@
+import Button from '../../components/Button';
 import './Onboarding.css';
 
 /**
@@ -93,12 +94,12 @@ export default function HowItWorks({ onContinue, onBack }) {
 
       <div className="onboarding-footer">
         <div className="button-group">
-          <button className="secondary-button" onClick={onBack}>
+          <Button variant="secondary" size="lg" onClick={onBack} className="onboarding-back">
             Back
-          </button>
-          <button className="primary-button" onClick={onContinue}>
+          </Button>
+          <Button variant="primary" size="lg" onClick={onContinue} className="onboarding-continue">
             Choose Habits
-          </button>
+          </Button>
         </div>
       </div>
     </div>

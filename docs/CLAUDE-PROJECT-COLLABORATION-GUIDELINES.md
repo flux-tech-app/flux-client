@@ -1,6 +1,6 @@
 # Claude Project Collaboration Guidelines
 
-**Last Updated:** December 3, 2024
+**Last Updated:** December 11, 2024
 
 ---
 
@@ -42,7 +42,7 @@ This file contains:
 | `src-structure.txt` | Current codebase organization |
 | `HabitContext.jsx` | Central state management |
 | `NavigationContext.jsx` | Page transition direction |
-| `HABIT_LIBRARY.js` | 15 curated habits for MVT |
+| `HABIT_LIBRARY.js` | 23 curated behaviors for MVT |
 
 **Note:** `FluxChatContext.jsx` has been removed for MVT.
 
@@ -115,7 +115,7 @@ If session ends mid-task, create a detailed handoff document (HANDOFF-SESSION-X.
 - Pattern recognition over schedule enforcement
 - "Morningstar for habits" - clean analysis, long-term perspective
 - AI as intelligent companion (insights throughout app)
-- Curated 15-habit library for MVT
+- Curated 23-behavior library for MVT
 
 ### What Flux is NOT
 
@@ -128,13 +128,16 @@ If session ends mid-task, create a detailed handoff document (HANDOFF-SESSION-X.
 
 | Removed | Replaced With |
 |---------|---------------|
-| BUILD/RESIST mechanics | All habits require explicit logging |
+| BUILD/RESIST mechanics | All behaviors require explicit logging |
 | Schedule enforcement | Pattern recognition |
 | HSS (Habit Strength Score) | Flux Score |
-| 8 categories | No categories in MVT (flat list of 15) |
+| 8 categories | No categories in MVT (flat list) |
 | Chat-first / 80% chat adoption | AI removed for MVT |
 | Bloomberg positioning | Morningstar positioning |
 | FluxChatContext | Removed entirely |
+| Ticker symbols ($RUN, $GYM) | Full behavior names only |
+| Emojis for icons | SVG icons only |
+| Percentile rankings (84th) | "Top X%" format only |
 
 ---
 
@@ -163,21 +166,22 @@ If session ends mid-task, create a detailed handoff document (HANDOFF-SESSION-X.
 
 The project is building toward MVT (Minimum Viable Test) with these requirements:
 
-### 1. Curated Habit Library
-- 15 pre-defined habits (no categories in navigation)
-- No custom habit creation in MVT
-- Clear ticker symbols ($RUN, $GYM, $ZEN, etc.)
+### 1. Curated Behavior Library
+- 23 pre-defined behaviors (13 Log + 10 Pass)
+- No custom behavior creation in MVT
+- Full behavior names displayed (no ticker symbols)
+- SVG icons only (no emojis)
 - Defined in HABIT_LIBRARY.js
 
-### 2. Explicit Logging for All Habits
-- Every habit requires manual logging to earn
+### 2. Explicit Logging for All Behaviors
+- Every behavior requires manual logging to earn
 - No auto-earning mechanics
 - Quick logging flow (< 5 seconds)
 
 ### 3. Pattern Recognition Foundation
 - Track timestamps, frequency, gaps
 - Calculate baseline after 10+ logs
-- Show "Building baseline..." for new habits
+- Show "Building baseline..." for new behaviors
 - No schedule enforcement
 
 ### 4. Accurate Money Calculations
@@ -194,7 +198,7 @@ The project is building toward MVT (Minimum Viable Test) with these requirements
 - Will return in Phase 2 as contextual insights
 
 ### Out of MVT Scope
-- Custom habit creation
+- Custom behavior creation
 - Real money transfers (Phase 4)
 - User authentication (Phase 4)
 - Behavior-level indices (Phase 6)
@@ -239,15 +243,15 @@ The project is building toward MVT (Minimum Viable Test) with these requirements
 ### Follow Established Patterns:
 
 - Folder-based structure with index.js exports
-- **All habit data flows through HabitContext**
+- **All behavior data flows through HabitContext**
 - **Navigation uses NavigationContext** for direction-aware animations
 - Utility functions in separate files
 - CSS variables for theming
-- **Habits link to HABIT_LIBRARY via libraryId**
+- **Behaviors link to HABIT_LIBRARY via libraryId**
 
 ### Test Critical Flows Mentally:
 
-- Onboarding → Select habits → Set rates → Land on home
+- Onboarding → Select behaviors → Set rates → Land on home
 - Log activity → See balance update → Navigate → Verify persistence
 - Friday transfer → Pending resets → Portfolio updates
 
@@ -260,12 +264,14 @@ The project is building toward MVT (Minimum Viable Test) with these requirements
 - When multiple approaches exist: present 2-3 options with pros/cons, then recommend
 - Prioritize optimal UX and polished functionality
 - **Morningstar aesthetic**: Clean, thoughtful, accessible (not dense/overwhelming)
+- **Ice-blue gradient background** with white cards
+- **SVG icons only** - no emojis anywhere in the app
 
 ---
 
 ## Data Considerations
 
-Flux tracks diverse habit types with different measurement needs:
+Flux tracks diverse behavior types with different measurement needs:
 
 | Rate Type | Measurement | Example |
 |-----------|-------------|---------|
@@ -310,14 +316,15 @@ When building features:
 
 | Term | Definition |
 |------|------------|
-| Position | A habit in the portfolio |
-| Ticker | Habit identifier ($RUN, $GYM) |
-| Log | Single recorded activity |
+| Position | A behavior in the portfolio |
+| Log | Single recorded activity completion |
+| Pass | Single recorded successful avoidance |
 | Pending Balance | Current week's earnings |
 | Portfolio Balance | Total transferred to date |
-| Flux Score | 0-100 habit quality metric |
+| Flux Score | 0-100 behavior quality metric |
 | Baseline | User's established pattern |
-| libraryId | Links user habit to HABIT_LIBRARY |
+| libraryId | Links user behavior to HABIT_LIBRARY |
+| Top X% | Index ranking format (not percentiles) |
 
 ### Document Locations
 

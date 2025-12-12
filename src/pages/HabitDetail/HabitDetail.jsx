@@ -17,6 +17,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import BackButton from '../../components/BackButton';
 import GoalSection from '../../components/GoalSection/GoalSection';
+import CalibratingFingerprint from '../../components/CalibratingFingerprint';
 import './HabitDetail.css';
 
 // Register Chart.js components
@@ -745,71 +746,107 @@ export default function HabitDetail() {
         </header>
 
         {/* Hero Section - Stacked/Centered */}
-        <section className="hero-section">
-          {/* Flux Score Ring */}
-          <div className="hero-flux-score">
-            <div className="flux-ring-container">
-              <svg className="flux-ring" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.5)"
-                  strokeWidth="7"
+        <section className={`hero-section ${habitDataStatus.status !== 'sufficient' ? 'calibrating' : ''}`}>
+          {/* Calibrating: Side-by-side layout */}
+          {habitDataStatus.status !== 'sufficient' ? (
+            <div className="hero-calibrating-layout">
+              <div className="hero-section-left">
+                <div className="calibrating-earnings">{formatCurrency(stats.totalEarnings)}</div>
+                <span className="calibrating-earnings-label">lifetime earnings</span>
+                {/* Status badges under earnings during calibration */}
+                {(isLoggedToday || habit.isActive === false) && (
+                  <div className="hero-status-inline">
+                    {isLoggedToday && (
+                      <div className="today-status">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Completed today</span>
+                      </div>
+                    )}
+                    {habit.isActive === false && (
+                      <div className="paused-status">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                        </svg>
+                        <span>Paused</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="hero-section-right">
+                <CalibratingFingerprint
+                  daysRemaining={14 - (habitDataStatus.daysLogged || 0)}
+                  size="hero"
                 />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="44"
-                  fill="none"
-                  stroke="url(#fluxGradient)"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 44}
-                  strokeDashoffset={2 * Math.PI * 44 * (1 - stats.hss / 100)}
-                  transform="rotate(-90 50 50)"
-                />
-                <defs>
-                  <linearGradient id="fluxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#60a5fa" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="flux-ring-value">
-                <span className="flux-number">{stats.hss}</span>
-                <span className="flux-label">Flux</span>
               </div>
             </div>
-          </div>
-
-          {/* Earnings */}
-          <div className="hero-earnings">
-            <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
-            <span className="earned-label">lifetime earnings</span>
-          </div>
-
-          {/* Status Badges */}
-          {(isLoggedToday || habit.isActive === false) && (
-            <div className="hero-status">
-              {isLoggedToday && (
-                <div className="today-status">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          ) : (
+            <>
+              <div className="hero-flux-score">
+                <div className="flux-ring-container">
+                  <svg className="flux-ring" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.5)"
+                      strokeWidth="7"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="44"
+                      fill="none"
+                      stroke="url(#fluxGradient)"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 44}
+                      strokeDashoffset={2 * Math.PI * 44 * (1 - stats.hss / 100)}
+                      transform="rotate(-90 50 50)"
+                    />
+                    <defs>
+                      <linearGradient id="fluxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#60a5fa" />
+                      </linearGradient>
+                    </defs>
                   </svg>
-                  <span>Completed today</span>
+                  <div className="flux-ring-value">
+                    <span className="flux-number">{stats.hss}</span>
+                    <span className="flux-label">Flux</span>
+                  </div>
+                </div>
+              </div>
+              {/* Earnings */}
+              <div className="hero-earnings">
+                <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
+                <span className="earned-label">lifetime earnings</span>
+              </div>
+              {/* Status Badges - normal position when calibrated */}
+              {(isLoggedToday || habit.isActive === false) && (
+                <div className="hero-status">
+                  {isLoggedToday && (
+                    <div className="today-status">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Completed today</span>
+                    </div>
+                  )}
+                  {habit.isActive === false && (
+                    <div className="paused-status">
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                      </svg>
+                      <span>Paused</span>
+                    </div>
+                  )}
                 </div>
               )}
-              {habit.isActive === false && (
-                <div className="paused-status">
-                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                  </svg>
-                  <span>Paused</span>
-                </div>
-              )}
-            </div>
+            </>
           )}
         </section>
 
@@ -867,9 +904,20 @@ export default function HabitDetail() {
                   </div>
                   <p className="chart-empty-message">{habitDataStatus.message}</p>
                 </div>
+              ) : chartType === 'fluxScore' && habitDataStatus.status !== 'sufficient' ? (
+                <div className="chart-calibrating-state">
+                  <div className="chart-calibrating-icon">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" strokeWidth="1.5"/>
+                      <path strokeLinecap="round" strokeWidth="1.5" d="M12 6v6l4 2"/>
+                    </svg>
+                  </div>
+                  <p className="chart-calibrating-message">Flux Score calibrating</p>
+                  <p className="chart-calibrating-submessage">{14 - (habitDataStatus.daysLogged || 0)} more days of data needed</p>
+                </div>
               ) : (
                 <>
-                  {habitDataStatus.status !== 'sufficient' && (
+                  {habitDataStatus.status !== 'sufficient' && chartType === 'earnings' && (
                     <div className="chart-building-notice">
                       <span className="building-dot"></span>
                       {habitDataStatus.message}

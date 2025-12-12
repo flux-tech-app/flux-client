@@ -4,23 +4,21 @@ import { useHabits } from '../../context/HabitContext';
 import { HABIT_LIBRARY, getHabitById, formatRate, getRateLabel, RATE_TYPES } from '../../utils/HABIT_LIBRARY';
 import HabitIcon from '../../utils/HabitIcons';
 import GoalSetup from '../GoalSetup/GoalSetup';
+import Button from '../Button';
 import './AddHabitFlow.css';
 
 /**
- * Add Habit Flow (Post-Onboarding)
+ * Add Habit Flow - Modernized 2-Step Design
  *
  * Step 1: Select from library (excluding already-added habits)
- * Step 2: Customize rate
- * Step 3: Set goal (NEW)
+ * Step 2: Configure rate + goal (combined)
  */
 export default function AddHabitFlow({ onComplete, onClose }) {
   const { isHabitAdded } = useHabits();
   const [step, setStep] = useState(1);
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [selectedRate, setSelectedRate] = useState(null);
-  const [customRate, setCustomRate] = useState('');
-  const [useCustomRate, setUseCustomRate] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [showRateOptions, setShowRateOptions] = useState(false);
   const [direction, setDirection] = useState(1);
 
   // Filter out already-added habits
@@ -45,18 +43,13 @@ export default function AddHabitFlow({ onComplete, onClose }) {
   const handleHabitSelect = (habit) => {
     setSelectedHabit(habit);
     setSelectedRate(habit.defaultRate);
-    setUseCustomRate(false);
-    setCustomRate('');
-    setSelectedGoal(null);
+    setShowRateOptions(false);
     setDirection(1);
     setStep(2);
   };
 
   const handleBack = () => {
-    if (step === 3) {
-      setDirection(-1);
-      setStep(2);
-    } else if (step === 2) {
+    if (step === 2) {
       setDirection(-1);
       setStep(1);
     } else {
@@ -64,40 +57,22 @@ export default function AddHabitFlow({ onComplete, onClose }) {
     }
   };
 
-  const handleRateConfirm = () => {
-    setDirection(1);
-    setStep(3);
-  };
-
   const handleGoalSet = (goal) => {
-    setSelectedGoal(goal);
-    handleConfirm(goal);
-  };
-
-  const handleConfirm = (goal) => {
     if (!selectedHabit || !goal) return;
-
-    const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
 
     onComplete?.({
       libraryId: selectedHabit.id,
-      rate: rate,
+      rate: selectedRate,
       goal: goal
     });
   };
 
-  const effectiveRate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
-
   return (
-    <div className="add-habit-flow">
-      {/* Progress indicator */}
-      <div className="flow-progress">
-        {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className={`progress-dot ${s === step ? 'active' : ''} ${s < step ? 'completed' : ''}`}
-          />
-        ))}
+    <div className="add-flow">
+      {/* Progress indicator - 2 dots */}
+      <div className="flow-dots">
+        <div className={`flow-dot ${step >= 1 ? 'active' : ''}`} />
+        <div className={`flow-dot ${step >= 2 ? 'active' : ''}`} />
       </div>
 
       {/* Step content */}
@@ -132,34 +107,12 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               transition={{ type: 'tween', duration: 0.25 }}
               className="flow-step"
             >
-              <StepCustomize
+              <StepConfigure
                 habit={selectedHabit}
                 selectedRate={selectedRate}
-                customRate={customRate}
-                useCustomRate={useCustomRate}
+                showRateOptions={showRateOptions}
                 onRateSelect={setSelectedRate}
-                onCustomRateChange={setCustomRate}
-                onUseCustomRateToggle={setUseCustomRate}
-                onBack={handleBack}
-                onConfirm={handleRateConfirm}
-              />
-            </motion.div>
-          )}
-
-          {step === 3 && selectedHabit && (
-            <motion.div
-              key="step3"
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ type: 'tween', duration: 0.25 }}
-              className="flow-step"
-            >
-              <StepGoal
-                habit={selectedHabit}
-                selectedRate={effectiveRate}
+                onToggleRateOptions={() => setShowRateOptions(!showRateOptions)}
                 onBack={handleBack}
                 onGoalSet={handleGoalSet}
               />
@@ -177,64 +130,57 @@ export default function AddHabitFlow({ onComplete, onClose }) {
 function StepSelectHabit({ habits, onSelect }) {
   if (habits.length === 0) {
     return (
-      <div className="step-select">
+      <div className="step-content">
         <h2 className="step-title">All Habits Added!</h2>
         <p className="step-subtitle">
-          You've already added all available habits to your portfolio.
+          You've added all available habits to your portfolio.
         </p>
-        <div className="empty-state-icon">🎉</div>
+        <div className="empty-icon">🎉</div>
       </div>
     );
   }
 
   return (
-    <div className="step-select">
+    <div className="step-content">
       <h2 className="step-title">Add Position</h2>
-      <p className="step-subtitle">
-        Select a habit to add to your portfolio
-      </p>
+      <p className="step-subtitle">Select a habit to add to your portfolio</p>
 
-      <div className="habit-list">
-        {habits.map((habit) => (
+      <div className="habit-select-list">
+        {habits.map((habit, index) => (
           <motion.button
             key={habit.id}
-            className="habit-option"
+            className="habit-select-row"
             onClick={() => onSelect(habit)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03 }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="habit-option-left">
-              <div className="habit-option-icon-container">
-                <HabitIcon habitId={habit.id} size={24} />
-              </div>
-              <div className="habit-option-info">
-                <span className="habit-option-name">{habit.name}</span>
-              </div>
+            <div className="habit-select-icon">
+              <HabitIcon habitId={habit.id} size={24} />
             </div>
-            <div className="habit-option-right">
-              <span className="habit-option-rate">
-                {formatRate(habit)}
-              </span>
-              <svg className="chevron" fill="currentColor" viewBox="0 0 20 20">
+            <span className="habit-select-name">{habit.name}</span>
+            <div className="habit-select-right">
+              <span className="habit-select-rate">{formatRate(habit)}</span>
+              <svg className="habit-select-chevron" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
             </div>
           </motion.button>
         ))}
 
-        {/* Request Habit Option */}
-        <div className="request-habit-card">
-          <div className="request-habit-icon">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Request Habit */}
+        <div className="request-card">
+          <div className="request-icon">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
           </div>
-          <div className="request-habit-content">
-            <div className="request-habit-title">Request a Habit</div>
-            <div className="request-habit-subtitle">
-              Custom habits coming soon! We're starting with a curated library to ensure data quality.
-            </div>
+          <div className="request-text">
+            <span className="request-title">Request a Habit</span>
+            <span className="request-desc">Custom habits coming soon</span>
           </div>
-          <div className="coming-soon-badge">Coming Soon</div>
+          <span className="coming-badge">Soon</span>
         </div>
       </div>
     </div>
@@ -242,203 +188,104 @@ function StepSelectHabit({ habits, onSelect }) {
 }
 
 /**
- * Step 2: Customize Rate
+ * Step 2: Configure Rate + Goal (Combined)
  */
-function StepCustomize({
+function StepConfigure({
   habit,
   selectedRate,
-  customRate,
-  useCustomRate,
+  showRateOptions,
   onRateSelect,
-  onCustomRateChange,
-  onUseCustomRateToggle,
+  onToggleRateOptions,
   onBack,
-  onConfirm
+  onGoalSet
 }) {
-  // Rough weekly projection
-  const getWeeklyEstimate = () => {
-    const rate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
-
-    if (habit.rateType === RATE_TYPES.BINARY) {
-      return rate * 5; // 5 completions per week
-    } else if (habit.rateType === RATE_TYPES.DURATION) {
-      return rate * 30 * 5; // 30 min, 5 times
-    } else if (habit.rateType === RATE_TYPES.DISTANCE) {
-      return rate * 3 * 4; // 3 miles, 4 times
-    } else if (habit.rateType === RATE_TYPES.COUNT) {
-      if (habit.unit === 'step') {
-        return rate * 8000 * 5;
-      } else if (habit.unit === 'rep') {
-        return rate * 20 * 5;
-      }
-      return rate * 3 * 5;
-    }
-    return 0;
-  };
-
-  const effectiveRate = useCustomRate && customRate ? parseFloat(customRate) : selectedRate;
-  const canConfirm = effectiveRate > 0;
+  const rateLabels = ['Low', 'Default', 'High'];
 
   return (
-    <div className="step-customize">
-      <button className="back-link" onClick={onBack}>
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
+    <div className="step-content">
+      {/* Back button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        leftIcon={
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        }
+        className="config-back-btn"
+      >
         Back
-      </button>
+      </Button>
 
-      {/* Habit header */}
-      <div className="customize-header">
-        <div className="customize-icon-container">
-          <HabitIcon habitId={habit.id} size={36} />
+      {/* Habit Header */}
+      <div className="config-header">
+        <div className="config-header-icon">
+          <HabitIcon habitId={habit.id} size={32} />
         </div>
-        <div className="customize-title-group">
-          <span className="customize-name">{habit.name}</span>
+        <div className="config-header-info">
+          <h2 className="config-header-name">{habit.name}</h2>
+          <span className="config-header-rate">
+            ${selectedRate < 0.01 ? selectedRate.toFixed(4) : selectedRate.toFixed(2)}/{habit.unit}
+          </span>
         </div>
       </div>
 
       {/* Description */}
-      <p className="customize-description">{habit.description}</p>
+      {habit.description && (
+        <p className="config-description">{habit.description}</p>
+      )}
 
-      {/* Rate selection */}
-      <div className="customize-section">
-        <h3 className="section-label">Set Your Rate</h3>
-        <div className="rate-options">
-          {habit.rateOptions.map((rate, index) => {
-            const isSelected = !useCustomRate && selectedRate === rate;
-            const label = getRateLabel(index);
+      {/* Rate Customization - Collapsed by default */}
+      <div className="config-rate-section">
+        <button
+          className={`rate-toggle ${showRateOptions ? 'expanded' : ''}`}
+          onClick={onToggleRateOptions}
+        >
+          <span className="rate-toggle-label">
+            {selectedRate === habit.defaultRate ? 'Using default rate' : 'Using custom rate'}
+          </span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="rate-toggle-icon">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L8 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
 
-            // Format rate
-            let rateDisplay;
-            if (rate < 0.01) {
-              rateDisplay = `$${rate.toFixed(4)}`;
-            } else {
-              rateDisplay = `$${rate.toFixed(2)}`;
-            }
-
-            return (
-              <button
-                key={rate}
-                className={`rate-option ${isSelected ? 'selected' : ''}`}
-                onClick={() => {
-                  onRateSelect(rate);
-                  onUseCustomRateToggle(false);
-                }}
-              >
-                <span className="rate-label">{label}</span>
-                <span className="rate-value">
-                  {rateDisplay}/{habit.unit}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Custom Rate Option */}
-      <div className="customize-section">
-        <h3 className="section-label">Or Use Custom Rate</h3>
-        <div className="custom-rate-section">
-          <button
-            className={`custom-rate-toggle ${useCustomRate ? 'active' : ''}`}
-            onClick={() => {
-              onUseCustomRateToggle(!useCustomRate);
-              if (!useCustomRate) {
-                onCustomRateChange('');
-              }
-            }}
-          >
-            <span>{useCustomRate ? 'Using Custom Rate' : 'Use Custom Rate'}</span>
-            <svg
-              className="toggle-icon"
-              width="20"
-              height="20"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+        <AnimatePresence>
+          {showRateOptions && (
+            <motion.div
+              className="rate-options-panel"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
-              {useCustomRate ? (
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              ) : (
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              )}
-            </svg>
-          </button>
-
-          {useCustomRate && (
-            <div className="custom-rate-input-wrapper">
-              <div className="custom-rate-input-group">
-                <span className="currency-symbol">$</span>
-                <input
-                  type="number"
-                  className="custom-rate-input"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0.01"
-                  value={customRate}
-                  onChange={(e) => onCustomRateChange(e.target.value)}
-                />
-                <span className="per-unit">/{habit.unit}</span>
+              <div className="rate-options-grid">
+                {habit.rateOptions.map((rate, index) => (
+                  <button
+                    key={rate}
+                    className={`rate-option-btn ${selectedRate === rate ? 'active' : ''}`}
+                    onClick={() => onRateSelect(rate)}
+                  >
+                    <span className="rate-option-label">{rateLabels[index] || 'Rate'}</span>
+                    <span className="rate-option-value">
+                      ${rate < 0.01 ? rate.toFixed(4) : rate.toFixed(2)}
+                    </span>
+                  </button>
+                ))}
               </div>
-              <p className="custom-rate-hint">
-                Enter your preferred rate amount for this habit
-              </p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
-      {/* Earnings Preview */}
-      <div className="earnings-preview">
-        <div className="earnings-row">
-          <span className="earnings-label">Estimated weekly earnings:</span>
-        </div>
-        <div className="earnings-amount">
-          <span className="amount-value">${getWeeklyEstimate().toFixed(2)}</span>
-          <span className="amount-label">/week</span>
-        </div>
+      {/* Goal Setup - Integrated */}
+      <div className="config-goal-section">
+        <GoalSetup
+          habitLibraryData={habit}
+          selectedRate={selectedRate}
+          onGoalSet={onGoalSet}
+        />
       </div>
-
-      {/* Continue button */}
-      <button
-        className="confirm-button"
-        onClick={onConfirm}
-        disabled={!canConfirm}
-      >
-        Set Goal
-      </button>
-    </div>
-  );
-}
-
-/**
- * Step 3: Set Goal
- */
-function StepGoal({ habit, selectedRate, onBack, onGoalSet }) {
-  return (
-    <div className="step-goal">
-      <button className="back-link" onClick={onBack}>
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
-        Back
-      </button>
-
-      {/* Habit header */}
-      <div className="customize-header">
-        <div className="customize-icon-container">
-          <HabitIcon habitId={habit.id} size={36} />
-        </div>
-        <div className="customize-title-group">
-          <span className="customize-name">{habit.name}</span>
-        </div>
-      </div>
-
-      <GoalSetup
-        habitLibraryData={habit}
-        selectedRate={selectedRate}
-        onGoalSet={onGoalSet}
-      />
     </div>
   );
 }

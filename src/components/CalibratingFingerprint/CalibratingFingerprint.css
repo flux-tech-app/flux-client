@@ -1,0 +1,222 @@
+/* ========================================
+   CALIBRATING FINGERPRINT COMPONENT
+   ======================================== */
+
+.calibrating-fingerprint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Size variants */
+.calibrating-fingerprint.large .fingerprint-container {
+  width: 120px;
+  height: 120px;
+}
+
+.calibrating-fingerprint.small .fingerprint-container {
+  width: 80px;
+  height: 80px;
+}
+
+.calibrating-fingerprint.small .fp-ring:nth-child(1) { width: 16px; height: 16px; }
+.calibrating-fingerprint.small .fp-ring:nth-child(2) { width: 28px; height: 28px; }
+.calibrating-fingerprint.small .fp-ring:nth-child(3) { width: 40px; height: 40px; }
+.calibrating-fingerprint.small .fp-ring:nth-child(4) { width: 52px; height: 52px; }
+.calibrating-fingerprint.small .fp-ring:nth-child(5) { width: 64px; height: 64px; }
+.calibrating-fingerprint.small .fp-ring:nth-child(6) { width: 76px; height: 76px; }
+
+.calibrating-fingerprint.small .fp-center-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.calibrating-fingerprint.small .days-badge {
+  padding: 4px 10px;
+}
+
+.calibrating-fingerprint.small .days-badge-text {
+  font-size: 11px;
+}
+
+/* Hero size - for habit detail page (56px) */
+.calibrating-fingerprint.hero {
+  gap: 8px;
+}
+
+.calibrating-fingerprint.hero .fingerprint-container {
+  width: 56px;
+  height: 56px;
+}
+
+.calibrating-fingerprint.hero .fp-ring:nth-child(1) { width: 11px; height: 11px; }
+.calibrating-fingerprint.hero .fp-ring:nth-child(2) { width: 19px; height: 19px; }
+.calibrating-fingerprint.hero .fp-ring:nth-child(3) { width: 28px; height: 28px; }
+.calibrating-fingerprint.hero .fp-ring:nth-child(4) { width: 36px; height: 36px; }
+.calibrating-fingerprint.hero .fp-ring:nth-child(5) { width: 44px; height: 44px; }
+.calibrating-fingerprint.hero .fp-ring:nth-child(6) { width: 52px; height: 52px; }
+
+.calibrating-fingerprint.hero .fp-center-dot {
+  width: 5px;
+  height: 5px;
+}
+
+.calibrating-fingerprint.hero .days-badge {
+  padding: 5px 10px;
+  gap: 4px;
+}
+
+.calibrating-fingerprint.hero .days-badge-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.calibrating-fingerprint.hero .days-badge-text {
+  font-size: 11px;
+}
+
+/* Fingerprint container */
+.fingerprint-container {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The rings that form the fingerprint pattern */
+.fingerprint-rings {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.fp-ring {
+  position: absolute;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  animation: fp-appear 3s ease-out infinite;
+}
+
+/* Ring 1 - innermost */
+.fp-ring:nth-child(1) {
+  width: 24px;
+  height: 24px;
+  border-color: #3b82f6;
+  animation-delay: 0s;
+}
+
+/* Ring 2 */
+.fp-ring:nth-child(2) {
+  width: 42px;
+  height: 42px;
+  border-color: #60a5fa;
+  border-top-color: transparent;
+  animation-delay: 0.2s;
+}
+
+/* Ring 3 */
+.fp-ring:nth-child(3) {
+  width: 60px;
+  height: 60px;
+  border-color: #93c5fd;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  animation-delay: 0.4s;
+}
+
+/* Ring 4 */
+.fp-ring:nth-child(4) {
+  width: 78px;
+  height: 78px;
+  border-color: #60a5fa;
+  border-bottom-color: transparent;
+  animation-delay: 0.6s;
+}
+
+/* Ring 5 */
+.fp-ring:nth-child(5) {
+  width: 96px;
+  height: 96px;
+  border-color: #3b82f6;
+  border-top-color: transparent;
+  border-left-color: transparent;
+  animation-delay: 0.8s;
+}
+
+/* Ring 6 - outermost */
+.fp-ring:nth-child(6) {
+  width: 114px;
+  height: 114px;
+  border-color: #2563eb;
+  border-right-color: transparent;
+  animation-delay: 1s;
+}
+
+@keyframes fp-appear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+/* Center pulsing dot */
+.fp-center-dot {
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  animation: fp-pulse 1.5s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes fp-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.7;
+  }
+}
+
+/* Days Badge */
+.days-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+}
+
+.days-badge-icon {
+  width: 14px;
+  height: 14px;
+  color: #3b82f6;
+}
+
+.days-badge-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+}

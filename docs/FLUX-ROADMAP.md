@@ -2,7 +2,7 @@
 
 **Phases, Scope & Timeline**
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -46,12 +46,12 @@ For business context, see FLUX-BUSINESS-BLUEPRINT.md.
 
 The existing prototype was built with the old model (BUILD/RESIST, schedules, chat-first). Significant rework needed:
 
-- Remove schedule-based logic → Implement pattern recognition
-- Remove BUILD/RESIST mechanics → All habits require explicit logging
-- Reduce AI from "command center" → AI as intelligent companion
-- Update 8 categories → 4 categories (FITNESS, FINANCIAL, PRODUCTIVITY, WELLNESS)
-- Add curated habit library → 15 pre-defined habits for MVT
-- Rename HHS → Flux Score with updated algorithm
+- Remove schedule-based logic â†’ Implement pattern recognition
+- Remove BUILD/RESIST mechanics â†’ All habits require explicit logging
+- Reduce AI from "command center" â†’ AI as intelligent companion
+- Update 8 categories â†’ 4 categories (FITNESS, FINANCIAL, PRODUCTIVITY, WELLNESS)
+- Add curated habit library â†’ 15 pre-defined habits for MVT
+- Rename HHS â†’ Flux Score with updated algorithm
 
 ### Business Infrastructure (Complete)
 
@@ -89,7 +89,7 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 
 **4. Accurate Money Calculations**
 - Pending balance tracks weekly earnings correctly
-- Friday transfer simulation works (pending → portfolio)
+- Friday transfer simulation works (pending â†’ portfolio)
 - Transfer history maintains integrity
 - Zero calculation errors
 
@@ -135,8 +135,8 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 | **Phase 1: MVT Build** | Weeks 1-8 | Core app aligned with current vision | Functional prototype |
 | **Phase 2: Validation** | Weeks 9-16 | Beta testing with 50+ users | Retention & engagement metrics |
 | **Phase 3: Polish & Iterate** | Weeks 17-20 | Refinement based on feedback | Ready for banking decision |
-| **DECISION GATE** | Week 20 | Proceed to banking or iterate | — |
-| **Phase 4: Banking Infrastructure** | Weeks 21-32 | Stripe Treasury, Plaid, real money | Real transfers working |
+| **DECISION GATE** | Week 20 | Proceed to banking or iterate | â€” |
+| **Phase 4: Banking Infrastructure** | Weeks 21-32 | BaaS provider, Plaid, real money | Real transfers working |
 | **Phase 5: Beta Launch** | Weeks 33-42 | 100-500 users, real money flowing | Stable, scalable |
 | **Phase 6: Indices & Scale** | Weeks 43-52 | Behavior-level indices, growth | Public launch ready |
 
@@ -153,9 +153,9 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 **Week 1-2: Foundation Reset**
 - Remove BUILD/RESIST logic from codebase
 - Remove schedule-based calculations
-- Update category structure (8 → 4)
+- Update category structure (8 â†’ 4)
 - Implement curated 15-habit library
-- Update terminology throughout (HHS → Flux Score)
+- Update terminology throughout (HHS â†’ Flux Score)
 
 **Week 3-4: Pattern Recognition Core**
 - Implement log-based pattern tracking
@@ -254,8 +254,11 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 - Account verification
 - Balance checking
 
-**Week 29-31: Stripe Treasury Integration**
-- Stripe Treasury account setup
+**Week 29-31: BaaS Provider Integration**
+
+> **Note:** BaaS provider selection in progress. Unit, Treasury Prime, and Synctera under evaluation. Stripe Treasury B2B-only.
+
+- BaaS provider account setup
 - Transfer API integration
 - Friday automated transfers
 - Transfer status tracking
@@ -422,7 +425,7 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 | Dependency | Phase | Risk Level | Mitigation |
 |------------|-------|------------|------------|
 | Anthropic API | Phase 1+ | Low | OpenAI as fallback |
-| Stripe Treasury approval | Phase 4 | Medium | Early application, legal consultation |
+| BaaS provider approval | Phase 4 | Medium | Early evaluation of Unit/Treasury Prime/Synctera |
 | Plaid partnership | Phase 4 | Low | Standard integration |
 | App Store approval | Phase 6 | Medium | Follow guidelines, early submission |
 
@@ -450,40 +453,40 @@ The existing prototype was built with the old model (BUILD/RESIST, schedules, ch
 
 ```
 PHASE 1: MVT BUILD (Weeks 1-8)
-├── Week 1-2: Foundation reset
-├── Week 3-4: Pattern recognition
-├── Week 5-6: Flux Score & money
-└── Week 7-8: AI companion & polish
-    ↓
+â”œâ”€â”€ Week 1-2: Foundation reset
+â”œâ”€â”€ Week 3-4: Pattern recognition
+â”œâ”€â”€ Week 5-6: Flux Score & money
+â””â”€â”€ Week 7-8: AI companion & polish
+    â†“
 [Gate 1: MVT Complete]
-    ↓
+    â†“
 PHASE 2: VALIDATION (Weeks 9-16)
-├── Week 9-10: Beta recruitment
-├── Week 11-14: Active testing
-└── Week 15-16: Analysis
-    ↓
+â”œâ”€â”€ Week 9-10: Beta recruitment
+â”œâ”€â”€ Week 11-14: Active testing
+â””â”€â”€ Week 15-16: Analysis
+    â†“
 [Gate 2: Validation Complete]
-    ↓
+    â†“
 PHASE 3: POLISH (Weeks 17-20)
-└── Refinement based on feedback
-    ↓
+â””â”€â”€ Refinement based on feedback
+    â†“
 [Gate 3: BANKING DECISION - Week 20]
-    ↓
+    â†“
 PHASE 4: BANKING (Weeks 21-32) [Conditional]
-├── Week 21-24: Backend infrastructure
-├── Week 25-28: Plaid integration
-├── Week 29-31: Stripe Treasury
-└── Week 32: Testing & compliance
-    ↓
+â”œâ”€â”€ Week 21-24: Backend infrastructure
+â”œâ”€â”€ Week 25-28: Plaid integration
+â”œâ”€â”€ Week 29-31: BaaS integration
+â””â”€â”€ Week 32: Testing & compliance
+    â†“
 [Gate 4: Real Money Launch]
-    ↓
+    â†“
 PHASE 5: BETA LAUNCH (Weeks 33-42)
-└── 100-500 users, real money
-    ↓
+â””â”€â”€ 100-500 users, real money
+    â†“
 PHASE 6: INDICES & SCALE (Weeks 43-52)
-├── Behavior-level indices
-└── Public launch prep
-    ↓
+â”œâ”€â”€ Behavior-level indices
+â””â”€â”€ Public launch prep
+    â†“
 PUBLIC LAUNCH (~Week 52)
 ```
 

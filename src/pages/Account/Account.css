@@ -2,12 +2,9 @@
   min-height: 100vh;
   background: linear-gradient(
     180deg,
-    #c8dce8 0%,
-    #d5e5ed 20%,
-    #e0ecf2 40%,
-    #e8f1f5 60%,
-    #f0f5f8 80%,
-    #f5f8fa 100%
+    #f8f9fa 0%,
+    #fbfbfc 40%,
+    #ffffff 100%
   );
   padding-bottom: 100px;
   position: relative;
@@ -19,6 +16,58 @@
   min-height: 100vh;
   position: relative;
   z-index: 1;
+}
+
+/* Header */
+.account-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, #f8f9fa 0%, #f8f9fa 80%, transparent 100%);
+  padding: 16px 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-title {
+  font-size: 20px;
+  font-weight: 700;
+  flex: 1;
+  text-align: left;
+  margin: 0;
+  line-height: 1;
+  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.account-header .header-spacer {
+  width: 44px;
+}
+
+.menu-button {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(44, 74, 110, 0.7);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.menu-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #2c4a6e;
+}
+
+.menu-button:active {
+  transform: scale(0.95);
 }
 
 /* Profile Header */

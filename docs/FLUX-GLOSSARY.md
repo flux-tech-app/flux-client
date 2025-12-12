@@ -2,7 +2,7 @@
 
 **Purpose:** Consistent terminology across all Flux documentation. When in doubt, reference this document.
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -16,9 +16,6 @@ A recorded successful avoidance of a behavior the user is trying to reduce or qu
 
 ### Position
 A behavior displayed using investment portfolio metaphor. Each behavior is a "position" in the user's behavioral portfolio, with performance metrics similar to financial investments.
-
-### Ticker
-A short symbol representing a behavior (e.g., $RUN, $ZEN, $TAKEOUT, $SMOKE). Used throughout the UI to reinforce the investment portfolio aesthetic.
 
 ### Behavior Library
 The curated set of 23 pre-defined behaviors users can select from in MVT (13 Log behaviors + 10 Pass behaviors). Users choose from this library rather than creating custom behaviors, ensuring consistent data quality for indices.
@@ -42,7 +39,7 @@ Transfer rights accumulated during the current week that haven't yet been transf
 The weekly transfer of pending balance from user's checking account to their Flux savings. Occurs every Friday. This is when "potential earnings" become "real savings."
 
 ### Flux Savings
-The user's savings held in Flux via Stripe Treasury. This is real money in FDIC-insured accounts, withdrawable anytime. Not virtual currency or points.
+The user's savings held in Flux via a BaaS provider (TBD). This is real money in FDIC-insured accounts, withdrawable anytime. Not virtual currency or points.
 
 ### Portfolio Balance
 Total real money held in the user's Flux savings account. Represents cumulative earnings from all completed behaviors minus any withdrawals.
@@ -94,17 +91,17 @@ The time frame over which a goal is measured: day, week, or month. Users choose 
 The measurement of current performance relative to the gap between baseline and goal. Expressed as a percentage or visual indicator showing how close the user is to their aspirational target.
 
 ```
-[Baseline ●━━━━━━━━○━━━━━ Goal]
-           ↑ Current
+[Baseline â—â”€â”€â”€â”€â”€â”€â”€â”€â—‹â”€â”€â”€â”€â”€â”€ Goal]
+           â†‘ Current
 ```
 
 ### Goal Projection
-The financial value of achieving a goal, calculated from goal amount × rate. Shown at behavior setup and on detail pages:
+The financial value of achieving a goal, calculated from goal amount Ã— rate. Shown at behavior setup and on detail pages:
 - "At your goal, you'd earn: $15/week, $780/year"
 - "Gap: $5.80/week you're leaving on the table"
 
 ### Baseline Ratchet
-The automatic increase of a user's baseline when they consistently exceed it (3-4 weeks above baseline, with minimum 4 weeks between ratchets). The ratchet "raises the floor"—the user's new normal is now higher than before. Users can then set new goals to continue progressing.
+The automatic increase of a user's baseline when they consistently exceed it (3-4 weeks above baseline, with minimum 4 weeks between ratchets). The ratchet "raises the floor"â€”the user's new normal is now higher than before. Users can then set new goals to continue progressing.
 
 ### At Goal
 When a user's baseline meets or exceeds their goal. The user has successfully improved to their aspirational target and can either set a new, higher goal or maintain at their current level.
@@ -127,12 +124,12 @@ Time-to-goal calculations based on current pace vs. goal pace:
 ## Indices
 
 ### Behavior-Level Index
-An aggregate performance metric for a specific behavior across all Flux users (e.g., "Cardio Index: 71.3%"). Shows how users collectively perform on that behavior, providing individual context: "You: Top 15%."
+An aggregate performance metric for a specific behavior across all Flux users (e.g., "Running Index"). Shows how users collectively perform on that behavior, providing individual context using "Top X%" format (e.g., "You: Top 15%").
 
-Key distinction: These are behavior-specific (Cardio Index, Meditation Index) rather than category rollups (not "Exercise Category Index"). Requires minimum users per behavior to be statistically valid.
+Key distinction: These are behavior-specific (Running Index, Meditation Index) rather than category rollups (not "Exercise Category Index"). Requires minimum users per behavior to be statistically valid.
 
 ### Index Comparison
-Optional feature allowing users to see how their performance compares to other Flux users on the same behavior. Opt-in only. Not a social feature - purely informational context.
+Optional feature allowing users to see how their performance compares to other Flux users on the same behavior. Opt-in only. Not a social feature - purely informational context. Rankings displayed as "Top X%" format.
 
 ---
 
@@ -151,6 +148,9 @@ Optional feature allowing users to see how their performance compares to other F
 | Auto-earning | (removed - all logs are explicit) |
 | Target (ambiguous) | Goal (for aspiration) or Baseline (for pattern) |
 | Habit | Behavior (preferred in current documentation) |
+| Ticker / Ticker symbols ($RUN, $ZEN) | Full behavior names only |
+| Emojis for behavior icons | SVG icons only |
+| Percentile (84th percentile) | "Top X%" format |
 
 ---
 
@@ -161,12 +161,11 @@ Optional feature allowing users to see how their performance compares to other F
 | Log | Recorded behavior completion with timestamp |
 | Pass | Recorded successful avoidance of a behavior |
 | Position | A behavior as a portfolio investment |
-| Ticker | Short symbol for behavior ($RUN, $ZEN) |
 | Behavior Library | 23 pre-defined behaviors for MVT |
 | Transfer Rights | What you earn per log or pass |
 | Pending Balance | This week's unprocessed earnings |
-| Friday Transfer | Weekly checking → Flux savings move |
-| Flux Savings | Real money held by Flux (Stripe Treasury) |
+| Friday Transfer | Weekly checking â†’ Flux savings move |
+| Flux Savings | Real money held by Flux (via BaaS provider) |
 | Portfolio Balance | Total savings in Flux account |
 | Baseline | Your established pattern for a behavior |
 | Typical Gap | Average days between your logs |
@@ -176,6 +175,7 @@ Optional feature allowing users to see how their performance compares to other F
 | Baseline Ratchet | Automatic baseline increase after sustained improvement (min 4 weeks apart) |
 | Savings Goal | Financial objective linked to behaviors |
 | Behavior-Level Index | Aggregate user performance for a behavior |
+| Top X% | Index ranking format (e.g., "Top 16%") |
 
 ---
 

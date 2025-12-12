@@ -14,7 +14,7 @@ export const animations = {
     }
   },
 
-  // Backdrop fade (keep existing)
+  // Backdrop fade
   backdrop: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -24,18 +24,55 @@ export const animations = {
     }
   },
 
-  // FAB interactions (keep existing - nice touch)
+  // FAB main button interactions - enhanced
   fab: {
-    tap: { scale: 0.9 },
+    tap: { scale: 0.92 },
     hover: { scale: 1.05 },
     transition: {
       type: 'spring',
-      stiffness: 400,
-      damping: 17
+      stiffness: 350,
+      damping: 20,
+      mass: 0.8
     }
   },
 
-  // Card press feedback (keep existing - subtle and nice)
+  // FAB expand animation for action bubbles
+  fabExpand: {
+    container: {
+      initial: { opacity: 0, y: 20 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: 20 },
+      transition: {
+        type: 'spring',
+        stiffness: 400,
+        damping: 28
+      }
+    },
+    item: {
+      initial: { opacity: 0, scale: 0.8, y: 10 },
+      animate: { opacity: 1, scale: 1, y: 0 },
+      exit: { opacity: 0, scale: 0.8, y: 10 },
+      transition: {
+        type: 'spring',
+        stiffness: 400,
+        damping: 25
+      }
+    },
+    staggerDelay: 0.05
+  },
+
+  // Button interactions - premium feel
+  button: {
+    tap: { scale: 0.98 },
+    hover: { y: -2, scale: 1.01 },
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 25
+    }
+  },
+
+  // Card press feedback - subtle and nice
   cardPress: {
     tap: { scale: 0.98 },
     transition: {
@@ -45,7 +82,7 @@ export const animations = {
     }
   },
 
-  // List item stagger (keep existing)
+  // List item stagger
   stagger: {
     container: {
       animate: {
@@ -60,6 +97,18 @@ export const animations = {
       transition: {
         duration: 0.3
       }
+    }
+  },
+
+  // Scale fade for modals and popups
+  scaleFade: {
+    initial: { opacity: 0, scale: 0.95 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 },
+    transition: {
+      type: 'spring',
+      stiffness: 350,
+      damping: 25
     }
   }
 };

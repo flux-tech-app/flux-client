@@ -29,46 +29,10 @@
   gap: 12px;
 }
 
-.back-button {
-  padding: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(59, 130, 246, 0.8);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.back-button:hover {
-  opacity: 0.8;
-}
-
 .header-title {
   font-size: 17px;
   font-weight: 600;
   color: #111827;
-}
-
-.save-button {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.save-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
-}
-
-.save-button:disabled {
-  background: #d1d5db;
-  cursor: not-allowed;
-  opacity: 1;
 }
 
 /* Form Content */

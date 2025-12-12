@@ -23,20 +23,6 @@
   z-index: 10;
 }
 
-.back-button {
-  padding: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #3b82f6;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.back-button:hover {
-  opacity: 0.8;
-}
-
 .header-title {
   font-size: 17px;
   font-weight: 600;
@@ -138,28 +124,6 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-}
-
-.quick-btn {
-  padding: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  font-size: 14px;
-  font-weight: 500;
-  color: #111827;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.quick-btn:hover {
-  border-color: #3b82f6;
-  background: #dbeafe;
-  color: #3b82f6;
-}
-
-.quick-btn:active {
-  transform: scale(0.95);
 }
 
 /* Completion Badge (for flat rate build habits) */
@@ -392,24 +356,4 @@
   margin-top: 8px;
 }
 
-/* Log Button */
-.log-button {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #3b82f6 0%, #93c5fd 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.log-button:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
-}
-
-.log-button:active {
-  transform: scale(0.98);
-}
+/* Log Button - Now uses Button component */

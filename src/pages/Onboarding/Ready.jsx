@@ -1,5 +1,6 @@
 import { getHabitById } from '../../utils/HABIT_LIBRARY';
 import HabitIcon from '../../utils/HabitIcons';
+import Button from '../../components/Button';
 import './Onboarding.css';
 
 /**
@@ -108,12 +109,12 @@ export default function Ready({
 
       <div className="onboarding-footer">
         <div className="button-group">
-          <button className="secondary-button" onClick={onBack}>
+          <Button variant="secondary" size="lg" onClick={onBack} className="onboarding-back">
             Back
-          </button>
-          <button className="primary-button launch" onClick={onComplete}>
+          </Button>
+          <Button variant="success" size="lg" onClick={onComplete} className="onboarding-continue">
             Start Building
-          </button>
+          </Button>
         </div>
       </div>
     </div>

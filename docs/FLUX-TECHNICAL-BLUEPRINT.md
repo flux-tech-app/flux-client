@@ -2,7 +2,7 @@
 
 **Architecture, Stack & Implementation**
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -34,27 +34,27 @@ For timeline, see FLUX-ROADMAP.md.
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      CLIENT (React)                          │
-├─────────────────────────────────────────────────────────────┤
-│  UI Components  │  Contexts  │  Utilities  │  Styles        │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    STATE MANAGEMENT                          │
-├─────────────────────────────────────────────────────────────┤
-│  HabitContext (behaviors, logs, transfers, goals)           │
-│  NavigationContext (page transitions)                        │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-│  localStorage   │ │  Anthropic    │ │  Future:        │
-│  (MVT)          │ │  Claude API   │ │  Supabase +     │
-│                 │ │               │ │  Stripe + Plaid │
-└─────────────────┘ └───────────────┘ └─────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                      CLIENT (React)                          â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  UI Components  â”‚  Contexts  â”‚  Utilities  â”‚  Styles        â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚
+                             â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    STATE MANAGEMENT                          â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  HabitContext (behaviors, logs, transfers, goals)           â”‚
+â”‚  NavigationContext (page transitions)                        â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚
+              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+              â–¼              â–¼              â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  localStorage   â”‚ â”‚  Anthropic    â”‚ â”‚  Future:        â”‚
+â”‚  (MVT)          â”‚ â”‚  Claude API   â”‚ â”‚  Supabase +     â”‚
+â”‚                 â”‚ â”‚               â”‚ â”‚  Stripe + Plaid â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### Architecture Principles
@@ -84,38 +84,38 @@ For timeline, see FLUX-ROADMAP.md.
 
 ```
 flux-2.0/
-├── src/
-│   ├── components/
-│   │   ├── common/          # Shared UI components
-│   │   ├── behaviors/       # Behavior-related components
-│   │   ├── portfolio/       # Portfolio views
-│   │   ├── goals/           # Goal setup and progress
-│   │   ├── activity/        # Activity feed
-│   │   └── GoalSetup/       # Goal configuration component
-│   ├── contexts/
-│   │   ├── HabitContext.jsx
-│   │   └── NavigationContext.jsx
-│   ├── pages/
-│   │   ├── Home/
-│   │   ├── Portfolio/
-│   │   ├── Indices/
-│   │   ├── Activity/
-│   │   ├── Settings/
-│   │   ├── Onboarding/
-│   │   └── BehaviorDetail/
-│   ├── utils/
-│   │   ├── HABIT_LIBRARY.js  # Behavior definitions with goal configs
-│   │   ├── calculations.js   # Money & score calculations
-│   │   ├── patterns.js       # Pattern recognition
-│   │   ├── goals.js          # Goal progress & projections
-│   │   └── formatters.js     # Display formatting
-│   ├── styles/
-│   │   └── variables.css    # Theme variables
-│   ├── App.jsx
-│   └── main.jsx
-├── public/
-├── package.json
-└── vite.config.js
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚   â”œâ”€â”€ common/          # Shared UI components
+â”‚   â”‚   â”œâ”€â”€ behaviors/       # Behavior-related components
+â”‚   â”‚   â”œâ”€â”€ portfolio/       # Portfolio views
+â”‚   â”‚   â”œâ”€â”€ goals/           # Goal setup and progress
+â”‚   â”‚   â”œâ”€â”€ activity/        # Activity feed
+â”‚   â”‚   â””â”€â”€ GoalSetup/       # Goal configuration component
+â”‚   â”œâ”€â”€ contexts/
+â”‚   â”‚   â”œâ”€â”€ HabitContext.jsx
+â”‚   â”‚   â””â”€â”€ NavigationContext.jsx
+â”‚   â”œâ”€â”€ pages/
+â”‚   â”‚   â”œâ”€â”€ Home/
+â”‚   â”‚   â”œâ”€â”€ Portfolio/
+â”‚   â”‚   â”œâ”€â”€ Indices/
+â”‚   â”‚   â”œâ”€â”€ Activity/
+â”‚   â”‚   â”œâ”€â”€ Settings/
+â”‚   â”‚   â”œâ”€â”€ Onboarding/
+â”‚   â”‚   â””â”€â”€ BehaviorDetail/
+â”‚   â”œâ”€â”€ utils/
+â”‚   â”‚   â”œâ”€â”€ HABIT_LIBRARY.js  # Behavior definitions with goal configs
+â”‚   â”‚   â”œâ”€â”€ calculations.js   # Money & score calculations
+â”‚   â”‚   â”œâ”€â”€ patterns.js       # Pattern recognition
+â”‚   â”‚   â”œâ”€â”€ goals.js          # Goal progress & projections
+â”‚   â”‚   â””â”€â”€ formatters.js     # Display formatting
+â”‚   â”œâ”€â”€ styles/
+â”‚   â”‚   â””â”€â”€ variables.css    # Theme variables
+â”‚   â”œâ”€â”€ App.jsx
+â”‚   â””â”€â”€ main.jsx
+â”œâ”€â”€ public/
+â”œâ”€â”€ package.json
+â””â”€â”€ vite.config.js
 ```
 
 ### Context Architecture
@@ -147,25 +147,25 @@ flux-2.0/
 ### Phase 4+ Architecture (Post-Validation)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   MOBILE CLIENT                              │
-│              (React Native - iOS/Android)                    │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      API LAYER                               │
-├─────────────────────────────────────────────────────────────┤
-│  Supabase Edge Functions  │  Anthropic API                  │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-│  Supabase       │ │  Stripe       │ │  Plaid          │
-│  PostgreSQL     │ │  Treasury     │ │  Link           │
-│  Auth           │ │  Transfers    │ │  Bank Connect   │
-└─────────────────┘ └───────────────┘ └─────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                   MOBILE CLIENT                              â”‚
+â”‚              (React Native - iOS/Android)                    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚
+                             â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                      API LAYER                               â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚  Supabase Edge Functions  â”‚  Anthropic API                  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                             â”‚
+              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+              â–¼              â–¼              â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Supabase       â”‚ â”‚  Stripe       â”‚ â”‚  Plaid          â”‚
+â”‚  PostgreSQL     â”‚ â”‚  Treasury     â”‚ â”‚  Link           â”‚
+â”‚  Auth           â”‚ â”‚  Transfers    â”‚ â”‚  Bank Connect   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### Target Tech Stack
@@ -177,7 +177,7 @@ flux-2.0/
 | Backend | Supabase | Phase 4 |
 | Database | PostgreSQL | Phase 4 |
 | Auth | Supabase Auth | Phase 4 |
-| Banking | Stripe Treasury | Phase 4 |
+| Banking | BaaS Provider (TBD) | Phase 4 |
 | Bank Linking | Plaid | Phase 4 |
 | AI | Anthropic Claude | Phase 1+ |
 | Notifications | Firebase/OneSignal | Phase 5 |
@@ -910,17 +910,21 @@ async function getFluxInsight(habitData, userContext) {
 - `/item/public_token/exchange` - Get access token
 - `/accounts/balance/get` - Check balance
 
-### Stripe Treasury API (Phase 4)
+### BaaS Provider API (Phase 4)
+
+> **Note:** BaaS provider selection in progress. Stripe Treasury was initially planned but only supports B2B use cases. Unit, Treasury Prime, and Synctera are under evaluation for consumer-facing savings accounts.
 
 **Use Cases:**
-- Create FDIC-insured accounts
+- Create FDIC-insured consumer savings accounts
 - Process Friday transfers
 - Handle withdrawals
 
-**Key Endpoints:**
-- `/v1/treasury/financial_accounts` - Create/manage accounts
-- `/v1/treasury/outbound_transfers` - Process transfers
-- `/v1/treasury/transactions` - Transaction history
+**Provider Evaluation Criteria:**
+- Consumer account support (required)
+- FDIC insurance through partner banks
+- ACH transfer capabilities
+- API documentation quality
+- Post-Synapse regulatory standing
 
 ---
 
@@ -959,10 +963,10 @@ async function getFluxInsight(habitData, userContext) {
 
 ```
 main (production)
-  └── develop (integration)
-       ├── feature/goals-setup
-       ├── feature/goal-progress
-       └── fix/money-calculation
+  â””â”€â”€ develop (integration)
+       â”œâ”€â”€ feature/goals-setup
+       â”œâ”€â”€ feature/goal-progress
+       â””â”€â”€ fix/money-calculation
 ```
 
 **Process:**
@@ -1016,7 +1020,7 @@ npm run dev
 | React over React Native for MVT | Faster iteration, deploy via web, RN for Phase 6 |
 | localStorage over backend | Reduces complexity for validation phase |
 | Supabase over custom backend | Faster development, built-in auth, real-time |
-| Stripe Treasury over alternatives | Best docs, ecosystem integration, FDIC included |
+| BaaS provider (TBD) | Unit, Treasury Prime, Synctera under evaluation; Stripe Treasury B2B-only |
 | Vercel over alternatives | Free tier, automatic deploys, edge functions |
 | Goals required at setup | Ensures aspirational targets from day one |
 | Min 4 weeks between ratchets | Prevents baseline from chasing user too aggressively |

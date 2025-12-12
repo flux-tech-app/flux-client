@@ -1,17 +1,20 @@
+import { useState } from 'react';
 import { useHabits } from '../../context/HabitContext';
+import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Account.css';
 
 export default function Account() {
-  const { 
-    user, 
+  const {
+    user,
     habits,
     logs,
-    processTransfer, 
-    getPendingBalance, 
-    addHabits, 
-    addLog, 
-    addTransfer 
+    processTransfer,
+    getPendingBalance,
+    addHabits,
+    addLog,
+    addTransfer
   } = useHabits();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Get user initials for avatar
   const getInitials = (name) => {
@@ -412,7 +415,21 @@ export default function Account() {
 
   return (
     <div className="account-page">
+      {/* Sidebar Menu */}
+      <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="account-container">
+        {/* Header */}
+        <header className="account-header">
+          <button className="menu-button" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h1 className="account-title">Account</h1>
+          <div className="header-spacer"></div>
+        </header>
+
         {/* Profile Header */}
         <div className="profile-header">
           <div className="profile-avatar">

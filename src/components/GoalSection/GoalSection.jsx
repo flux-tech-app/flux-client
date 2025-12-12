@@ -4,6 +4,7 @@ import { getHabitById } from '../../utils/HABIT_LIBRARY';
 import { formatCurrency } from '../../utils/formatters';
 import GoalSetup from '../GoalSetup/GoalSetup';
 import { useHabits } from '../../context/HabitContext';
+import Button from '../Button';
 import './GoalSection.css';
 
 /**
@@ -42,12 +43,13 @@ export default function GoalSection({ habit, logs }) {
     <section className="goal-section">
       <div className="goal-section-header">
         <h3 className="goal-section-title">Goal Progress</h3>
-        <button
-          className="edit-goal-btn"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setShowEditGoal(true)}
         >
           Edit
-        </button>
+        </Button>
       </div>
 
       {/* Top Row: Ring + Stats side by side */}
@@ -152,14 +154,16 @@ export default function GoalSection({ habit, logs }) {
           <div className="edit-goal-modal" onClick={e => e.stopPropagation()}>
             <div className="edit-goal-modal-header">
               <h3>Edit Goal</h3>
-              <button
-                className="modal-close-btn"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowEditGoal(false)}
+                className="modal-close-btn"
               >
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
-              </button>
+              </Button>
             </div>
             <GoalSetup
               habitLibraryData={libraryHabit}

@@ -1,0 +1,317 @@
+/* ===========================================
+   Button Component - Premium Design System
+   =========================================== */
+
+/* Base Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Size Variants */
+.btn-sm {
+  height: 36px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.btn-md {
+  height: 44px;
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 12px;
+}
+
+.btn-lg {
+  height: 52px;
+  padding: 16px 28px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+/* Full Width */
+.btn-full-width {
+  width: 100%;
+}
+
+/* ===========================================
+   Primary Variant - Blue Gradient + Premium Shadow
+   =========================================== */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  box-shadow:
+    0 2px 4px rgba(59, 130, 246, 0.2),
+    0 4px 8px rgba(59, 130, 246, 0.15),
+    0 8px 16px rgba(59, 130, 246, 0.1);
+}
+
+/* Inner highlight for depth */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  box-shadow:
+    0 4px 8px rgba(59, 130, 246, 0.25),
+    0 8px 16px rgba(59, 130, 246, 0.2),
+    0 16px 32px rgba(59, 130, 246, 0.15);
+}
+
+/* ===========================================
+   Secondary Variant - Glassmorphism
+   =========================================== */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  color: #1a3a5c;
+  box-shadow:
+    0 4px 16px rgba(100, 130, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 6px 20px rgba(100, 130, 160, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ===========================================
+   Ghost Variant - Minimal/Text
+   =========================================== */
+.btn-ghost {
+  background: transparent;
+  color: #3b82f6;
+  box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.btn-ghost:active:not(:disabled) {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+/* ===========================================
+   Icon Variant - Square/Circular Icon Buttons
+   =========================================== */
+.btn-icon-only {
+  padding: 0;
+  background: transparent;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.btn-icon-only.btn-sm {
+  width: 36px;
+  height: 36px;
+}
+
+.btn-icon-only.btn-md {
+  width: 44px;
+  height: 44px;
+}
+
+.btn-icon-only.btn-lg {
+  width: 52px;
+  height: 52px;
+}
+
+.btn-icon-only:hover:not(:disabled) {
+  background: rgba(100, 116, 139, 0.08);
+  color: #475569;
+}
+
+/* ===========================================
+   Danger Variant - Red Gradient
+   =========================================== */
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  color: white;
+  box-shadow:
+    0 2px 4px rgba(239, 68, 68, 0.2),
+    0 4px 8px rgba(239, 68, 68, 0.15),
+    0 8px 16px rgba(239, 68, 68, 0.1);
+}
+
+.btn-danger::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  box-shadow:
+    0 4px 8px rgba(239, 68, 68, 0.25),
+    0 8px 16px rgba(239, 68, 68, 0.2),
+    0 16px 32px rgba(239, 68, 68, 0.15);
+}
+
+/* ===========================================
+   Success Variant - Green Gradient
+   =========================================== */
+.btn-success {
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+  color: white;
+  box-shadow:
+    0 2px 4px rgba(34, 197, 94, 0.2),
+    0 4px 8px rgba(34, 197, 94, 0.15),
+    0 8px 16px rgba(34, 197, 94, 0.1);
+}
+
+.btn-success::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  box-shadow:
+    0 4px 8px rgba(34, 197, 94, 0.25),
+    0 8px 16px rgba(34, 197, 94, 0.2),
+    0 16px 32px rgba(34, 197, 94, 0.15);
+}
+
+/* ===========================================
+   Disabled State
+   =========================================== */
+.btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none !important;
+  border: none;
+}
+
+.btn:disabled::before {
+  display: none;
+}
+
+/* ===========================================
+   Loading State
+   =========================================== */
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+.btn-secondary .btn-spinner,
+.btn-ghost .btn-spinner {
+  border-color: rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===========================================
+   Icon Styling
+   =========================================== */
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-sm .btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-lg .btn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===========================================
+   Responsive Adjustments
+   =========================================== */
+@media (max-width: 380px) {
+  .btn-sm {
+    height: 34px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .btn-md {
+    height: 42px;
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+
+  .btn-lg {
+    height: 48px;
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+}
+
+/* ===========================================
+   Reduced Motion
+   =========================================== */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+
+  .btn-spinner {
+    animation: none;
+  }
+}

@@ -2,7 +2,7 @@
 
 **Complete Feature Specifications**
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 11, 2025
 
 ---
 
@@ -66,13 +66,15 @@ Flux is a behavioral intelligence platform that connects behavior completion to 
 
 ### The Core Model
 
-Users pay themselves for behavioral success. Money flows from user's checking account to their Flux savings account (held in Stripe Treasury, FDIC-insured).
+Users pay themselves for behavioral success. Money flows from user's checking account to their Flux savings account (held via BaaS provider, FDIC-insured).
+
+> **Note:** BaaS provider selection in progress. Stripe Treasury was initially planned but only supports B2B use cases. Unit, Treasury Prime, and Synctera are under evaluation for consumer-facing accounts.
 
 ```
 User Checking Account
-        ↓ (Friday transfer)
-Flux Savings (Stripe Treasury)
-        ↓ (anytime)
+        â†“ (Friday transfer)
+Flux Savings (BaaS - TBD)
+        â†“ (anytime)
 User Withdrawal
 ```
 
@@ -104,9 +106,9 @@ Users configure transfer amounts per behavior. Two structures available:
 
 | Day | Action |
 |-----|--------|
-| Mon-Thu | User logs/passes behaviors → earns transfer rights → pending balance increases |
-| Friday | Pending balance calculated → transfer executes (checking → Flux savings) |
-| Sat-Sun | User continues logging → starts new week's pending balance |
+| Mon-Thu | User logs/passes behaviors â†’ earns transfer rights â†’ pending balance increases |
+| Friday | Pending balance calculated â†’ transfer executes (checking â†’ Flux savings) |
+| Sat-Sun | User continues logging â†’ starts new week's pending balance |
 
 ### Balance Types
 
@@ -153,36 +155,36 @@ This eliminates awkward "No X" habit framing. Instead of creating "No Takeout" a
 
 #### Log Behaviors (13)
 
-| # | Behavior | Ticker | Rate Type | Default Rate |
-|---|----------|--------|-----------|--------------|
-| 1 | Running | $RUN | Distance | $1.00/mile |
-| 2 | Gym Workout | $GYM | Binary | $5.00/session |
-| 3 | Push Ups | $PUSH | Count | $0.05/rep |
-| 4 | Walking | $WALK | Count | $0.001/step |
-| 5 | Crunches | $CRUNCH | Count | $0.03/rep |
-| 6 | Review Budget | $BUDGET | Binary | $3.00/session |
-| 7 | Cook at Home | $COOK | Binary | $4.00/meal |
-| 8 | Reading | $READ | Count | $0.50/chapter |
-| 9 | Learning/Study | $STUDY | Duration | $0.10/minute |
-| 10 | Meditation | $ZEN | Duration | $0.20/minute |
-| 11 | Journaling | $JOURNAL | Binary | $2.00/session |
-| 12 | Give Compliment | $KIND | Count | $1.00/compliment |
-| 13 | Make Bed | $BED | Binary | $2.00/day |
+| # | Behavior | Rate Type | Default Rate |
+|---|----------|-----------|--------------|
+| 1 | Running | Distance | $1.00/mile |
+| 2 | Gym Workout | Binary | $5.00/session |
+| 3 | Push Ups | Count | $0.05/rep |
+| 4 | Walking | Count | $0.001/step |
+| 5 | Crunches | Count | $0.03/rep |
+| 6 | Review Budget | Binary | $3.00/session |
+| 7 | Cook at Home | Binary | $4.00/meal |
+| 8 | Reading | Count | $0.50/chapter |
+| 9 | Learning/Study | Duration | $0.10/minute |
+| 10 | Meditation | Duration | $0.20/minute |
+| 11 | Journaling | Binary | $2.00/session |
+| 12 | Give Compliment | Count | $1.00/compliment |
+| 13 | Make Bed | Binary | $2.00/day |
 
 #### Pass Behaviors (Avoidance) (10)
 
-| # | Behavior | Ticker | Rate Type | Default Rate |
-|---|----------|--------|-----------|--------------|
-| 14 | Takeout | $TAKEOUT | Binary | $7.00/pass |
-| 15 | Alcohol | $BOOZE | Binary | $5.00/pass |
-| 16 | Doomscrolling | $SCROLL | Binary | $3.00/pass |
-| 17 | Smoking | $SMOKE | Binary | $5.00/pass |
-| 18 | Vaping | $VAPE | Binary | $5.00/pass |
-| 19 | Impulse Purchases | $IMPULSE | Binary | $5.00/pass |
-| 20 | Junk Food | $JUNK | Binary | $3.00/pass |
-| 21 | Midnight Snacks | $MIDNIGHT | Binary | $3.00/pass |
-| 22 | Gambling | $BET | Binary | $10.00/pass |
-| 23 | Hitting Snooze | $SNOOZE | Binary | $2.00/pass |
+| # | Behavior | Rate Type | Default Rate |
+|---|----------|-----------|--------------|
+| 14 | Takeout | Binary | $7.00/pass |
+| 15 | Alcohol | Binary | $5.00/pass |
+| 16 | Doomscrolling | Binary | $3.00/pass |
+| 17 | Smoking | Binary | $5.00/pass |
+| 18 | Vaping | Binary | $5.00/pass |
+| 19 | Impulse Purchases | Binary | $5.00/pass |
+| 20 | Junk Food | Binary | $3.00/pass |
+| 21 | Midnight Snacks | Binary | $3.00/pass |
+| 22 | Gambling | Binary | $10.00/pass |
+| 23 | Hitting Snooze | Binary | $2.00/pass |
 
 ### Avoidance Behaviors: Key Characteristics
 
@@ -212,11 +214,11 @@ Each behavior has default configurations that users can customize:
 
 ### User Flow: Logging & Passing
 
-1. **Press FAB** → Presented with two options: **Log** or **Pass**
-2. **Select action** → Smart input field appears with predictive autocomplete
-3. **Type or browse** → Active behaviors filter as user types
-4. **Select behavior** → Rate selection (Low/Default/High/Custom)
-5. **Confirm** → Done
+1. **Press FAB** â†’ Presented with two options: **Log** or **Pass**
+2. **Select action** â†’ Smart input field appears with predictive autocomplete
+3. **Type or browse** â†’ Active behaviors filter as user types
+4. **Select behavior** â†’ Rate selection (Low/Default/High/Custom)
+5. **Confirm** â†’ Done
 
 ### Request Behavior (Coming Soon)
 
@@ -328,7 +330,7 @@ The Flux Score (0-100) represents the overall health and strength of a user's be
 - A 75 for someone who exercises 2x/week is as valid as 75 for someone who exercises 6x/week
 - Consistency to your own baseline matters most
 
-**Flux Score ≠ Goal Progress:**
+**Flux Score â‰  Goal Progress:**
 - Score measures habit health (how consistently you maintain your pattern)
 - Goal progress measures growth (how close you are to your aspiration)
 - Both are displayed but serve different purposes
@@ -366,8 +368,8 @@ Users can link behaviors to specific financial objectives, creating a direct beh
 ### Display Example
 
 ```
-🏖️ Vacation Fund
-━━━━━━━━━━━━━━━━━━━━
+Vacation Fund
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $847 of $2,000 (42%)
 Behaviors contributing: Running, Gym Workout
 This week: +$34 from 6 logs
@@ -401,7 +403,7 @@ Hitting your goals gets you there 8 weeks sooner.
 
 Aggregate anonymized data across users to create behavior-level benchmarks. Users can opt-in to see how they compare to others doing the same behaviors.
 
-**Example:** "Your running Flux Score is in the 73rd percentile of all Flux runners"
+**Example:** "Your running Flux Score puts you in the Top 27% of all Flux runners"
 
 ### Why Behavior-Level (Not Category)
 
@@ -423,10 +425,10 @@ Indices require minimum users per behavior for statistical validity. Target: 50+
 ### Index Display Example
 
 ```
-$RUN Running Index
-━━━━━━━━━━━━━━━━━━━━
+Running Index
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Your Flux Score: 78
-Percentile: 73rd
+Your Rank: Top 27%
 Index Average: 71
 Active Runners: 1,247
 ```
@@ -501,8 +503,8 @@ A user can have a high Flux Score (healthy behavior) while still being far from 
 
 Every goal has two components:
 
-**Amount** — The target value (15 miles, 10,000 steps, 4 sessions)
-**Period** — The time frame (per day, per week, per month)
+**Amount** â€” The target value (15 miles, 10,000 steps, 4 sessions)
+**Period** â€” The time frame (per day, per week, per month)
 
 Users choose both, allowing flexibility:
 - "10,000 steps / day" (daily stepper)
@@ -528,7 +530,7 @@ Every behavior requires a goal at setup. This ensures:
 - Financial projections are always available
 - The cold start period has immediate direction
 
-**Goal editing:** Users can adjust goals anytime, including lowering them. Life circumstances change; goals should adapt. Baseline is unaffected by goal changes—it's always calculated from actual behavior.
+**Goal editing:** Users can adjust goals anytime, including lowering them. Life circumstances change; goals should adapt. Baseline is unaffected by goal changesâ€”it's always calculated from actual behavior.
 
 ### User Flow: Setting a Goal
 
@@ -537,25 +539,25 @@ Every behavior requires a goal at setup. This ensures:
 After selecting rate, user sets goal:
 
 ```
-┌─────────────────────────────────┐
-│  What's your goal for Running?  │
-│                                 │
-│  Amount: [15] miles             │
-│                                 │
-│  Period: [per week ▼]           │
-│          ├─ per day             │
-│          ├─ per week            │
-│          └─ per month           │
-│                                 │
-│  ─────────────────────────────  │
-│                                 │
-│  At this goal, you'd earn:      │
-│    $15 / week                   │
-│    $60 / month                  │
-│    $780 / year                  │
-│                                 │
-│  [Continue]                     │
-└─────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  What's your goal for Running?  â”‚
+â”‚                                 â”‚
+â”‚  Amount: [15] miles             â”‚
+â”‚                                 â”‚
+â”‚  Period: [per week â–¼]           â”‚
+â”‚          â”œâ”€ per day             â”‚
+â”‚          â”œâ”€ per week            â”‚
+â”‚          â””â”€ per month           â”‚
+â”‚                                 â”‚
+â”‚  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€  â”‚
+â”‚                                 â”‚
+â”‚  At this goal, you'd earn:      â”‚
+â”‚    $15 / week                   â”‚
+â”‚    $60 / month                  â”‚
+â”‚    $780 / year                  â”‚
+â”‚                                 â”‚
+â”‚  [Continue]                     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 **Smart Defaults:** Each behavior in the library has suggested goals that users can accept or customize. The goal input pre-populates with a sensible default.
@@ -567,13 +569,13 @@ After selecting rate, user sets goal:
 Goal provides direction while baseline builds:
 
 ```
-$RUN — Running
+Running
 Goal: 15 miles / week
 
 Flux Score: Building baseline...
 Logged: 18 miles over 3 weeks
 
-Keep going — 3 more logs to unlock full insights
+Keep going â€” 3 more logs to unlock full insights
 ```
 
 **After Baseline Emerges (10+ logs):**
@@ -581,14 +583,14 @@ Keep going — 3 more logs to unlock full insights
 Two metrics shown together:
 
 ```
-$RUN — Running
+Running
 
 Flux Score: 74
 Baseline: 9.2 miles / week (learned)
 Goal: 15 miles / week
 
-[Baseline ●━━━━━━━━○━━━━━ Goal]
-           ↑ You (11.3 this week)
+[Baseline â—â”€â”€â”€â”€â”€â”€â”€â”€â—‹â”€â”€â”€â”€â”€â”€ Goal]
+           â†‘ You (11.3 this week)
 
 Gap: 3.7 miles / week
      $192 / year potential
@@ -603,8 +605,8 @@ Goals unlock powerful financial insights:
 
 **On Behavior Detail:**
 ```
-Goal: 15 miles / week → $15/week
-Baseline: 9.2 miles / week → $9.20/week
+Goal: 15 miles / week â†’ $15/week
+Baseline: 9.2 miles / week â†’ $9.20/week
 
 Gap: $5.80 / week
      $302 / year you're leaving on the table
@@ -628,19 +630,19 @@ You're capturing 69% of your goal potential.
 When users consistently exceed their baseline (3-4 weeks), the baseline automatically increases (minimum 4 weeks between ratchets):
 
 ```
-┌─────────────────────────────────┐
-│  Your running baseline has      │
-│  increased!                     │
-│                                 │
-│  Old: 9.2 miles / week          │
-│  New: 11.8 miles / week         │
-│                                 │
-│  This reflects your actual      │
-│  performance over the last      │
-│  4 weeks. Your floor has risen. │
-│                                 │
-│  [Set New Goal]  [Keep Current] │
-└─────────────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Your running baseline has      â”‚
+â”‚  increased!                     â”‚
+â”‚                                 â”‚
+â”‚  Old: 9.2 miles / week          â”‚
+â”‚  New: 11.8 miles / week         â”‚
+â”‚                                 â”‚
+â”‚  This reflects your actual      â”‚
+â”‚  performance over the last      â”‚
+â”‚  4 weeks. Your floor has risen. â”‚
+â”‚                                 â”‚
+â”‚  [Set New Goal]  [Keep Current] â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 **The Ratchet Creates Natural Progression:**
@@ -668,15 +670,15 @@ The same goal structure (amount + period) works for avoidance. Lower is better f
 
 **Financial Projections:**
 - "At your goal (0 cigarettes/day), you'd earn $35/week"
-- "Current baseline: 3 cigarettes/day → $20/week"
+- "Current baseline: 3 cigarettes/day â†’ $20/week"
 - "Gap: $15/week potential by hitting your goal"
 
 ### What Goals Don't Do
 
-- **Don't affect Flux Score** — Score measures pattern health, not goal compliance
-- **Don't reduce earnings** — Missing a goal doesn't cost money
-- **Don't enforce schedules** — Goals are targets, not commitments
-- **Don't create guilt** — Missing a goal is just data, not failure
+- **Don't affect Flux Score** â€” Score measures pattern health, not goal compliance
+- **Don't reduce earnings** â€” Missing a goal doesn't cost money
+- **Don't enforce schedules** â€” Goals are targets, not commitments
+- **Don't create guilt** â€” Missing a goal is just data, not failure
 
 ---
 
@@ -794,11 +796,12 @@ Flux uses financial/investment metaphor throughout:
 | Element | Implementation |
 |---------|----------------|
 | Behaviors | Displayed as "positions" |
-| Behavior names | Ticker symbols ($RUN, $ZEN) |
+| Behavior names | Full names (Running, Meditation, etc.) |
 | Log history | "Transaction history" |
 | Earnings | "Returns" |
 | Dashboard | "Portfolio" view |
 | Flux Score | Like a stock rating |
+| Index ranking | "Top X%" format |
 
 ### Design Principles
 
@@ -826,6 +829,12 @@ Flux uses financial/investment metaphor throughout:
 - Logging should be < 5 seconds
 - Insights readable at a glance
 
+**Visual Identity:**
+- Ice-blue gradient background
+- White cards with soft shadows
+- Navy text, blue accents
+- SVG icons only (no emojis)
+
 ### Core Screens
 
 1. **Today** - Daily behaviors available to log/pass, quick action *(under evaluation - may merge into Dashboard/Portfolio)*
@@ -843,27 +852,27 @@ Flux uses financial/investment metaphor throughout:
 
 | Feature | MVT Status | Notes |
 |---------|------------|-------|
-| Behavior Library (23 behaviors) | ✓ Required | Curated selection, no custom creation |
-| Log/Pass Dual-Action | ✓ Required | Neutral behaviors, action carries intent |
-| Manual Logging | ✓ Required | Core input method |
-| Transfer Rights/Earnings | ✓ Required | Each log/pass earns |
-| Friday Transfers | ✓ Required | Weekly settlement |
-| Pattern Recognition | ✓ Required | No schedules, learn from logs |
-| Flux Score (Log behaviors) | ✓ Required | 5 components, 100-point |
-| Portfolio Dashboard | ✓ Required | Position view |
-| Basic AI Insights | ✓ Required | Contextual, not chat-first |
-| Custom Rate Configuration | ✓ Required | At setup and log/pass time |
-| Predictive Autocomplete | ✓ Required | Smart input for behavior selection |
-| **Goals (Required)** | ✓ Required | Amount + period at setup, financial projections |
-| **Pass Behavior Goals** | ✓ Required | Max frequency targets |
-| Savings Goals | ○ Stretch | Link behaviors to objectives |
-| Behavior-Level Indices | ○ Stretch | Requires 50+ users per behavior |
-| **Baseline Ratchet** | ○ Post-MVT | Min 4 weeks between ratchets |
-| Flux Score (Pass behaviors) | ○ Post-MVT | Scoring model needs user data |
-| Avoidance Indices | ○ Post-MVT | Requires Pass scoring model |
-| Negative Behavior Logging | ○ Post-MVT | Quit tracking |
-| AI Chat Interface | ○ Post-MVT | Deep-dive conversations |
-| App Integrations | ✗ Future | After core validation |
+| Behavior Library (23 behaviors) | âœ” Required | Curated selection, no custom creation |
+| Log/Pass Dual-Action | âœ” Required | Neutral behaviors, action carries intent |
+| Manual Logging | âœ” Required | Core input method |
+| Transfer Rights/Earnings | âœ” Required | Each log/pass earns |
+| Friday Transfers | âœ” Required | Weekly settlement |
+| Pattern Recognition | âœ” Required | No schedules, learn from logs |
+| Flux Score (Log behaviors) | âœ” Required | 5 components, 100-point |
+| Portfolio Dashboard | âœ” Required | Position view |
+| Basic AI Insights | âœ” Required | Contextual, not chat-first |
+| Custom Rate Configuration | âœ” Required | At setup and log/pass time |
+| Predictive Autocomplete | âœ” Required | Smart input for behavior selection |
+| **Goals (Required)** | âœ” Required | Amount + period at setup, financial projections |
+| **Pass Behavior Goals** | âœ” Required | Max frequency targets |
+| Savings Goals | â—‹ Stretch | Link behaviors to objectives |
+| Behavior-Level Indices | â—‹ Stretch | Requires 50+ users per behavior |
+| **Baseline Ratchet** | â—‹ Post-MVT | Min 4 weeks between ratchets |
+| Flux Score (Pass behaviors) | â—‹ Post-MVT | Scoring model needs user data |
+| Avoidance Indices | â—‹ Post-MVT | Requires Pass scoring model |
+| Negative Behavior Logging | â—‹ Post-MVT | Quit tracking |
+| AI Chat Interface | â—‹ Post-MVT | Deep-dive conversations |
+| App Integrations | âœ— Future | After core validation |
 
 ---
 

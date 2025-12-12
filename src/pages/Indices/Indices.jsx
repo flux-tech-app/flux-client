@@ -1,145 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useHabits } from '../../context/HabitContext';
+import { HABIT_LIBRARY, ACTION_TYPES } from '../../utils/HABIT_LIBRARY';
+import { getIndexData, generateDefaultIndexData, hasIndexData } from '../../utils/indexDataGenerator';
+import Sparkline from '../../components/Sparkline';
+import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Indices.css';
 
 export default function Indices() {
   const navigate = useNavigate();
+  const { habits } = useHabits();
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [indexData, setIndexData] = useState(null);
 
-  // Mock data for indices
-  const userIndices = [
-    {
-      id: 'exercise',
-      name: 'Exercise',
-      value: '68.2%',
-      change: '+2.4%',
-      changePositive: true,
-      participants: 1247,
-      percentile: '87th',
-      icon: 'trending'
-    },
-    {
-      id: 'productivity',
-      name: 'Productivity',
-      value: '71.8%',
-      change: '-1.2%',
-      changePositive: false,
-      participants: 892,
-      percentile: '42nd',
-      icon: 'check'
-    },
-    {
-      id: 'recovery',
-      name: 'Recovery',
-      value: '76.9%',
-      change: '+4.1%',
-      changePositive: true,
-      participants: 634,
-      percentile: '96th',
-      icon: 'activity'
+  // Load or generate index data on mount
+  useEffect(() => {
+    if (!hasIndexData()) {
+      generateDefaultIndexData();
     }
-  ];
+    setIndexData(getIndexData());
+  }, []);
 
-  const allIndices = [
-    {
-      id: 'nutrition',
-      name: 'Nutrition',
-      value: '81.5%',
-      change: '+1.8%',
-      changePositive: true,
-      participants: 1103,
-      isTracking: false,
-      icon: 'food'
-    },
-    {
-      id: 'financial',
-      name: 'Financial',
-      value: '69.3%',
-      change: '+0.7%',
-      changePositive: true,
-      participants: 478,
-      isTracking: false,
-      icon: 'dollar'
-    },
-    {
-      id: 'social',
-      name: 'Social',
-      value: '64.7%',
-      change: '-2.3%',
-      changePositive: false,
-      participants: 312,
-      isTracking: false,
-      icon: 'users'
-    },
-    {
-      id: 'mindfulness',
-      name: 'Mindfulness',
-      value: '78.4%',
-      change: '+3.2%',
-      changePositive: true,
-      participants: 589,
-      isTracking: false,
-      icon: 'sun'
-    }
-  ];
+  // Get LOG behaviors from library
+  const logBehaviors = HABIT_LIBRARY.filter(b => b.actionType === ACTION_TYPES.LOG);
 
-  const getIcon = (iconType) => {
-    const icons = {
-      trending: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"></path>
-          <path d="M15 7h6v6"></path>
-        </svg>
-      ),
-      check: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="9 11 12 14 22 4"></polyline>
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-        </svg>
-      ),
-      activity: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-        </svg>
-      ),
-      food: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-          <line x1="6" y1="1" x2="6" y2="4"></line>
-          <line x1="10" y1="1" x2="10" y2="4"></line>
-          <line x1="14" y1="1" x2="14" y2="4"></line>
-        </svg>
-      ),
-      dollar: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="12" y1="1" x2="12" y2="23"></line>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-        </svg>
-      ),
-      users: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-      ),
-      sun: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l-4.2 4.2m10.4-8.2l-6 0m-6 0l-6 0m13.2 5.2l-4.2-4.2m0-6l-4.2-4.2"></path>
-        </svg>
-      )
+  // Build index list with user habit matching
+  const indices = logBehaviors.map(behavior => {
+    const behaviorIndexData = indexData?.behaviors?.[behavior.id];
+    const userHabit = habits.find(h => h.libraryId === behavior.id);
+
+    return {
+      id: behavior.id,
+      name: behavior.name,
+      indexAverage: behaviorIndexData?.indexAverage || 70,
+      change: behaviorIndexData?.change || 0,
+      participants: behaviorIndexData?.participants || 0,
+      history: behaviorIndexData?.history || [],
+      userHabit,
+      userPercentile: userHabit ? Math.round(5 + Math.random() * 40) : null
     };
-    return icons[iconType];
-  };
+  });
+
+  // Split into user's indices and discover indices
+  const userIndices = indices.filter(idx => idx.userHabit);
+  const discoverIndices = indices.filter(idx => !idx.userHabit);
 
   return (
     <div className="indices-page">
+      {/* Sidebar Menu */}
+      <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="indices-container">
         {/* Header */}
         <header className="indices-header">
+          <button className="menu-button" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <h1 className="page-title">Indices</h1>
           <button className="icon-button" onClick={() => setShowInfoModal(true)}>
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
@@ -148,90 +67,101 @@ export default function Indices() {
           </button>
         </header>
 
-        {/* Market Overview Banner */}
-        <div className="market-overview">
-          <div className="market-label">Flux Market Index</div>
-          <div className="market-value">73.6%</div>
-          <div className="market-change">
-            <svg className="trend-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            </svg>
-            +1.8% this week
+        {/* Your Indices Section */}
+        {userIndices.length > 0 && (
+          <div className="indices-section">
+            <div className="section-header-row">
+              <span className="section-title">Your Indices</span>
+              <span className="example-data-badge">Example Data</span>
+            </div>
+            <div className="indices-list">
+              {userIndices.map((index) => (
+                <div
+                  key={index.id}
+                  className="index-row"
+                  onClick={() => navigate(`/indices/${index.id}`)}
+                >
+                  <div className="index-info">
+                    <div className="index-name">{index.name}</div>
+                    <div className="index-meta">{index.participants.toLocaleString()} tracking</div>
+                  </div>
+
+                  <Sparkline
+                    data={index.history}
+                    width={56}
+                    height={24}
+                    positive={index.change >= 0}
+                  />
+
+                  <div className="index-value-section">
+                    <div className="index-value">{index.indexAverage.toFixed(1)}</div>
+                    <div className={`index-change ${index.change >= 0 ? 'positive' : 'negative'}`}>
+                      {index.change >= 0 ? '+' : ''}{index.change.toFixed(1)}
+                    </div>
+                  </div>
+
+                  {index.userPercentile && (
+                    <span className="percentile-badge">Top {index.userPercentile}%</span>
+                  )}
+
+                  <svg className="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="market-subtitle">2,847 active users across all categories</div>
+        )}
+
+        {/* Discover Indices Section */}
+        <div className="indices-section">
+          <div className="section-header-row">
+            <span className="section-title">Discover Indices</span>
+            {userIndices.length === 0 && <span className="example-data-badge">Example Data</span>}
+          </div>
+          <div className="indices-list">
+            {discoverIndices.map((index) => (
+              <div
+                key={index.id}
+                className="index-row discover"
+                onClick={() => navigate(`/indices/${index.id}`)}
+              >
+                <div className="index-info">
+                  <div className="index-name">{index.name}</div>
+                  <div className="index-meta">{index.participants.toLocaleString()} tracking</div>
+                </div>
+
+                <Sparkline
+                  data={index.history}
+                  width={56}
+                  height={24}
+                  positive={index.change >= 0}
+                />
+
+                <div className="index-value-section">
+                  <div className="index-value">{index.indexAverage.toFixed(1)}</div>
+                  <div className={`index-change ${index.change >= 0 ? 'positive' : 'negative'}`}>
+                    {index.change >= 0 ? '+' : ''}{index.change.toFixed(1)}
+                  </div>
+                </div>
+
+                <svg className="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Your Categories Section */}
-        <div className="section-header">Your Categories</div>
-        <div className="indices-list">
-          {userIndices.map(index => (
-            <div 
-              key={index.id}
-              className="index-item"
-              onClick={() => navigate(`/indices/${index.id}`)}
-            >
-              <div className="index-icon">
-                {getIcon(index.icon)}
-              </div>
-              <div className="index-info">
-                <div className="index-header-row">
-                  <span className="index-name">{index.name}</span>
-                  <span className="your-badge">{index.percentile}</span>
-                </div>
-                <div className="index-meta">
-                  {index.participants.toLocaleString()} participants
-                </div>
-              </div>
-              <div className="index-value-section">
-                <div className="index-value">{index.value}</div>
-                <div className={`index-change ${index.changePositive ? 'positive' : 'negative'}`}>
-                  <svg className="change-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <polyline points={index.changePositive ? "23 6 13.5 15.5 8.5 10.5 1 18" : "23 18 13.5 8.5 8.5 13.5 1 6"}></polyline>
-                  </svg>
-                  {index.change}
-                </div>
-              </div>
-              <svg className="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          ))}
-        </div>
-
-        {/* All Categories Section */}
-        <div className="section-header">All Categories</div>
-        <div className="indices-list">
-          {allIndices.map(index => (
-            <div 
-              key={index.id}
-              className={`index-item ${!index.isTracking ? 'inactive' : ''}`}
-              onClick={() => navigate(`/indices/${index.id}`)}
-            >
-              <div className="index-icon">
-                {getIcon(index.icon)}
-              </div>
-              <div className="index-info">
-                <div className="index-header-row">
-                  <span className="index-name">{index.name}</span>
-                </div>
-                <div className="index-meta">
-                  {index.participants.toLocaleString()} participants
-                </div>
-              </div>
-              <div className="index-value-section">
-                <div className="index-value">{index.value}</div>
-                <div className={`index-change ${index.changePositive ? 'positive' : 'negative'}`}>
-                  <svg className="change-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <polyline points={index.changePositive ? "23 6 13.5 15.5 8.5 10.5 1 18" : "23 18 13.5 8.5 8.5 13.5 1 6"}></polyline>
-                  </svg>
-                  {index.change}
-                </div>
-              </div>
-              <svg className="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
-          ))}
+        {/* Pass Behavior Indices Coming Soon */}
+        <div className="indices-section">
+          <div className="section-header-row">
+            <span className="section-title">Pass Indices</span>
+            <span className="coming-soon-badge">Coming Soon</span>
+          </div>
+          <div className="coming-soon-row">
+            <span>Avoidance behavior indices are in development.</span>
+          </div>
         </div>
       </div>
 
@@ -247,21 +177,35 @@ export default function Indices() {
                 </svg>
               </button>
             </div>
-            
+
             <div className="modal-body">
-              {/* Placeholder Notice */}
-              <div className="placeholder-notice">
-                <svg className="placeholder-icon" viewBox="0 0 20 20" fill="currentColor">
+              <div className="example-notice">
+                <svg className="example-icon" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                <span>Placeholder data - Indices feature coming in Phase 2</span>
+                <span>Example data for demonstration</span>
               </div>
 
-              {/* Info Text */}
-              <p className="modal-info-text">
-                Indices compare your performance against other Flux users in specific habit categories. 
-                Your percentile shows where you rank compared to all participants.
-              </p>
+              <div className="modal-info-section">
+                <h4>Behavior Indices</h4>
+                <p className="modal-info-text">
+                  Each index shows the average Flux Score across all users tracking that behavior.
+                </p>
+              </div>
+
+              <div className="modal-info-section">
+                <h4>Sparkline</h4>
+                <p className="modal-info-text">
+                  The mini chart shows the 12-week trend. Green means improving, red means declining.
+                </p>
+              </div>
+
+              <div className="modal-info-section">
+                <h4>Your Percentile</h4>
+                <p className="modal-info-text">
+                  "Top 15%" means you're outperforming 85% of users tracking that behavior.
+                </p>
+              </div>
             </div>
           </div>
         </div>

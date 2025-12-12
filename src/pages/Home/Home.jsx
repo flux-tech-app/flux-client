@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHabits } from '../../context/HabitContext'
 import EmptyState from '../Portfolio/EmptyState'
+import Button from '../../components/Button'
 import './Home.css'
 
 export default function Home() {
@@ -390,17 +391,16 @@ export default function Home() {
                 </div>
 
                 {/* Confirm button */}
-                <button 
-                  className="log-confirm-button"
+                <Button
+                  variant="success"
+                  size="lg"
+                  fullWidth
                   onClick={handleLogSubmit}
                   disabled={isLogging || (selectedHabit.rateType !== 'BINARY' && !parseFloat(logValue))}
+                  loading={isLogging}
                 >
-                  {isLogging ? (
-                    <span className="logging-spinner" />
-                  ) : (
-                    selectedHabit.rateType !== 'BINARY' ? 'Log Activity' : 'Yes, I did it!'
-                  )}
-                </button>
+                  {selectedHabit.rateType !== 'BINARY' ? 'Log Activity' : 'Yes, I did it!'}
+                </Button>
               </div>
             </motion.div>
           </>
