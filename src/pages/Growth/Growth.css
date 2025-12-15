@@ -1,0 +1,147 @@
+/* ==========================================
+   GROWTH PAGE - Behavioral Tree Visualization
+   ========================================== */
+
+.growth-page {
+  background: #070d15;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 80px;
+}
+
+.growth-header {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  color: white;
+  z-index: 10;
+}
+
+.growth-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.growth-header p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.growth-stats {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: white;
+  text-align: right;
+  z-index: 10;
+}
+
+.growth-total {
+  font-size: 48px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00D4AA, #63B3FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.growth-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.growth-legend {
+  position: absolute;
+  bottom: 100px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.growth-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.growth-legend .legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.growth-canvas-container {
+  width: 100%;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#growth-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.growth-empty {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  text-align: center;
+  z-index: 10;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .growth-header {
+    top: 16px;
+    left: 16px;
+  }
+
+  .growth-header h1 {
+    font-size: 20px;
+  }
+
+  .growth-header p {
+    font-size: 12px;
+  }
+
+  .growth-stats {
+    top: 16px;
+    right: 16px;
+  }
+
+  .growth-total {
+    font-size: 36px;
+  }
+
+  .growth-label {
+    font-size: 12px;
+  }
+
+  .growth-legend {
+    bottom: 90px;
+    left: 16px;
+  }
+
+  .growth-legend .legend-item {
+    font-size: 10px;
+  }
+
+  .growth-legend .legend-dot {
+    width: 6px;
+    height: 6px;
+  }
+}

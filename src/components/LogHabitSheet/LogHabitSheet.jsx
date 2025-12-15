@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHabits } from '../../context/HabitContext';
 import { RATE_TYPES, ACTION_TYPES, getHabitById } from '../../utils/HABIT_LIBRARY';
@@ -9,8 +9,13 @@ import './LogHabitSheet.css';
 /**
  * Log Habit Sheet - Modernized Design
  * Clean, minimal interface for quick habit logging
+ *
+ * @param {string} actionType - 'log' or 'pass'
+ * @param {string} initialHabitId - Optional habit ID to pre-select
+ * @param {function} onClose - Called when sheet closes
+ * @param {function} onLogComplete - Called after successful log
  */
-export default function LogHabitSheet({ actionType, onClose, onLogComplete }) {
+export default function LogHabitSheet({ actionType, initialHabitId, onClose, onLogComplete }) {
   const { habits, isHabitLoggedOnDate, addLog } = useHabits();
   const [selectedHabit, setSelectedHabit] = useState(null);
   const [logValue, setLogValue] = useState('');
@@ -20,6 +25,16 @@ export default function LogHabitSheet({ actionType, onClose, onLogComplete }) {
   const [isLogging, setIsLogging] = useState(false);
 
   const today = new Date();
+
+  // Pre-select habit if initialHabitId is provided
+  useEffect(() => {
+    if (initialHabitId && habits.length > 0) {
+      const habit = habits.find(h => h.id === initialHabitId);
+      if (habit) {
+        handleHabitSelect(habit);
+      }
+    }
+  }, [initialHabitId, habits]);
 
   // Filter habits by action type
   const filteredHabits = habits.filter(habit => {

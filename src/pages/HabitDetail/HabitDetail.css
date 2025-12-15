@@ -100,6 +100,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 
 .habit-detail-page .hero-section-right {
@@ -132,67 +134,35 @@
 
 .habit-detail-page .hero-status-inline .today-status,
 .habit-detail-page .hero-status-inline .paused-status {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .habit-detail-page .hero-status-inline .today-status {
-  background: rgba(22, 163, 74, 0.1);
+  background: rgba(34, 197, 94, 0.15);
   color: #16a34a;
 }
 
+.habit-detail-page .hero-status-inline .today-status svg,
+.habit-detail-page .hero-status-inline .paused-status svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 .habit-detail-page .hero-status-inline .paused-status {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(245, 158, 11, 0.15);
   color: #d97706;
-}
-
-/* Flux Score Ring */
-.habit-detail-page .hero-flux-score {
-  margin-bottom: 20px;
-}
-
-.habit-detail-page .flux-ring-container {
-  position: relative;
-  width: 110px;
-  height: 110px;
-}
-
-.habit-detail-page .flux-ring {
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1);
-}
-
-.habit-detail-page .flux-ring-value {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1;
-}
-
-.habit-detail-page .flux-number {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a3a5c;
-}
-
-.habit-detail-page .flux-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(44, 74, 110, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
 }
 
 /* Earnings */
@@ -1515,19 +1485,6 @@
 
   .habit-detail-page .detail-earned-amount {
     font-size: 28px;
-  }
-
-  .habit-detail-page .flux-ring-container {
-    width: 72px;
-    height: 72px;
-  }
-
-  .habit-detail-page .flux-number {
-    font-size: 22px;
-  }
-
-  .habit-detail-page .flux-label {
-    font-size: 9px;
   }
 
   .habit-detail-page .hero-meta {

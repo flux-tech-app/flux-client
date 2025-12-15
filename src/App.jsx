@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HabitProvider, useHabits } from './context/HabitContext';
-import { ACTION_TYPES } from './utils/HABIT_LIBRARY';
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -29,25 +28,19 @@ import HabitDetail from './pages/HabitDetail';
 import Indices from './pages/Indices';
 import IndexDetail from './pages/IndexDetail';
 import Transfers from './pages/Transfers';
+import Growth from './pages/Growth';
 
 // Components
 import Navigation from './components/Navigation';
-import BottomSheet from './components/BottomSheet';
-import AddHabitFlow from './components/AddHabitFlow';
-import LogHabitSheet from './components/LogHabitSheet';
 
 /**
  * Main App Routes
  * - Onboarding guard for first-time users
- * - Navigation bar with integrated FAB
- * - Bottom sheets for quick actions
+ * - Bottom navigation bar (Home, Portfolio, Indices)
  */
 function AppRoutes() {
-  const { user, updateUser, addHabit } = useHabits();
+  const { user, updateUser } = useHabits();
   const location = useLocation();
-
-  // Sheet states for FAB actions
-  const [activeSheet, setActiveSheet] = useState(null); // 'create' | 'log' | 'pass' | null
 
   // Check if we should skip onboarding (for testing)
   const urlParams = new URLSearchParams(window.location.search);
@@ -71,45 +64,17 @@ function AppRoutes() {
   const hideNavPaths = ['/add', '/log'];
   const shouldHideNav = hideNavPaths.some(path => location.pathname.startsWith(path));
 
-  // Handle FAB actions
-  const handleCreateHabit = () => {
-    setActiveSheet('create');
-  };
-
-  const handleLog = () => {
-    setActiveSheet('log');
-  };
-
-  const handlePass = () => {
-    setActiveSheet('pass');
-  };
-
-  const closeSheet = () => {
-    setActiveSheet(null);
-  };
-
-  // Handle habit creation completion
-  const handleHabitCreated = (habitData) => {
-    const newHabit = addHabit(habitData);
-    console.log('Created habit:', newHabit);
-    closeSheet();
-  };
-
-  // Handle log completion
-  const handleLogComplete = (log) => {
-    console.log('Logged activity:', log);
-    closeSheet();
-  };
-
   return (
     <>
       <ScrollToTop />
       <Routes location={location}>
         {/* Bottom Nav Routes */}
-        <Route path="/" element={<Navigate to="/portfolio" replace />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
+        <Route path="/growth" element={<Growth />} />
         <Route path="/account" element={<Navigate to="/profile" replace />} />
 
         {/* Secondary Pages */}
@@ -129,52 +94,8 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Navigation Bar with integrated FAB */}
-      {!shouldHideNav && (
-        <Navigation
-          onCreateHabit={handleCreateHabit}
-          onLog={handleLog}
-          onPass={handlePass}
-        />
-      )}
-
-      {/* Create Habit Bottom Sheet */}
-      <BottomSheet
-        isOpen={activeSheet === 'create'}
-        onClose={closeSheet}
-        height="tall"
-      >
-        <AddHabitFlow
-          onComplete={handleHabitCreated}
-          onClose={closeSheet}
-        />
-      </BottomSheet>
-
-      {/* Log Activity Bottom Sheet */}
-      <BottomSheet
-        isOpen={activeSheet === 'log'}
-        onClose={closeSheet}
-        height="tall"
-      >
-        <LogHabitSheet
-          actionType={ACTION_TYPES.LOG}
-          onClose={closeSheet}
-          onLogComplete={handleLogComplete}
-        />
-      </BottomSheet>
-
-      {/* Pass Activity Bottom Sheet */}
-      <BottomSheet
-        isOpen={activeSheet === 'pass'}
-        onClose={closeSheet}
-        height="tall"
-      >
-        <LogHabitSheet
-          actionType={ACTION_TYPES.PASS}
-          onClose={closeSheet}
-          onLogComplete={handleLogComplete}
-        />
-      </BottomSheet>
+      {/* Navigation Bar */}
+      {!shouldHideNav && <Navigation />}
     </>
   );
 }

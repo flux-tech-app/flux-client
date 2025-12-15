@@ -1,0 +1,197 @@
+/* ================================================
+   FLUX BADGE - BREATHING ANIMATION COMPONENT
+   Class names prefixed with "breath-" to avoid conflicts
+   ================================================ */
+
+.breath-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.breath-glow {
+  position: absolute;
+  border-radius: 50%;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.8;
+  }
+}
+
+.breath-ring {
+  position: absolute;
+  border: 2.5px solid;
+  border-radius: 50%;
+  animation: breathe-ring 4s ease-in-out infinite;
+}
+
+@keyframes breathe-ring {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.breath-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.breath-score {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+}
+
+
+/* ================================================
+   SIZE VARIANTS
+   ================================================ */
+
+/* Extra Small (xs) - 32px for list rows */
+.breath--xs {
+  width: 32px;
+  height: 32px;
+}
+
+.breath--xs .breath-glow {
+  width: 26px;
+  height: 26px;
+}
+
+.breath--xs .breath-ring {
+  width: 24px;
+  height: 24px;
+  border-width: 1.5px;
+}
+
+.breath--xs .breath-score {
+  font-size: 11px;
+}
+
+/* Small (sm) - 44px */
+.breath--sm {
+  width: 44px;
+  height: 44px;
+}
+
+.breath--sm .breath-glow {
+  width: 36px;
+  height: 36px;
+}
+
+.breath--sm .breath-ring {
+  width: 33px;
+  height: 33px;
+  border-width: 2px;
+}
+
+.breath--sm .breath-score {
+  font-size: 14px;
+}
+
+/* Medium (md) - 56px (default) */
+.breath--md {
+  width: 56px;
+  height: 56px;
+}
+
+.breath--md .breath-glow {
+  width: 45px;
+  height: 45px;
+}
+
+.breath--md .breath-ring {
+  width: 41px;
+  height: 41px;
+  border-width: 2px;
+}
+
+.breath--md .breath-score {
+  font-size: 18px;
+}
+
+/* Large (lg) - 90px */
+.breath--lg {
+  width: 90px;
+  height: 90px;
+}
+
+.breath--lg .breath-glow {
+  width: 72px;
+  height: 72px;
+}
+
+.breath--lg .breath-ring {
+  width: 66px;
+  height: 66px;
+  border-width: 2.5px;
+}
+
+.breath--lg .breath-score {
+  font-size: 24px;
+}
+
+
+/* ================================================
+   COLOR ZONES
+   ================================================ */
+
+/* RED ZONE: Critical (0-25) */
+.breath--critical .breath-glow {
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.25) 0%, transparent 70%);
+}
+
+.breath--critical .breath-ring {
+  border-color: #fb7185;
+}
+
+.breath--critical .breath-score {
+  color: #e11d48;
+}
+
+/* GRAY ZONE: Fragile & Building (26-65) */
+.breath--gray .breath-glow {
+  background: radial-gradient(circle, rgba(156, 163, 175, 0.25) 0%, transparent 70%);
+}
+
+.breath--gray .breath-ring {
+  border-color: #9ca3af;
+}
+
+.breath--gray .breath-score {
+  color: #6b7280;
+}
+
+/* BLUE ZONE: Strong & Automatic (66-100) */
+.breath--blue .breath-glow {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+}
+
+.breath--blue .breath-ring {
+  border-color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+.breath--blue .breath-score {
+  color: #1d4ed8;
+}

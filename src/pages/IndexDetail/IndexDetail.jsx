@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useHabits } from '../../context/HabitContext';
 import { getCalibrationStatus } from '../../utils/calibrationStatus';
-import { calculateFluxScore } from '../../utils/calculations';
 import { getBehaviorIndexData, hasIndexData, calculateUserPercentile } from '../../utils/indexDataGenerator';
 import { getHabitById } from '../../utils/HABIT_LIBRARY';
 import BackButton from '../../components/BackButton';
@@ -11,7 +10,7 @@ import './IndexDetail.css';
 export default function IndexDetail() {
   const navigate = useNavigate();
   const { indexId } = useParams();
-  const { habits, logs } = useHabits();
+  const { habits, logs, calculateFluxScore } = useHabits();
   const [selectedPeriod, setSelectedPeriod] = useState('1M');
 
   const periods = ['1W', '1M', '3M', '6M', '1Y', 'All'];
@@ -38,11 +37,11 @@ export default function IndexDetail() {
     return logs.filter(l => l.habitId === userHabit.id);
   }, [userHabit, logs]);
 
-  // Calculate user's actual Flux Score
+  // Calculate user's actual Flux Score using context (same as Portfolio/HabitDetail)
   const userFluxData = useMemo(() => {
-    if (habitLogs.length === 0) return null;
-    return calculateFluxScore(habitLogs);
-  }, [habitLogs]);
+    if (!userHabit) return null;
+    return calculateFluxScore(userHabit.id);
+  }, [userHabit, calculateFluxScore]);
 
   // Get calibration status
   const calibrationStatus = useMemo(() => {

@@ -1,0 +1,132 @@
+/* ==========================================
+   INDICES TICKER BAR
+   ========================================== */
+
+.indices-ticker-container {
+  margin: 0 0 12px;
+  padding: 8px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ticker scroll wrapper */
+.ticker-scroll-wrapper {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Fade edges */
+.ticker-scroll-wrapper::before,
+.ticker-scroll-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ticker-scroll-wrapper::before {
+  left: 0;
+  background: linear-gradient(90deg, #e8f4fc 0%, transparent 100%);
+}
+
+.ticker-scroll-wrapper::after {
+  right: 0;
+  background: linear-gradient(90deg, transparent 0%, #e8f4fc 100%);
+}
+
+/* The scrolling track */
+.ticker-track {
+  display: flex;
+  gap: 24px;
+  animation: ticker-scroll 30s linear infinite;
+  width: max-content;
+  padding: 0 12px;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Individual ticker item */
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #f8fbfd 0%, #f0f7fc 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ticker-item:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: white;
+}
+
+.ticker-item-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.ticker-item-icon svg {
+  width: 12px;
+  height: 12px;
+  stroke: #3b82f6;
+  stroke-width: 2;
+  fill: none;
+}
+
+.ticker-item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e3a5f;
+}
+
+.ticker-item-rank {
+  font-size: 11px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.ticker-item-rank.top-20 {
+  color: #f59e0b;
+}
+
+.ticker-item-rank.top-10 {
+  color: #ef4444;
+}
+
+/* Live dot */
+.ticker-live-dot {
+  width: 5px;
+  height: 5px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: ticker-pulse 2s infinite;
+}
+
+@keyframes ticker-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

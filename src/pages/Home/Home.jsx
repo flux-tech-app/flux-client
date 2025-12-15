@@ -1,190 +1,223 @@
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useHabits } from '../../context/HabitContext'
+import { formatCurrency } from '../../utils/formatters'
+import { ACTION_TYPES, getHabitById } from '../../utils/HABIT_LIBRARY'
+import BottomSheet from '../../components/BottomSheet'
+import LogHabitSheet from '../../components/LogHabitSheet'
+import SidebarMenu from '../../components/SidebarMenu/SidebarMenu'
 import EmptyState from '../Portfolio/EmptyState'
-import Button from '../../components/Button'
 import './Home.css'
 
-export default function Home() {
-  const { 
-    habits, 
-    logs, 
-    isHabitLoggedOnDate,
-    addLog 
-  } = useHabits()
-  
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [selectedHabit, setSelectedHabit] = useState(null)
-  const [logValue, setLogValue] = useState('')
-  const [isLogging, setIsLogging] = useState(false)
-  const dateScrollRef = useRef(null)
+// Animated counter hook - counts up from 0 to target value
+const useAnimatedCounter = (targetValue, duration = 1200) => {
+  const [displayValue, setDisplayValue] = useState(0)
+  const startTime = useRef(null)
+  const startValue = useRef(0)
 
-  const hasHabits = habits.length > 0
-
-  // Generate date range (7 days back, today, 3 days forward)
-  const generateDateRange = () => {
-    const dates = []
-    const today = new Date()
-    
-    for (let i = -7; i <= 3; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      dates.push(date)
-    }
-    
-    return dates
-  }
-
-  const dateRange = generateDateRange()
-
-  // Auto-scroll to selected date on mount
   useEffect(() => {
-    if (dateScrollRef.current) {
-      const todayIndex = dateRange.findIndex(
-        date => date.toDateString() === selectedDate.toDateString()
-      )
-      if (todayIndex !== -1) {
-        const scrollLeft = todayIndex * 52
-        dateScrollRef.current.scrollLeft = scrollLeft
+    startValue.current = displayValue
+    startTime.current = Date.now()
+
+    const animate = () => {
+      const now = Date.now()
+      const elapsed = now - startTime.current
+      const progress = Math.min(elapsed / duration, 1)
+
+      // Easing function (ease-out cubic)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+      const current = startValue.current + (targetValue - startValue.current) * easeOut
+
+      setDisplayValue(current)
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
       }
     }
-  }, [])
 
-  // Date helpers
-  const formatDay = (date) => date.toLocaleDateString('en-US', { weekday: 'short' })
-  const formatDateNum = (date) => date.getDate()
-  const isSelected = (date) => date.toDateString() === selectedDate.toDateString()
-  const isToday = (date) => date.toDateString() === new Date().toDateString()
-  const isFuture = (date) => {
+    requestAnimationFrame(animate)
+  }, [targetValue, duration])
+
+  return displayValue
+}
+
+export default function Home() {
+  const navigate = useNavigate()
+  const {
+    habits,
+    logs,
+    getWeekEarnings,
+    getTodayEarnings,
+    isHabitLoggedOnDate,
+    calculateFluxScore
+  } = useHabits()
+
+  const [activeSheet, setActiveSheet] = useState(null) // 'log' | 'pass' | null
+  const [selectedHabitId, setSelectedHabitId] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const hasHabits = habits.length > 0
+  const weekEarnings = getWeekEarnings()
+  const todayEarnings = getTodayEarnings()
+  const animatedWeekEarnings = useAnimatedCounter(weekEarnings)
+
+  // Calculate pace projection (assuming 7-day week, project based on days elapsed)
+  const now = new Date()
+  const dayOfWeek = now.getDay() || 7 // Sunday = 7
+  const dailyAverage = dayOfWeek > 0 ? weekEarnings / dayOfWeek : 0
+  const projectedWeekTotal = dailyAverage * 7
+
+  // Get calibrating habits (status === 'building')
+  const getCalibratingHabits = () => {
+    return habits
+      .map(habit => {
+        const fluxScore = calculateFluxScore(habit.id)
+        return {
+          ...habit,
+          fluxScore,
+          isCalibrating: fluxScore?.status === 'building',
+          logsNeeded: fluxScore?.logsNeeded ?? 0,
+          totalLogs: fluxScore?.totalLogs ?? 0
+        }
+      })
+      .filter(h => h.isCalibrating)
+  }
+
+  const calibratingHabits = getCalibratingHabits()
+
+  // Get weekly performance data for horizontal cards
+  const getWeeklyPerformers = () => {
+    if (!habits || !logs) return []
+
+    const now = new Date()
+    const startOfThisWeek = new Date(now)
+    startOfThisWeek.setDate(now.getDate() - now.getDay())
+    startOfThisWeek.setHours(0, 0, 0, 0)
+
+    return habits
+      .map(habit => {
+        const habitLogs = (logs || []).filter(log => log && log.habitId === habit.id)
+        const thisWeekLogs = habitLogs.filter(log => {
+          if (!log.timestamp) return false
+          return new Date(log.timestamp) >= startOfThisWeek
+        })
+        const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0)
+
+        // Generate sparkline data (last 6 days)
+        const sparklineData = []
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now)
+          date.setDate(date.getDate() - i)
+          date.setHours(0, 0, 0, 0)
+          const nextDate = new Date(date)
+          nextDate.setDate(nextDate.getDate() + 1)
+
+          const dayEarnings = habitLogs
+            .filter(log => {
+              if (!log.timestamp) return false
+              const logDate = new Date(log.timestamp)
+              return logDate >= date && logDate < nextDate
+            })
+            .reduce((sum, log) => sum + (log.totalEarnings || 0), 0)
+          sparklineData.push(dayEarnings)
+        }
+
+        return {
+          ...habit,
+          thisWeekEarnings,
+          thisWeekLogCount: thisWeekLogs.length,
+          sparklineData
+        }
+      })
+      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings)
+  }
+
+  const weeklyPerformers = getWeeklyPerformers()
+
+  // Get today's habits with logged status and progress info
+  const getTodayHabits = () => {
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const check = new Date(date)
-    check.setHours(0, 0, 0, 0)
-    return check > today
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay())
+    startOfWeek.setHours(0, 0, 0, 0)
+
+    return habits.map(habit => {
+      const isLogged = isHabitLoggedOnDate(habit.id, today)
+      const todayLog = logs.find(log =>
+        log.habitId === habit.id &&
+        new Date(log.timestamp).toDateString() === today.toDateString()
+      )
+
+      // Get action type from library
+      const libraryHabit = getHabitById(habit.libraryId)
+      const actionType = libraryHabit?.actionType || ACTION_TYPES.LOG
+
+      // Count logs this week
+      const weekLogs = logs.filter(log => {
+        if (log.habitId !== habit.id) return false
+        const logDate = new Date(log.timestamp)
+        return logDate >= startOfWeek
+      })
+      const weekLogCount = weekLogs.length
+
+      // Calculate progress info
+      let progressText = `${weekLogCount} this week`
+      if (habit.goal && habit.goal.period === 'week') {
+        const remaining = Math.max(0, habit.goal.amount - weekLogCount)
+        if (remaining === 0) {
+          progressText = 'Goal reached!'
+        } else {
+          progressText = `${remaining} more to goal`
+        }
+      }
+
+      return {
+        ...habit,
+        isLogged,
+        todayEarnings: todayLog?.totalEarnings || 0,
+        actionType,
+        weekLogCount,
+        progressText
+      }
+    })
   }
 
-  // Check if date has any completions
-  const hasCompletions = (date) => {
-    const dateStr = date.toDateString()
-    return logs.some(log => new Date(log.timestamp).toDateString() === dateStr)
+  const todayHabits = getTodayHabits()
+  const loggedCount = todayHabits.filter(h => h.isLogged).length
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 17) return 'Good afternoon'
+    return 'Good evening'
   }
 
-  // Get logs for selected date
-  const getLogsForDate = (date) => {
-    const dateStr = date.toDateString()
-    return logs.filter(log => new Date(log.timestamp).toDateString() === dateStr)
+  const closeSheet = () => {
+    setActiveSheet(null)
+    setSelectedHabitId(null)
   }
 
-  const selectedDateLogs = getLogsForDate(selectedDate)
-
-  // Get habit log for selected date
-  const getHabitLog = (habitId) => {
-    return selectedDateLogs.find(log => log.habitId === habitId)
+  const handleLogComplete = () => {
+    closeSheet()
   }
 
-  // Format rate display for habit card
-  const formatHabitRate = (habit) => {
-    const rate = habit.rate ?? 0
-    // For very small rates (like walking), show more decimals
-    if (rate < 0.01) {
-      return `$${rate.toFixed(4)}/${habit.unit || 'unit'}`
-    }
-    if (habit.rateType === 'BINARY') {
-      return `$${rate.toFixed(2)}`
-    }
-    return `$${rate.toFixed(2)}/${habit.unit || 'unit'}`
-  }
-
-  // Handle habit card tap
+  // Handle tapping a habit in the Today section
   const handleHabitTap = (habit) => {
-    // Don't allow logging for future dates
-    if (isFuture(selectedDate)) return
-    
-    // Don't allow if already logged
-    if (isHabitLoggedOnDate(habit.id, selectedDate)) return
-    
-    setSelectedHabit(habit)
-    // Set smart default based on rate type
-    if (habit.rateType === 'BINARY') {
-      setLogValue('1')
-    } else if (habit.libraryId === 'walking') {
-      setLogValue('5000') // Default 5000 steps
-    } else if (habit.rateType === 'DURATION') {
-      setLogValue('30') // Default 30 minutes
-    } else if (habit.rateType === 'DISTANCE') {
-      setLogValue('3') // Default 3 miles/km
-    } else {
-      setLogValue('10') // Default 10 for counts
-    }
+    // If already logged, do nothing
+    if (habit.isLogged) return
+
+    // Set the selected habit and open the appropriate sheet
+    setSelectedHabitId(habit.id)
+    setActiveSheet(habit.actionType === ACTION_TYPES.PASS ? 'pass' : 'log')
   }
-
-  // Handle log submission
-  const handleLogSubmit = async () => {
-    if (!selectedHabit) return
-    
-    setIsLogging(true)
-    
-    const units = selectedHabit.rateType === 'BINARY' 
-      ? 1 
-      : parseFloat(logValue) || 1
-    
-    const logData = {
-      habitId: selectedHabit.id,
-      units: units
-    }
-
-    addLog(logData)
-    
-    // Brief delay for feedback
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    setIsLogging(false)
-    setSelectedHabit(null)
-    setLogValue('')
-  }
-
-  // Calculate earnings preview for log modal
-  const getEarningsPreview = () => {
-    if (!selectedHabit) return 0
-    const rate = selectedHabit.rate ?? 0
-    if (selectedHabit.rateType === 'BINARY') {
-      return rate
-    }
-    return rate * (parseFloat(logValue) || 0)
-  }
-
-  // Smart value change based on habit type
-  const handleValueChange = (delta) => {
-    const current = parseFloat(logValue) || 0
-    let increment = 1
-    
-    // Smart increments based on habit type
-    if (selectedHabit?.libraryId === 'walking') {
-      increment = delta > 0 ? 1000 : -1000
-    } else if (selectedHabit?.rateType === 'DURATION') {
-      increment = delta > 0 ? 5 : -5 // 5 minute increments
-    } else if (selectedHabit?.rateType === 'DISTANCE') {
-      increment = delta > 0 ? 0.5 : -0.5 // 0.5 mile increments
-    } else {
-      increment = delta > 0 ? 1 : -1
-    }
-    
-    const newValue = Math.max(0, current + increment)
-    setLogValue(newValue.toString())
-  }
-
-  // Get input label text
-  const getInputLabel = () => {
-    if (!selectedHabit) return ''
-    if (selectedHabit.rateType === 'BINARY') return ''
-    return `How many ${selectedHabit.unitPlural || selectedHabit.unit + 's'}?`
-  }
-
-  // Count logged habits for selected date
-  const loggedCount = habits.filter(h => isHabitLoggedOnDate(h.id, selectedDate)).length
 
   return (
     <div className="home-page">
+      {/* Sidebar Menu */}
+      <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="home-container">
         {!hasHabits ? (
           <EmptyState />
@@ -192,220 +225,197 @@ export default function Home() {
           <>
             {/* Header */}
             <header className="home-header">
-              <div className="header-top">
+              <div className="header-row">
+                <button className="menu-button" onClick={() => setSidebarOpen(true)}>
+                  <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
                 <div className="header-content">
-                  <h1 className="greeting">Today</h1>
-                  <p className="day-date">
-                    {selectedDate.toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      month: 'long', 
-                      day: 'numeric' 
+                  <h1 className="home-greeting">{getGreeting()}</h1>
+                  <p className="home-date">
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </p>
                 </div>
-                <button className="notification-button">
-                  <svg className="notification-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-                  </svg>
-                </button>
               </div>
             </header>
 
-            {/* Date Picker */}
-            <div className="date-picker-section">
-              <div className="date-picker-scroll" ref={dateScrollRef}>
-                {dateRange.map((date, index) => (
+            {/* This Week Summary Card */}
+            <section className="week-summary-card">
+              <div className="week-summary-top">
+                <div className="week-earned">
+                  <span className="earned-label">Earned this week</span>
+                  <span className="earned-value">{formatCurrency(animatedWeekEarnings)}</span>
+                </div>
+                {projectedWeekTotal > 0 && (
+                  <div className="week-pace">
+                    <span className="pace-label">On pace for</span>
+                    <span className="pace-value">{formatCurrency(projectedWeekTotal)}</span>
+                  </div>
+                )}
+              </div>
+              {todayEarnings > 0 && (
+                <div className="today-earned">
+                  <span className="today-label">Today</span>
+                  <span className="today-value">+{formatCurrency(todayEarnings)}</span>
+                </div>
+              )}
+            </section>
+
+            {/* Today's Behaviors */}
+            <section className="today-section">
+              <div className="section-header">
+                <span className="section-label">Today</span>
+                <span className="section-count">{loggedCount}/{habits.length}</span>
+              </div>
+              <div className="today-list">
+                {todayHabits.map(habit => (
                   <div
-                    key={index}
-                    className={`date-square ${isSelected(date) ? 'active' : ''}`}
-                    onClick={() => setSelectedDate(date)}
+                    key={habit.id}
+                    className={`today-row ${habit.isLogged ? 'logged' : 'tappable'}`}
+                    onClick={() => handleHabitTap(habit)}
                   >
-                    <span className="date-day">{formatDay(date)}</span>
-                    <span className="date-number">{formatDateNum(date)}</span>
-                    {hasCompletions(date) && !isSelected(date) && (
-                      <div className="completion-dot" />
-                    )}
+                    <div className="today-status">
+                      {habit.isLogged ? (
+                        <div className="status-check">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="status-circle" />
+                      )}
+                    </div>
+                    <div className="today-info">
+                      <span className="today-name">{habit.name}</span>
+                    </div>
+                    <div className="today-value">
+                      {habit.isLogged ? (
+                        <span className="today-earned">+{formatCurrency(habit.todayEarnings)}</span>
+                      ) : (
+                        <span className="today-progress">{habit.progressText}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* AI Insight */}
-            <div className="insight-section">
-              <div className="ai-insight-card">
-                <div className="flux-badge">
-                  <svg className="flux-icon" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                  </svg>
-                  FLUX
+            {/* This Week Performers */}
+            {weeklyPerformers.length > 0 && (
+              <section className="performers-section">
+                <div className="section-label">This Week</div>
+                <div className="performers-scroll">
+                  {weeklyPerformers.map((performer, index) => {
+                    const maxSparkline = Math.max(...performer.sparklineData, 1)
+                    return (
+                      <motion.div
+                        key={performer.id}
+                        className="performer-card"
+                        onClick={() => navigate(`/habit/${performer.id}`)}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <div className="performer-name">{performer.name}</div>
+                        <div className="performer-earnings">{formatCurrency(performer.thisWeekEarnings)}</div>
+                        <div className="sparkline-container">
+                          {performer.sparklineData.map((value, i) => {
+                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10
+                            const isRecent = i >= performer.sparklineData.length - 2
+                            return (
+                              <div
+                                key={i}
+                                className={`spark-bar ${isRecent ? 'highlight' : ''}`}
+                                style={{ height: `${Math.max(height, 10)}%` }}
+                              />
+                            )
+                          })}
+                        </div>
+                        <div className="performer-logs">{performer.thisWeekLogCount} logs</div>
+                      </motion.div>
+                    )
+                  })}
                 </div>
-                <div className="insight-text">
-                  {isFuture(selectedDate) 
-                    ? `You have ${habits.length} habits to track. Come back ${isToday(new Date(selectedDate.getTime() - 86400000)) ? 'tomorrow' : 'on this day'} to log.`
-                    : loggedCount === habits.length 
-                      ? `All ${habits.length} habits logged! Great work today.`
-                      : loggedCount > 0 
-                        ? `${loggedCount} of ${habits.length} habits logged. Keep going!`
-                        : `${habits.length} habits ready to log. Tap to track your progress.`
-                  }
-                </div>
-              </div>
-            </div>
+              </section>
+            )}
 
-            {/* Habits List - All habits (no schedule filtering in MVT) */}
-            <div className="habits-section">
-              <div className="habit-cards">
-                {habits.map(habit => {
-                  const habitLog = getHabitLog(habit.id)
-                  const isLogged = !!habitLog
-                  const isFutureDate = isFuture(selectedDate)
-                  
-                  return (
+            {/* Calibrating Section */}
+            {calibratingHabits.length > 0 && (
+              <section className="calibrating-section">
+                <div className="section-label">Calibrating</div>
+                <div className="calibrating-list">
+                  {calibratingHabits.map(habit => (
                     <div
                       key={habit.id}
-                      className={`habit-card ${isLogged ? 'logged' : ''} ${isFutureDate ? 'future' : ''}`}
-                      onClick={() => handleHabitTap(habit)}
+                      className="calibrating-row"
+                      onClick={() => navigate(`/habit/${habit.id}`)}
                     >
-                      <div className="habit-card-main">
-                        <div className="habit-card-left">
-                          <span className="habit-name">{habit.name}</span>
-                        </div>
-                        <div className="habit-card-right">
-                          {isLogged ? (
-                            <div className="habit-status-logged">
-                              <svg className="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                              </svg>
-                              <span className="earned-amount">+${(habitLog.totalEarnings || 0).toFixed(2)}</span>
-                            </div>
-                          ) : isFutureDate ? (
-                            <span className="habit-scheduled">Scheduled</span>
-                          ) : (
-                            <div className="habit-status-pending">
-                              <div className="status-circle"></div>
-                              <span className="habit-rate">{formatHabitRate(habit)}</span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="calibrating-progress">
+                        <svg viewBox="0 0 36 36" className="calibrating-ring">
+                          <circle
+                            className="ring-bg"
+                            cx="18" cy="18" r="14"
+                            fill="none" strokeWidth="3"
+                          />
+                          <circle
+                            className="ring-progress"
+                            cx="18" cy="18" r="14"
+                            fill="none" strokeWidth="3"
+                            strokeDasharray={`${(habit.totalLogs / 10) * 88} 88`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <span className="calibrating-count">{habit.totalLogs}</span>
                       </div>
-                      <div className="habit-card-secondary">
-                        {isLogged ? (
-                          <span className="logged-time">
-                            Logged {new Date(habitLog.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                            {habitLog.units > 1 && habit.rateType !== 'BINARY' && ` · ${habitLog.units} ${habit.unitPlural || habit.unit + 's'}`}
-                          </span>
-                        ) : isFutureDate ? (
-                          <span className="future-label">Complete on this day</span>
-                        ) : (
-                          <span className="tap-to-log">Tap to log</span>
-                        )}
+                      <div className="calibrating-info">
+                        <span className="calibrating-name">{habit.name}</span>
+                        <span className="calibrating-needed">{habit.logsNeeded} more logs</span>
                       </div>
+                      <svg className="calibrating-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>
 
-      {/* Log Habit Modal */}
-      <AnimatePresence>
-        {selectedHabit && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="modal-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedHabit(null)}
-            />
-            
-            {/* Modal */}
-            <motion.div
-              className="log-modal-container"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            >
-              <div className="log-modal-handle" />
-              
-              <div className="log-habit-modal">
-                <div className="log-modal-header">
-                  <span className="log-habit-icon">{selectedHabit.icon || '📌'}</span>
-                  <div className="log-habit-info">
-                    <span className="log-habit-name">{selectedHabit.name}</span>
-                  </div>
-                </div>
+      {/* Log Activity Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeSheet === 'log'}
+        onClose={closeSheet}
+        height="tall"
+      >
+        <LogHabitSheet
+          actionType={ACTION_TYPES.LOG}
+          initialHabitId={selectedHabitId}
+          onClose={closeSheet}
+          onLogComplete={handleLogComplete}
+        />
+      </BottomSheet>
 
-                {/* Unit-based habits get a number input */}
-                {selectedHabit.rateType !== 'BINARY' ? (
-                  <div className="log-input-section">
-                    <label className="log-input-label">
-                      {getInputLabel()}
-                    </label>
-                    <div className="log-stepper">
-                      <button 
-                        className="stepper-button"
-                        onClick={() => handleValueChange(-1)}
-                        disabled={parseFloat(logValue) <= 0}
-                      >
-                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      <input
-                        type="number"
-                        className="stepper-input"
-                        value={logValue}
-                        onChange={(e) => setLogValue(e.target.value)}
-                        min="0"
-                        step={selectedHabit.libraryId === 'walking' ? '1000' : '1'}
-                      />
-                      <button 
-                        className="stepper-button"
-                        onClick={() => handleValueChange(1)}
-                      >
-                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="log-confirmation-section">
-                    <p className="log-confirmation-text">
-                      Did you complete <strong>{selectedHabit.name}</strong>{isToday(selectedDate) ? ' today' : ''}?
-                    </p>
-                  </div>
-                )}
-
-                {/* Earnings preview */}
-                <div className="earnings-preview-box">
-                  <span className="earnings-preview-label">You'll earn</span>
-                  <span className="earnings-preview-value">
-                    +${getEarningsPreview().toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Confirm button */}
-                <Button
-                  variant="success"
-                  size="lg"
-                  fullWidth
-                  onClick={handleLogSubmit}
-                  disabled={isLogging || (selectedHabit.rateType !== 'BINARY' && !parseFloat(logValue))}
-                  loading={isLogging}
-                >
-                  {selectedHabit.rateType !== 'BINARY' ? 'Log Activity' : 'Yes, I did it!'}
-                </Button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Pass Activity Bottom Sheet */}
+      <BottomSheet
+        isOpen={activeSheet === 'pass'}
+        onClose={closeSheet}
+        height="tall"
+      >
+        <LogHabitSheet
+          actionType={ACTION_TYPES.PASS}
+          initialHabitId={selectedHabitId}
+          onClose={closeSheet}
+          onLogComplete={handleLogComplete}
+        />
+      </BottomSheet>
     </div>
   )
 }

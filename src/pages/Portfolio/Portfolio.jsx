@@ -6,6 +6,10 @@ import { formatCurrency } from '../../utils/formatters';
 import { getNextTransferDate } from '../../utils/calculations';
 import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import CalibratingFingerprint from '../../components/CalibratingFingerprint';
+import FluxBadge from '../../components/FluxBadge';
+import BottomSheet from '../../components/BottomSheet';
+import AddHabitFlow from '../../components/AddHabitFlow';
+import IndicesTicker from '../../components/IndicesTicker';
 import './Portfolio.css';
 
 // Animated counter hook - counts up from 0 to target value
@@ -46,10 +50,17 @@ export default function Portfolio() {
     logs,
     getTransferredBalance,
     getPendingBalance,
-    calculateFluxScore
+    calculateFluxScore,
+    addHabit
   } = useHabits();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAddSheet, setShowAddSheet] = useState(false);
+
+  const handleHabitCreated = (habitData) => {
+    addHabit(habitData);
+    setShowAddSheet(false);
+  };
 
   const transferredBalance = getTransferredBalance();
   const nextTransfer = getNextTransferDate();
@@ -57,85 +68,6 @@ export default function Portfolio() {
 
   // Animated portfolio value - counts up from 0 on load
   const animatedBalance = useAnimatedCounter(transferredBalance, 1200);
-
-  // Calculate weekly movers data for active habits
-  const getWeeklyMoversData = () => {
-    try {
-      if (!habits || !logs) return [];
-
-      const now = new Date();
-      const startOfThisWeek = new Date(now);
-      startOfThisWeek.setDate(now.getDate() - now.getDay());
-      startOfThisWeek.setHours(0, 0, 0, 0);
-
-      const startOfLastWeek = new Date(startOfThisWeek);
-      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-
-      return habits
-        .map(habit => {
-          const fluxScoreData = calculateFluxScore(habit.id);
-          const habitLogs = (logs || []).filter(log => log && log.habitId === habit.id);
-
-          // This week's data
-          const thisWeekLogs = habitLogs.filter(log => {
-            if (!log.timestamp) return false;
-            return new Date(log.timestamp) >= startOfThisWeek;
-          });
-          const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-          const thisWeekLogCount = thisWeekLogs.length;
-
-          // Last week's data
-          const lastWeekLogs = habitLogs.filter(log => {
-            if (!log.timestamp) return false;
-            const logDate = new Date(log.timestamp);
-            return logDate >= startOfLastWeek && logDate < startOfThisWeek;
-          });
-          const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-
-          // Calculate percentage change
-          let changePercent = 0;
-          if (lastWeekEarnings > 0) {
-            changePercent = ((thisWeekEarnings - lastWeekEarnings) / lastWeekEarnings) * 100;
-          } else if (thisWeekEarnings > 0) {
-            changePercent = 100;
-          }
-
-          // Generate sparkline data (last 6 days of earnings)
-          const sparklineData = [];
-          for (let i = 5; i >= 0; i--) {
-            const date = new Date(now);
-            date.setDate(date.getDate() - i);
-            date.setHours(0, 0, 0, 0);
-            const nextDate = new Date(date);
-            nextDate.setDate(nextDate.getDate() + 1);
-
-            const dayEarnings = habitLogs
-              .filter(log => {
-                if (!log.timestamp) return false;
-                const logDate = new Date(log.timestamp);
-                return logDate >= date && logDate < nextDate;
-              })
-              .reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-            sparklineData.push(dayEarnings);
-          }
-
-          return {
-            ...habit,
-            fluxScoreStatus: fluxScoreData?.status ?? 'building',
-            thisWeekEarnings,
-            thisWeekLogCount,
-            changePercent,
-            sparklineData
-          };
-        })
-        .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
-    } catch (error) {
-      console.error('Error calculating weekly movers:', error);
-      return [];
-    }
-  };
-
-  const weeklyMovers = getWeeklyMoversData();
 
   // Calculate total earned for a habit
   const getHabitTotalEarned = (habitId) => {
@@ -179,13 +111,16 @@ export default function Portfolio() {
             </svg>
           </button>
           <div className="header-actions">
-            <button className="icon-button" aria-label="Notifications" onClick={() => alert('Coming soon!')}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            <button className="icon-button" aria-label="View Indices" onClick={() => navigate('/indices')}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 13h2v8H3v-8zm4-5h2v13H7V8zm4-5h2v18h-2V3zm4 8h2v10h-2V11zm4-3h2v13h-2V8z" />
               </svg>
             </button>
           </div>
         </header>
+
+        {/* Indices Ticker */}
+        {hasHabits && <IndicesTicker />}
 
         {/* Portfolio Value Section */}
         <section className="portfolio-value-section">
@@ -205,79 +140,17 @@ export default function Portfolio() {
           )}
         </section>
 
-        {/* Weekly Movers */}
-        {hasHabits && weeklyMovers.length > 0 && (
-          <>
-            <div className="section-label">This Week</div>
-            <div className="movers-scroll">
-              {weeklyMovers.map((mover, index) => {
-                const isPositive = mover.changePercent >= 0;
-                const maxSparkline = Math.max(...mover.sparklineData, 1);
-
-                return (
-                  <motion.div
-                    key={mover.id}
-                    className={`mover-card ${isPositive ? 'positive' : 'negative'}`}
-                    onClick={() => navigate(`/habit/${mover.id}`)}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <div className="mover-card-header">
-                      <div className="mover-name">{mover.name}</div>
-                    </div>
-
-                    <div className="mover-earnings">{formatCurrency(mover.thisWeekEarnings)}</div>
-
-                    <div className={`mover-change ${isPositive ? 'positive' : 'negative'}`}>
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        {isPositive ? (
-                          <path d="M7 14l5-5 5 5H7z"/>
-                        ) : (
-                          <path d="M7 10l5 5 5-5H7z"/>
-                        )}
-                      </svg>
-                      {isPositive ? '+' : ''}{Math.round(mover.changePercent)}%
-                    </div>
-
-                    <div className="sparkline-container">
-                      {mover.sparklineData.map((value, i) => {
-                        const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
-                        const isLast = i >= mover.sparklineData.length - 2;
-                        let barClass = 'spark-bar';
-                        if (isLast) {
-                          barClass += isPositive ? ' highlight' : ' down';
-                        } else if (i >= mover.sparklineData.length - 4) {
-                          barClass += ' active';
-                        }
-                        return (
-                          <div
-                            key={i}
-                            className={barClass}
-                            style={{ height: `${Math.max(height, 10)}%` }}
-                          />
-                        );
-                      })}
-                    </div>
-
-                    <div className="mover-footer">
-                      <span>This week</span>
-                      <span>{mover.thisWeekLogCount} logs</span>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
         {/* Holdings Section */}
         {hasHabits ? (
           <div className="holdings-section-flat">
             <div className="section-header-row">
               <span className="section-title-flat">Holdings</span>
-              <span className="holdings-count-flat">{holdings.length} behaviors</span>
+              <button
+                className="add-habit-btn"
+                onClick={() => setShowAddSheet(true)}
+              >
+                + Add
+              </button>
             </div>
 
             <div className="holdings-list-flat">
@@ -291,7 +164,16 @@ export default function Portfolio() {
                   transition={{ delay: index * 0.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {/* Name + Top % for active */}
+                  {/* Badge/Calibrating - Left */}
+                  <div className="holding-badge">
+                    {holding.fluxScoreStatus === 'building' || holding.fluxScore === null ? (
+                      <CalibratingFingerprint logsNeeded={holding.logsNeeded} size="compact" />
+                    ) : (
+                      <FluxBadge score={holding.fluxScore} size="xs" />
+                    )}
+                  </div>
+
+                  {/* Name + Top % */}
                   <div className="holding-info">
                     <div className="holding-name-flat">{holding.name}</div>
                     {holding.fluxScoreStatus === 'active' && (
@@ -300,37 +182,6 @@ export default function Portfolio() {
                           const rankPercent = Math.floor(Math.random() * 40 + 10);
                           return `Top ${rankPercent}%`;
                         })()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Center: Calibration Animation or Flux Score Ring */}
-                  <div className="holding-center">
-                    {holding.fluxScoreStatus === 'building' ? (
-                      <CalibratingFingerprint logsNeeded={holding.logsNeeded} size="compact" />
-                    ) : (
-                      <div className="flux-score-ring">
-                        <svg viewBox="0 0 36 36" className="flux-ring-svg">
-                          <circle
-                            className="flux-ring-bg"
-                            cx="18"
-                            cy="18"
-                            r="15"
-                            fill="none"
-                            strokeWidth="3"
-                          />
-                          <circle
-                            className="flux-ring-progress"
-                            cx="18"
-                            cy="18"
-                            r="15"
-                            fill="none"
-                            strokeWidth="3"
-                            strokeDasharray={`${(holding.fluxScore || 75) * 0.94} 94`}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        <span className="flux-score-value">{holding.fluxScore || 75}</span>
                       </div>
                     )}
                   </div>
@@ -394,6 +245,18 @@ export default function Portfolio() {
           </section>
         )}
       </div>
+
+      {/* Add Habit Bottom Sheet */}
+      <BottomSheet
+        isOpen={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+        height="tall"
+      >
+        <AddHabitFlow
+          onComplete={handleHabitCreated}
+          onClose={() => setShowAddSheet(false)}
+        />
+      </BottomSheet>
     </div>
   );
 }

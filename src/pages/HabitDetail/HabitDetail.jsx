@@ -16,10 +16,10 @@ import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import { getCalibrationStatus } from '../../utils/calibrationStatus';
-import { calculateFluxScore } from '../../utils/calculations';
 import BackButton from '../../components/BackButton';
 import GoalSection from '../../components/GoalSection/GoalSection';
 import CalibratingFingerprint from '../../components/CalibratingFingerprint';
+import FluxBadge from '../../components/FluxBadge';
 import './HabitDetail.css';
 
 // Register Chart.js components
@@ -37,7 +37,7 @@ ChartJS.register(
 export default function HabitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { habits, logs, deleteHabit } = useHabits();
+  const { habits, logs, deleteHabit, calculateFluxScore } = useHabits();
   
   // Tab state
   const [activeTab, setActiveTab] = useState('overview');
@@ -241,10 +241,10 @@ export default function HabitDetail() {
     return getCalibrationStatus(habitLogs);
   }, [habitLogs]);
 
-  // Calculate Flux Score using the blueprint 5-component formula
+  // Calculate Flux Score using the context's calculateFluxScore (same as Portfolio)
   const fluxScoreData = useMemo(() => {
-    return calculateFluxScore(habitLogs);
-  }, [habitLogs]);
+    return calculateFluxScore(habit.id);
+  }, [habit.id, calculateFluxScore]);
 
   // Derive habitDataStatus from calibration for UI compatibility
   const habitDataStatus = useMemo(() => {
@@ -805,70 +805,36 @@ export default function HabitDetail() {
               </div>
             </div>
           ) : (
-            <>
-              <div className="hero-flux-score">
-                <div className="flux-ring-container">
-                  <svg className="flux-ring" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="44"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.5)"
-                      strokeWidth="7"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="44"
-                      fill="none"
-                      stroke="url(#fluxGradient)"
-                      strokeWidth="7"
-                      strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 44}
-                      strokeDashoffset={2 * Math.PI * 44 * (1 - (fluxScoreData.score || 0) / 100)}
-                      transform="rotate(-90 50 50)"
-                    />
-                    <defs>
-                      <linearGradient id="fluxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#60a5fa" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="flux-ring-value">
-                    <span className="flux-number">{fluxScoreData.score || 0}</span>
-                    <span className="flux-label">Flux</span>
+            <div className="hero-calibrating-layout">
+              <div className="hero-section-left">
+                <div className="calibrating-earnings">{formatCurrency(stats.totalEarnings)}</div>
+                <span className="calibrating-earnings-label">lifetime earnings</span>
+                {/* Status badges under earnings */}
+                {(isLoggedToday || habit.isActive === false) && (
+                  <div className="hero-status-inline">
+                    {isLoggedToday && (
+                      <div className="today-status">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Completed today</span>
+                      </div>
+                    )}
+                    {habit.isActive === false && (
+                      <div className="paused-status">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                        </svg>
+                        <span>Paused</span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
-              {/* Earnings */}
-              <div className="hero-earnings">
-                <div className="detail-earned-amount">{formatCurrency(stats.totalEarnings)}</div>
-                <span className="earned-label">lifetime earnings</span>
+              <div className="hero-section-right">
+                <FluxBadge score={fluxScoreData.score || 0} size="md" />
               </div>
-              {/* Status Badges - normal position when calibrated */}
-              {(isLoggedToday || habit.isActive === false) && (
-                <div className="hero-status">
-                  {isLoggedToday && (
-                    <div className="today-status">
-                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>Completed today</span>
-                    </div>
-                  )}
-                  {habit.isActive === false && (
-                    <div className="paused-status">
-                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                      </svg>
-                      <span>Paused</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+            </div>
           )}
         </section>
 
