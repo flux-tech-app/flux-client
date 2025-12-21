@@ -1,3 +1,4 @@
+// src/pages/HabitDetail/HabitDetail.jsx
 import { useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
@@ -12,10 +13,13 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+
 import { useHabits } from '../../context/HabitContext';
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import { getCalibrationStatus } from '../../utils/calibrationStatus';
+import { getHabitById, RATE_TYPES } from '../../utils/HABIT_LIBRARY';
+
 import BackButton from '../../components/BackButton';
 import GoalSection from '../../components/GoalSection/GoalSection';
 import CalibratingFingerprint from '../../components/CalibratingFingerprint';
@@ -34,18 +38,92 @@ ChartJS.register(
   Filler
 );
 
+// ---------- helpers (Step A: normalize backend shapes to legacy UI expectations) ----------
+const microsToDollars = (micros) => Number(micros || 0) / 1_000_000;
+
+const safeIsoFromMs = (ms) => {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return new Date(n).toISOString();
+};
+
+const decorateHabitForUI = (h) => {
+  const lib = getHabitById(h?.libraryId);
+  const createdAtIso =
+    h?.createdAt ||
+    safeIsoFromMs(h?.createdAtMs) ||
+    (h?.createdAtMs ? new Date(h.createdAtMs).toISOString() : null) ||
+    new Date().toISOString();
+
+  const rateDollars =
+    h?.rate != null
+      ? Number(h.rate)
+      : h?.rateMicros != null
+      ? microsToDollars(h.rateMicros)
+      : lib?.defaultRate != null
+      ? Number(lib.defaultRate)
+      : 0;
+
+  return {
+    ...h,
+    name: h?.name || lib?.name || h?.libraryId || 'Habit',
+    icon: h?.icon || lib?.icon,
+    rateType: h?.rateType || lib?.rateType,
+    unit: h?.unit || lib?.unit,
+    unitPlural: h?.unitPlural || lib?.unitPlural,
+    createdAt: createdAtIso,
+    rate: rateDollars
+  };
+};
+
+const normalizeLog = (log) => {
+  const ts =
+    log?.timestamp != null
+      ? new Date(log.timestamp)
+      : log?.timestampMs != null
+      ? new Date(log.timestampMs)
+      : log?.createdAt != null
+      ? new Date(log.createdAt)
+      : log?.createdAtMs != null
+      ? new Date(log.createdAtMs)
+      : new Date();
+
+  const timestampMs = log?.timestampMs ?? ts.getTime();
+  const timestamp = log?.timestamp ?? ts.toISOString();
+
+  const totalEarnings =
+    log?.totalEarnings != null
+      ? Number(log.totalEarnings || 0)
+      : log?.earningsMicros != null
+      ? microsToDollars(log.earningsMicros)
+      : log?.totalEarningsMicros != null
+      ? microsToDollars(log.totalEarningsMicros)
+      : 0;
+
+  // legacy UI uses log.amount/log.unit in a couple places; backend usually uses units
+  const amount = log?.amount ?? log?.units ?? 1;
+
+  return {
+    ...log,
+    timestampMs,
+    timestamp,
+    totalEarnings,
+    amount
+  };
+};
+
 export default function HabitDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { habits, logs, deleteHabit, calculateFluxScore } = useHabits();
-  
+
   // Tab state
   const [activeTab, setActiveTab] = useState('overview');
 
   // Chart state
   const [chartType, setChartType] = useState('fluxScore');
   const [chartPeriod, setChartPeriod] = useState('1M');
-  
+
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
@@ -94,21 +172,17 @@ export default function HabitDetail() {
       const currentMonth = now.getMonth();
 
       if (!(calendarMonth.year === currentYear && calendarMonth.month === currentMonth)) {
-        setCalendarMonth(prev => {
+        setCalendarMonth((prev) => {
           const newMonth = prev.month + 1;
-          if (newMonth > 11) {
-            return { year: prev.year + 1, month: 0 };
-          }
+          if (newMonth > 11) return { year: prev.year + 1, month: 0 };
           return { ...prev, month: newMonth };
         });
       }
     } else if (isRightSwipe) {
       // Swipe right = previous month
-      setCalendarMonth(prev => {
+      setCalendarMonth((prev) => {
         const newMonth = prev.month - 1;
-        if (newMonth < 0) {
-          return { year: prev.year - 1, month: 11 };
-        }
+        if (newMonth < 0) return { year: prev.year - 1, month: 11 };
         return { ...prev, month: newMonth };
       });
     }
@@ -116,9 +190,11 @@ export default function HabitDetail() {
     touchStartX.current = null;
     touchEndX.current = null;
   }, [calendarMonth]);
-  
-  const habit = habits.find(h => h.id === id);
-  
+
+  // ---- habit lookup + decoration
+  const rawHabit = habits?.find((h) => h.id === id);
+  const habit = rawHabit ? decorateHabitForUI(rawHabit) : null;
+
   if (!habit) {
     return (
       <div className="habit-detail-page">
@@ -132,90 +208,85 @@ export default function HabitDetail() {
     );
   }
 
-  // Get all logs for this habit
-  const habitLogs = logs.filter(log => log.habitId === habit.id);
-  
-  // Generate insights using utility
+  // ---- logs normalized for this habit
+  const habitLogs = useMemo(() => {
+    return (logs || [])
+      .filter((l) => l && l.habitId === habit.id)
+      .map(normalizeLog);
+  }, [logs, habit.id]);
+
+  // Generate insights using utility (pass normalized logs to keep utility stable)
   const insights = useMemo(() => {
-    return generateHabitInsights(habit, logs);
-  }, [habit, logs]);
-  
+    return generateHabitInsights(habit, habitLogs);
+  }, [habit, habitLogs]);
+
   // Calculate basic statistics for header/hero
   const stats = useMemo(() => {
     const now = new Date();
     const habitCreated = new Date(habit.createdAt);
-    const daysSinceCreation = Math.max(1, Math.floor((now - habitCreated) / (1000 * 60 * 60 * 24)));
-    
+    const daysSinceCreation = Math.max(
+      1,
+      Math.floor((now.getTime() - habitCreated.getTime()) / (1000 * 60 * 60 * 24))
+    );
+
     // Total earnings
     const totalEarnings = habitLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
-    
-    // Get logs from last 30 days for completion rate
+
+    // Logs from last 30 days for completion rate (Phase 1: assume daily expectation)
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const recentLogs = habitLogs.filter(log => new Date(log.timestamp) >= thirtyDaysAgo);
-    
-    // Calculate expected completions based on schedule
-    const getExpectedCompletions = (days) => {
-      if (!habit.schedule) return days;
-      const { type, days: scheduleDays } = habit.schedule;
-      switch (type) {
-        case 'daily': return days;
-        case 'weekdays': return Math.floor(days * 5 / 7);
-        case 'weekends': return Math.floor(days * 2 / 7);
-        case 'specific_days': return Math.floor(days * (scheduleDays?.length || 7) / 7);
-        default: return days;
-      }
-    };
-    
+    const recentLogs = habitLogs.filter((log) => new Date(log.timestamp).getTime() >= thirtyDaysAgo.getTime());
+
     const periodDays = Math.min(30, daysSinceCreation);
-    const expected = getExpectedCompletions(periodDays);
+    const expected = periodDays; // Phase 1: schedule coming later
     const completionRate = expected > 0 ? Math.min(100, Math.round((recentLogs.length / expected) * 100)) : 0;
-    
+
     // Calculate current streak
     const calculateCurrentStreak = () => {
       if (habitLogs.length === 0) return 0;
-      
+
       const sortedLogs = [...habitLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      
-      const uniqueDates = [...new Set(sortedLogs.map(log => {
-        const d = new Date(log.timestamp);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-      }))].sort((a, b) => b - a);
-      
+
+      const uniqueDates = [
+        ...new Set(
+          sortedLogs.map((log) => {
+            const d = new Date(log.timestamp);
+            d.setHours(0, 0, 0, 0);
+            return d.getTime();
+          })
+        )
+      ].sort((a, b) => b - a);
+
       if (uniqueDates.length === 0) return 0;
-      
+
       const lastLogDate = new Date(uniqueDates[0]);
-      
+
       let currentStreak = 0;
       if (lastLogDate.getTime() === today.getTime() || lastLogDate.getTime() === yesterday.getTime()) {
         currentStreak = 1;
         let checkDate = new Date(lastLogDate);
-        
+
         for (let i = 1; i < uniqueDates.length; i++) {
           checkDate.setDate(checkDate.getDate() - 1);
-          if (uniqueDates[i] === checkDate.getTime()) {
-            currentStreak++;
-          } else {
-            break;
-          }
+          if (uniqueDates[i] === checkDate.getTime()) currentStreak++;
+          else break;
         }
       }
-      
+
       return currentStreak;
     };
-    
+
     const currentStreak = calculateCurrentStreak();
-    
-    // Simple HSS calculation for header display
+
+    // Simple score for header display (legacy HSS-like)
     const consistencyScore = Math.min(100, completionRate);
     const streakBonus = Math.min(20, currentStreak * 2);
-    const hss = Math.round((consistencyScore * 0.8) + streakBonus);
-    
+    const hss = Math.round(consistencyScore * 0.8 + streakBonus);
+
     return {
       totalEarnings,
       completionRate,
@@ -223,32 +294,32 @@ export default function HabitDetail() {
       hss: Math.min(100, hss),
       daysSinceCreation
     };
-  }, [habit, habitLogs]);
+  }, [habit.createdAt, habitLogs]);
 
   // Check if logged today
   const isLoggedToday = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return habitLogs.some(log => {
+    return habitLogs.some((log) => {
       const logDate = new Date(log.timestamp);
       logDate.setHours(0, 0, 0, 0);
       return logDate.getTime() === today.getTime();
     });
   }, [habitLogs]);
 
-  // Get calibration status from centralized utility (log-based per blueprint)
+  // Calibration status from centralized utility (log-based)
   const calibrationStatus = useMemo(() => {
     return getCalibrationStatus(habitLogs);
   }, [habitLogs]);
 
-  // Calculate Flux Score using the context's calculateFluxScore (same as Portfolio)
+  // Flux Score using context
   const fluxScoreData = useMemo(() => {
-    return calculateFluxScore(habit.id);
+    return calculateFluxScore?.(habit.id);
   }, [habit.id, calculateFluxScore]);
 
-  // Derive habitDataStatus from calibration for UI compatibility
+  // Derive habitDataStatus for UI compatibility
   const habitDataStatus = useMemo(() => {
-    const logCount = calibrationStatus.logCount;
+    const logCount = calibrationStatus?.logCount ?? habitLogs.length;
 
     if (logCount === 0) {
       return {
@@ -256,13 +327,13 @@ export default function HabitDetail() {
         message: 'Complete this habit to start tracking your progress',
         logCount
       };
-    } else if (calibrationStatus.isCalibrating) {
+    } else if (calibrationStatus?.isCalibrating) {
       return {
         status: 'building',
         message: calibrationStatus.message,
         logCount
       };
-    } else if (calibrationStatus.isEmerging) {
+    } else if (calibrationStatus?.isEmerging) {
       return {
         status: 'emerging',
         message: 'Baseline emerging',
@@ -270,13 +341,11 @@ export default function HabitDetail() {
       };
     }
     return { status: 'sufficient', logCount };
-  }, [calibrationStatus]);
+  }, [calibrationStatus, habitLogs.length]);
 
-  // Get recent activity (last 10 logs)
+  // Recent activity (last 10 logs)
   const recentActivity = useMemo(() => {
-    return [...habitLogs]
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 10);
+    return [...habitLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
   }, [habitLogs]);
 
   // Weekly summary data
@@ -293,44 +362,32 @@ export default function HabitDetail() {
     const lastWeekStart = new Date(weekStart);
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-    // End of last week
-    const lastWeekEnd = new Date(weekStart);
-    lastWeekEnd.setMilliseconds(-1);
-
     // This week's logs
-    const thisWeekLogs = habitLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      return logDate >= weekStart;
-    });
+    const thisWeekLogs = habitLogs.filter((log) => new Date(log.timestamp) >= weekStart);
 
     // Last week's logs
-    const lastWeekLogs = habitLogs.filter(log => {
-      const logDate = new Date(log.timestamp);
-      return logDate >= lastWeekStart && logDate < weekStart;
+    const lastWeekLogs = habitLogs.filter((log) => {
+      const d = new Date(log.timestamp);
+      return d >= lastWeekStart && d < weekStart;
     });
 
-    // Count unique days this week
-    const thisWeekDays = new Set(thisWeekLogs.map(log => {
-      const d = new Date(log.timestamp);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    })).size;
+    const countUniqueDays = (arr) =>
+      new Set(
+        arr.map((log) => {
+          const d = new Date(log.timestamp);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        })
+      ).size;
 
-    // Count unique days last week
-    const lastWeekDays = new Set(lastWeekLogs.map(log => {
-      const d = new Date(log.timestamp);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    })).size;
+    const thisWeekDays = countUniqueDays(thisWeekLogs);
+    const lastWeekDays = countUniqueDays(lastWeekLogs);
 
-    // Earnings
     const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
     const lastWeekEarnings = lastWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
 
-    // Days elapsed this week (including today)
     const daysElapsed = dayOfWeek + 1;
 
-    // Comparison
     const daysDiff = thisWeekDays - lastWeekDays;
     const earningsDiff = thisWeekEarnings - lastWeekEarnings;
 
@@ -342,7 +399,8 @@ export default function HabitDetail() {
       lastWeekEarnings,
       daysDiff,
       earningsDiff,
-      isAhead: thisWeekDays >= Math.floor((daysElapsed / 7) * lastWeekDays) || thisWeekDays > lastWeekDays
+      isAhead:
+        thisWeekDays >= Math.floor((daysElapsed / 7) * (lastWeekDays || 0)) || thisWeekDays > lastWeekDays
     };
   }, [habitLogs]);
 
@@ -354,39 +412,37 @@ export default function HabitDetail() {
     const dayEnd = new Date(dayStart);
     dayEnd.setHours(23, 59, 59, 999);
 
-    return habitLogs.filter(log => {
+    return habitLogs.filter((log) => {
       const logDate = new Date(log.timestamp);
       return logDate >= dayStart && logDate <= dayEnd;
     });
   };
-
 
   // Format time for activity
   const formatActivityTime = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const isBinaryHabit = habit.rateType === RATE_TYPES.BINARY || habit.rateType === 'BINARY';
+
   // Get unit label
   const getUnitLabel = () => {
     if (habit.unit) return habit.unit;
-    if (habit.rateType === 'per_unit') return 'units';
-    return 'sessions';
+    return 'units';
   };
 
   // Calendar navigation functions
   const goToPreviousMonth = () => {
-    setCalendarMonth(prev => {
+    setCalendarMonth((prev) => {
       const newMonth = prev.month - 1;
-      if (newMonth < 0) {
-        return { year: prev.year - 1, month: 11 };
-      }
+      if (newMonth < 0) return { year: prev.year - 1, month: 11 };
       return { ...prev, month: newMonth };
     });
   };
@@ -397,15 +453,11 @@ export default function HabitDetail() {
     const currentMonth = now.getMonth();
 
     // Don't go past current month
-    if (calendarMonth.year === currentYear && calendarMonth.month === currentMonth) {
-      return;
-    }
+    if (calendarMonth.year === currentYear && calendarMonth.month === currentMonth) return;
 
-    setCalendarMonth(prev => {
+    setCalendarMonth((prev) => {
       const newMonth = prev.month + 1;
-      if (newMonth > 11) {
-        return { year: prev.year + 1, month: 0 };
-      }
+      if (newMonth > 11) return { year: prev.year + 1, month: 0 };
       return { ...prev, month: newMonth };
     });
   };
@@ -423,20 +475,15 @@ export default function HabitDetail() {
 
     const { year, month } = calendarMonth;
 
-    // First day of the month
     const firstOfMonth = new Date(year, month, 1);
-    // Last day of the month
     const lastOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastOfMonth.getDate();
 
-    // What day of week does the month start on? (0 = Sunday)
-    const startDayOfWeek = firstOfMonth.getDay();
-    // What day of week does the month end on?
+    const startDayOfWeek = firstOfMonth.getDay(); // 0 = Sunday
     const endDayOfWeek = lastOfMonth.getDay();
 
-    // Build log map for quick lookup
     const logMap = new Map();
-    habitLogs.forEach(log => {
+    habitLogs.forEach((log) => {
       const d = new Date(log.timestamp);
       d.setHours(0, 0, 0, 0);
       const key = d.getTime();
@@ -445,20 +492,16 @@ export default function HabitDetail() {
 
     const days = [];
 
-    // Add padding days before the 1st (from previous month)
+    // Padding before 1st
     for (let i = 0; i < startDayOfWeek; i++) {
-      days.push({
-        date: null,
-        count: 0,
-        isPadding: true,
-        isFuture: false,
-        level: 0
-      });
+      days.push({ date: null, count: 0, isPadding: true, isFuture: false, level: 0 });
     }
 
-    // Add days of the month
+    // Days of month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
+      date.setHours(0, 0, 0, 0);
+
       const key = date.getTime();
       const count = logMap.get(key) || 0;
       const isFuture = date > today;
@@ -475,19 +518,13 @@ export default function HabitDetail() {
       });
     }
 
-    // Add padding days after the last day (to complete the week)
+    // Padding after last day
     const remainingDays = 6 - endDayOfWeek;
     for (let i = 0; i < remainingDays; i++) {
-      days.push({
-        date: null,
-        count: 0,
-        isPadding: true,
-        isFuture: false,
-        level: 0
-      });
+      days.push({ date: null, count: 0, isPadding: true, isFuture: false, level: 0 });
     }
 
-    // Convert to weeks (array of 7-day arrays)
+    // Weeks
     const weeks = [];
     for (let i = 0; i < days.length; i += 7) {
       weeks.push(days.slice(i, i + 7));
@@ -502,35 +539,35 @@ export default function HabitDetail() {
   // Chart data generation
   const chartData = useMemo(() => {
     const now = new Date();
+    const createdAt = new Date(habit.createdAt);
+    const createdAtOk = Number.isFinite(createdAt.getTime());
+
     const ranges = {
       '1W': 7,
       '1M': 30,
       '3M': 90,
-      'YTD': Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)),
+      YTD: Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)),
       '1Y': 365,
-      'ALL': Math.floor((now - new Date(habit.createdAt)) / (1000 * 60 * 60 * 24)) + 1
+      ALL: createdAtOk
+        ? Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)) + 1
+        : 365
     };
 
-    const days = Math.max(7, Math.min(ranges[chartPeriod], 365));
+    const days = Math.max(7, Math.min(ranges[chartPeriod] ?? 30, 365));
     const data = [];
 
-    // Determine number of data points based on range
     let dataPoints;
-    switch(chartPeriod) {
+    switch (chartPeriod) {
       case '1W':
         dataPoints = 7;
         break;
       case '1M':
-        dataPoints = 15;
-        break;
       case '3M':
+      case 'YTD':
         dataPoints = 15;
         break;
       case '1Y':
         dataPoints = 16;
-        break;
-      case 'YTD':
-        dataPoints = Math.min(15, days);
         break;
       case 'ALL':
       default:
@@ -541,11 +578,11 @@ export default function HabitDetail() {
 
     for (let i = dataPoints; i >= 0; i--) {
       const date = new Date();
-      date.setDate(date.getDate() - (i * interval));
+      date.setDate(date.getDate() - i * interval);
       date.setHours(0, 0, 0, 0);
 
-      // Get all logs up to this date for cumulative earnings
-      const logsUpToDate = habitLogs.filter(log => {
+      // Cumulative earnings up to this date
+      const logsUpToDate = habitLogs.filter((log) => {
         const logDate = new Date(log.timestamp);
         logDate.setHours(0, 0, 0, 0);
         return logDate.getTime() <= date.getTime();
@@ -553,25 +590,26 @@ export default function HabitDetail() {
 
       const cumulativeEarnings = logsUpToDate.reduce((sum, log) => sum + (log.totalEarnings || 0), 0);
 
-      // Calculate rolling Flux Score (7-day window ending on this date)
+      // Rolling 7-day window "score" (legacy quick view)
       const sevenDaysAgo = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const logsInWindow = habitLogs.filter(log => {
+      const logsInWindow = habitLogs.filter((log) => {
         const logDate = new Date(log.timestamp);
         logDate.setHours(0, 0, 0, 0);
         return logDate.getTime() > sevenDaysAgo.getTime() && logDate.getTime() <= date.getTime();
       });
 
-      // Count unique days logged in window
-      const uniqueDaysLogged = new Set(logsInWindow.map(log => {
-        const d = new Date(log.timestamp);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-      })).size;
+      const uniqueDaysLogged = new Set(
+        logsInWindow.map((log) => {
+          const d = new Date(log.timestamp);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        })
+      ).size;
 
       const fluxScore = Math.round((uniqueDaysLogged / 7) * 100);
 
       data.push({
-        date: date,
+        date,
         label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         cumulativeEarnings,
         fluxScore
@@ -579,30 +617,13 @@ export default function HabitDetail() {
     }
 
     return data;
-  }, [habitLogs, chartPeriod, habit.createdAt]);
+  }, [habit.createdAt, habitLogs, chartPeriod]);
 
-  // Calculate change over period
-  const periodChange = useMemo(() => {
-    if (chartData.length < 2) return { value: 0, formatted: '0' };
+  // Chart configuration
+  const chartConfig = useMemo(() => {
+    const labels = chartData.map((d) => d.label);
+    const values = chartData.map((d) => (chartType === 'fluxScore' ? d.fluxScore : d.cumulativeEarnings));
 
-    const firstPoint = chartData[0];
-    const lastPoint = chartData[chartData.length - 1];
-
-    if (chartType === 'fluxScore') {
-      const change = lastPoint.fluxScore - firstPoint.fluxScore;
-      return { value: change, formatted: `${Math.abs(change)}` };
-    } else {
-      const change = lastPoint.cumulativeEarnings - firstPoint.cumulativeEarnings;
-      return { value: change, formatted: formatCurrency(Math.abs(change)) };
-    }
-  }, [chartData, chartType]);
-
-  // Chart.js configuration
-  const getChartConfig = useMemo(() => {
-    const labels = chartData.map(d => d.label);
-    const values = chartData.map(d => chartType === 'fluxScore' ? d.fluxScore : d.cumulativeEarnings);
-
-    // Blue for Flux Score, Green for Earnings
     const isFlux = chartType === 'fluxScore';
     const lineColor = isFlux ? '#3b82f6' : '#22c55e';
     const gradientColorStart = isFlux ? 'rgba(59, 130, 246, 0.2)' : 'rgba(34, 197, 94, 0.2)';
@@ -610,90 +631,73 @@ export default function HabitDetail() {
 
     return {
       labels,
-      datasets: [{
-        label: isFlux ? 'Flux Score' : 'Earnings',
-        data: values,
-        borderColor: lineColor,
-        backgroundColor: (context) => {
-          const chart = context.chart;
-          const {ctx, chartArea} = chart;
-          if (!chartArea) return null;
-
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, gradientColorStart);
-          gradient.addColorStop(1, gradientColorEnd);
-          return gradient;
-        },
-        borderWidth: 2.5,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: lineColor,
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-      }]
+      datasets: [
+        {
+          label: isFlux ? 'Flux Score' : 'Earnings',
+          data: values,
+          borderColor: lineColor,
+          backgroundColor: (context) => {
+            const chart = context.chart;
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return null;
+            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            gradient.addColorStop(0, gradientColorStart);
+            gradient.addColorStop(1, gradientColorEnd);
+            return gradient;
+          },
+          borderWidth: 2.5,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: lineColor,
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2
+        }
+      ]
     };
   }, [chartData, chartType]);
 
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: {
-        top: 10
-      }
-    },
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: '#fff',
-        titleColor: '#6b7280',
-        bodyColor: '#111827',
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        cornerRadius: 8,
-        padding: 10,
-        displayColors: false,
-        callbacks: {
-          label: function(context) {
-            const value = context.parsed.y;
-            if (chartType === 'fluxScore') {
-              return `Score: ${Math.round(value)}`;
+  const chartOptions = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 10 } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#fff',
+          titleColor: '#6b7280',
+          bodyColor: '#111827',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          cornerRadius: 8,
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: function (context) {
+              const value = context.parsed.y;
+              if (chartType === 'fluxScore') return `Score: ${Math.round(value)}`;
+              return `Earned: ${formatCurrency(value)}`;
             }
-            return `Earned: ${formatCurrency(value)}`;
           }
         }
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          font: {
-            size: 10
-          },
-          color: '#9ca3af',
-          maxTicksLimit: 5
-        }
       },
-      y: {
-        display: false,
-        grace: '10%',
-        grid: {
-          color: '#f3f4f6'
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#9ca3af', maxTicksLimit: 5 }
+        },
+        y: {
+          display: false,
+          grace: '10%',
+          grid: { color: '#f3f4f6' }
         }
       }
-    }
-  }), [chartType]);
+    }),
+    [chartType]
+  );
 
   // Handle actions
   const handleEdit = () => {
@@ -702,6 +706,7 @@ export default function HabitDetail() {
   };
 
   const handlePause = () => {
+    // Phase 1: Coming soon
     setShowComingSoon(true);
     setTimeout(() => setShowComingSoon(false), 2000);
   };
@@ -711,19 +716,24 @@ export default function HabitDetail() {
     setShowPauseConfirm(false);
   };
 
-  const handleDelete = () => {
-    setShowDeleteConfirm(true);
-  };
+  const handleDelete = () => setShowDeleteConfirm(true);
 
-  const confirmDelete = () => {
-    deleteHabit(habit.id);
-    navigate('/portfolio', { state: { direction: 'back' } });
+  const confirmDelete = async () => {
+    try {
+      await deleteHabit?.(habit.id);
+      navigate('/portfolio', { state: { direction: 'back' } });
+    } catch (e) {
+      console.error(e);
+      alert(e?.message || 'Failed to delete habit.');
+    } finally {
+      setShowDeleteConfirm(false);
+    }
   };
 
   return (
     <div className="habit-detail-page">
       <div className="habit-detail-container">
-        {/* Header with Habit Name */}
+        {/* Header */}
         <header className="detail-header">
           <BackButton to="/portfolio" />
           <span className="header-title">{habit.name}</span>
@@ -734,9 +744,9 @@ export default function HabitDetail() {
               aria-label="More options"
             >
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="5" r="2"/>
-                <circle cx="12" cy="12" r="2"/>
-                <circle cx="12" cy="19" r="2"/>
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="12" cy="19" r="2" />
               </svg>
             </button>
             {showMoreMenu && (
@@ -745,19 +755,19 @@ export default function HabitDetail() {
                 <div className="more-menu-dropdown">
                   <button className="menu-item" onClick={() => { setShowMoreMenu(false); handleEdit(); }}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Edit Habit
                   </button>
                   <button className="menu-item" onClick={() => { setShowMoreMenu(false); handlePause(); }}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Pause Habit
                   </button>
                   <button className="menu-item delete" onClick={() => { setShowMoreMenu(false); handleDelete(); }}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete Habit
                   </button>
@@ -767,15 +777,14 @@ export default function HabitDetail() {
           </div>
         </header>
 
-        {/* Hero Section - Stacked/Centered */}
+        {/* Hero */}
         <section className={`hero-section ${habitDataStatus.status !== 'sufficient' ? 'calibrating' : ''}`}>
-          {/* Calibrating: Side-by-side layout */}
           {habitDataStatus.status !== 'sufficient' ? (
             <div className="hero-calibrating-layout">
               <div className="hero-section-left">
                 <div className="calibrating-earnings">{formatCurrency(stats.totalEarnings)}</div>
                 <span className="calibrating-earnings-label">lifetime earnings</span>
-                {/* Status badges under earnings during calibration */}
+
                 {(isLoggedToday || habit.isActive === false) && (
                   <div className="hero-status-inline">
                     {isLoggedToday && (
@@ -797,11 +806,9 @@ export default function HabitDetail() {
                   </div>
                 )}
               </div>
+
               <div className="hero-section-right">
-                <CalibratingFingerprint
-                  logsNeeded={calibrationStatus.logsNeeded}
-                  size="hero"
-                />
+                <CalibratingFingerprint logsNeeded={calibrationStatus?.logsNeeded ?? 0} size="hero" />
               </div>
             </div>
           ) : (
@@ -809,7 +816,7 @@ export default function HabitDetail() {
               <div className="hero-section-left">
                 <div className="calibrating-earnings">{formatCurrency(stats.totalEarnings)}</div>
                 <span className="calibrating-earnings-label">lifetime earnings</span>
-                {/* Status badges under earnings */}
+
                 {(isLoggedToday || habit.isActive === false) && (
                   <div className="hero-status-inline">
                     {isLoggedToday && (
@@ -831,36 +838,28 @@ export default function HabitDetail() {
                   </div>
                 )}
               </div>
+
               <div className="hero-section-right">
-                <FluxBadge score={fluxScoreData.score || 0} size="md" />
+                <FluxBadge score={fluxScoreData?.score ?? 0} size="md" />
               </div>
             </div>
           )}
         </section>
 
-        {/* Tab Navigation */}
+        {/* Tabs */}
         <div className="detail-tabs">
-          <button
-            className={`detail-tab ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
+          <button className={`detail-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             Overview
           </button>
-          <button
-            className={`detail-tab ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => setActiveTab('activity')}
-          >
+          <button className={`detail-tab ${activeTab === 'activity' ? 'active' : ''}`} onClick={() => setActiveTab('activity')}>
             Activity
           </button>
-          <button
-            className={`detail-tab ${activeTab === 'insights' ? 'active' : ''}`}
-            onClick={() => setActiveTab('insights')}
-          >
+          <button className={`detail-tab ${activeTab === 'insights' ? 'active' : ''}`} onClick={() => setActiveTab('insights')}>
             Insights
           </button>
         </div>
 
-        {/* ========== OVERVIEW TAB ========== */}
+        {/* ================= OVERVIEW ================= */}
         {activeTab === 'overview' && (
           <>
             {/* Performance Chart */}
@@ -868,16 +867,10 @@ export default function HabitDetail() {
               <div className="detail-chart-header">
                 <h3 className="detail-section-title">Performance</h3>
                 <div className="chart-toggle-group">
-                  <button
-                    className={`chart-toggle-btn ${chartType === 'fluxScore' ? 'active' : ''}`}
-                    onClick={() => setChartType('fluxScore')}
-                  >
+                  <button className={`chart-toggle-btn ${chartType === 'fluxScore' ? 'active' : ''}`} onClick={() => setChartType('fluxScore')}>
                     Score
                   </button>
-                  <button
-                    className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`}
-                    onClick={() => setChartType('earnings')}
-                  >
+                  <button className={`chart-toggle-btn ${chartType === 'earnings' ? 'active' : ''}`} onClick={() => setChartType('earnings')}>
                     Earnings
                   </button>
                 </div>
@@ -887,21 +880,21 @@ export default function HabitDetail() {
                 <div className="chart-empty-state">
                   <div className="chart-empty-icon">
                     <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
                   <p className="chart-empty-message">{habitDataStatus.message}</p>
                 </div>
-              ) : chartType === 'fluxScore' && calibrationStatus.isCalibrating ? (
+              ) : chartType === 'fluxScore' && calibrationStatus?.isCalibrating ? (
                 <div className="chart-calibrating-state">
                   <div className="chart-calibrating-icon">
                     <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" strokeWidth="1.5"/>
-                      <path strokeLinecap="round" strokeWidth="1.5" d="M12 6v6l4 2"/>
+                      <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+                      <path strokeLinecap="round" strokeWidth="1.5" d="M12 6v6l4 2" />
                     </svg>
                   </div>
                   <p className="chart-calibrating-message">Flux Score calibrating</p>
-                  <p className="chart-calibrating-submessage">{calibrationStatus.message}</p>
+                  <p className="chart-calibrating-submessage">{calibrationStatus?.message}</p>
                 </div>
               ) : (
                 <>
@@ -912,36 +905,31 @@ export default function HabitDetail() {
                     </div>
                   )}
                   <div className="chart-container">
-                    <Line data={getChartConfig} options={chartOptions} />
+                    <Line data={chartConfig} options={chartOptions} />
                   </div>
                 </>
               )}
 
               <div className="time-toggles">
-                {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map(period => (
-                  <button
-                    key={period}
-                    className={`time-toggle ${chartPeriod === period ? 'active' : ''}`}
-                    onClick={() => setChartPeriod(period)}
-                  >
+                {['1W', '1M', '3M', 'YTD', '1Y', 'ALL'].map((period) => (
+                  <button key={period} className={`time-toggle ${chartPeriod === period ? 'active' : ''}`} onClick={() => setChartPeriod(period)}>
                     {period}
                   </button>
                 ))}
               </div>
             </section>
 
-            {/* Goal Progress Section */}
-            {habit.goal && (
-              <GoalSection habit={habit} logs={habitLogs} />
-            )}
+            {/* Goal Progress */}
+            {habit.goal && <GoalSection habit={habit} logs={habitLogs} />}
 
-            {/* Weekly Summary Card */}
+            {/* Weekly Summary */}
             <section className="weekly-summary-section">
               <div className="weekly-summary-card">
                 <div className="weekly-summary-header">
                   <h3 className="weekly-summary-title">This Week</h3>
                   <span className={`weekly-trend ${weeklySummary.isAhead ? 'positive' : 'neutral'}`}>
-                    {weeklySummary.daysDiff > 0 ? '+' : ''}{weeklySummary.daysDiff} vs last week
+                    {weeklySummary.daysDiff > 0 ? '+' : ''}
+                    {weeklySummary.daysDiff} vs last week
                   </span>
                 </div>
                 <div className="weekly-summary-stats">
@@ -958,7 +946,9 @@ export default function HabitDetail() {
                 {weeklySummary.lastWeekDays > 0 && (
                   <div className="weekly-comparison">
                     <span className="comparison-label">Last week:</span>
-                    <span className="comparison-value">{weeklySummary.lastWeekDays} days · {formatCurrency(weeklySummary.lastWeekEarnings)}</span>
+                    <span className="comparison-value">
+                      {weeklySummary.lastWeekDays} days · {formatCurrency(weeklySummary.lastWeekEarnings)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -966,7 +956,7 @@ export default function HabitDetail() {
           </>
         )}
 
-        {/* ========== ACTIVITY TAB ========== */}
+        {/* ================= ACTIVITY ================= */}
         {activeTab === 'activity' && (
           <>
             {/* Calendar Heatmap */}
@@ -994,6 +984,7 @@ export default function HabitDetail() {
                   </div>
                 </div>
               </div>
+
               <div
                 className="calendar-heatmap"
                 ref={calendarRef}
@@ -1002,14 +993,9 @@ export default function HabitDetail() {
                 onTouchEnd={handleTouchEnd}
               >
                 <div className="calendar-weekday-labels">
-                  <span>S</span>
-                  <span>M</span>
-                  <span>T</span>
-                  <span>W</span>
-                  <span>T</span>
-                  <span>F</span>
-                  <span>S</span>
+                  <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                 </div>
+
                 <div className="calendar-month-grid">
                   {calendarData.weeks.map((week, weekIndex) => (
                     <div key={weekIndex} className="calendar-week-row">
@@ -1017,14 +1003,12 @@ export default function HabitDetail() {
                         <div
                           key={dayIndex}
                           className={`calendar-day ${
-                            day.isPadding ? 'padding' :
-                            day.isFuture ? 'future' :
-                            `level-${day.level}`
-                          } ${day.isToday ? 'today' : ''} ${!day.isPadding && !day.isFuture && day.count > 0 ? 'tappable' : ''}`}
+                            day.isPadding ? 'padding' : day.isFuture ? 'future' : `level-${day.level}`
+                          } ${day.isToday ? 'today' : ''} ${
+                            !day.isPadding && !day.isFuture && day.count > 0 ? 'tappable' : ''
+                          }`}
                           onClick={() => {
-                            if (!day.isPadding && !day.isFuture && day.count > 0) {
-                              setSelectedCalendarDay(day);
-                            }
+                            if (!day.isPadding && !day.isFuture && day.count > 0) setSelectedCalendarDay(day);
                           }}
                         >
                           {!day.isPadding && <span className="day-number">{day.day}</span>}
@@ -1033,6 +1017,7 @@ export default function HabitDetail() {
                     </div>
                   ))}
                 </div>
+
                 <div className="calendar-legend">
                   <span className="legend-label">Less</span>
                   <div className="legend-squares">
@@ -1049,20 +1034,25 @@ export default function HabitDetail() {
             {/* Recent Activity */}
             <section className="detail-activity-section">
               <h3 className="detail-section-title">Recent Activity</h3>
+
               {recentActivity.length > 0 ? (
                 <div className="detail-activity-list">
                   {recentActivity.slice(0, 5).map((log) => (
                     <div key={log.id} className="detail-activity-item">
                       <div className="activity-date">
                         <span className="date-day">{new Date(log.timestamp).getDate()}</span>
-                        <span className="date-month">{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short' })}</span>
+                        <span className="date-month">
+                          {new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short' })}
+                        </span>
                       </div>
+
                       <div className="activity-info">
                         <div className="activity-title">
-                          {log.amount ? `${log.amount} ${log.unit || getUnitLabel()}` : 'Completed'}
+                          {isBinaryHabit ? 'Completed' : `${log.amount} ${log.unit || getUnitLabel()}`}
                         </div>
                         <div className="activity-time">{formatActivityTime(log.timestamp)}</div>
                       </div>
+
                       <div className="activity-amount">+{formatCurrency(log.totalEarnings || 0)}</div>
                     </div>
                   ))}
@@ -1071,13 +1061,19 @@ export default function HabitDetail() {
                 <div className="activity-empty">
                   <div className="empty-icon">
                     <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
                     </svg>
                   </div>
                   <p className="empty-title">No activity yet</p>
                   <p className="empty-subtitle">Complete this habit to start tracking</p>
                 </div>
               )}
+
               {habitLogs.length > 5 && (
                 <button className="view-history-btn" onClick={() => navigate('/activity', { state: { habitId: habit.id } })}>
                   View Full History
@@ -1087,14 +1083,13 @@ export default function HabitDetail() {
           </>
         )}
 
-        {/* ========== INSIGHTS TAB ========== */}
+        {/* ================= INSIGHTS ================= */}
         {activeTab === 'insights' && (
           <>
-            {/* Insights Accordion */}
             <section className="insights-accordion-section">
               <h3 className="detail-section-title">Insights</h3>
 
-              {/* Milestone Accordion */}
+              {/* Milestone */}
               <div className={`accordion-item ${expandedInsight === 'milestone' ? 'expanded' : ''}`}>
                 <button
                   className="accordion-header"
@@ -1103,100 +1098,105 @@ export default function HabitDetail() {
                   <div className="accordion-header-left">
                     <span className="accordion-icon milestone">
                       <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                        <circle cx="12" cy="12" r="4" fill="currentColor" />
                       </svg>
                     </span>
                     <span className="accordion-title">Next Milestone</span>
                   </div>
                   <div className="accordion-header-right">
-                    <span className="accordion-preview">{formatCurrency(insights.milestone.target)}</span>
+                    <span className="accordion-preview">{formatCurrency(insights?.milestone?.target || 0)}</span>
                     <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </button>
+
                 <div className="accordion-content">
-                  {insights.milestone.reached ? (
+                  {insights?.milestone?.reached ? (
                     <p className="insight-message">{insights.milestone.message}</p>
                   ) : (
                     <>
                       <div className="milestone-progress-container">
                         <div className="milestone-progress-bar">
-                          <div className="milestone-progress-fill" style={{ width: `${insights.milestone.progress}%` }} />
+                          <div className="milestone-progress-fill" style={{ width: `${insights?.milestone?.progress || 0}%` }} />
                         </div>
                         <div className="milestone-progress-text">
-                          <span>{formatCurrency(insights.milestone.current)}</span>
-                          <span>{formatCurrency(insights.milestone.target)}</span>
+                          <span>{formatCurrency(insights?.milestone?.current || 0)}</span>
+                          <span>{formatCurrency(insights?.milestone?.target || 0)}</span>
                         </div>
                       </div>
-                      <p className="insight-message">{insights.milestone.message}</p>
+                      <p className="insight-message">{insights?.milestone?.message}</p>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Maturity Accordion */}
+              {/* Maturity */}
               <div className={`accordion-item ${expandedInsight === 'maturity' ? 'expanded' : ''}`}>
                 <button
                   className="accordion-header"
                   onClick={() => setExpandedInsight(expandedInsight === 'maturity' ? null : 'maturity')}
                 >
                   <div className="accordion-header-left">
-                    <span className={`accordion-icon maturity ${insights.maturity.stage}`}>
+                    <span className={`accordion-icon maturity ${insights?.maturity?.stage || ''}`}>
                       <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                       </svg>
                     </span>
                     <span className="accordion-title">Habit Stage</span>
                   </div>
                   <div className="accordion-header-right">
-                    <span className="accordion-preview">{insights.maturity.title}</span>
+                    <span className="accordion-preview">{insights?.maturity?.title || '—'}</span>
                     <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </button>
+
                 <div className="accordion-content">
-                  <p className="maturity-description">{insights.maturity.description}</p>
-                  {insights.maturity.nextStage && (
+                  <p className="maturity-description">{insights?.maturity?.description}</p>
+
+                  {insights?.maturity?.nextStage && (
                     <div className="maturity-progress-container">
                       <div className="maturity-progress-bar">
-                        <div className="maturity-progress-fill" style={{ width: `${insights.maturity.progress}%` }} />
+                        <div className="maturity-progress-fill" style={{ width: `${insights?.maturity?.progress || 0}%` }} />
                       </div>
-                      <p className="maturity-next">{insights.maturity.daysUntilNext} days until {insights.maturity.nextStage}</p>
+                      <p className="maturity-next">
+                        {insights?.maturity?.daysUntilNext} days until {insights?.maturity?.nextStage}
+                      </p>
                     </div>
                   )}
-                  <p className="insight-advice">{insights.maturity.insight}</p>
+
+                  <p className="insight-advice">{insights?.maturity?.insight}</p>
                 </div>
               </div>
 
-              {/* Calibration Accordion */}
+              {/* Calibration */}
               <div className={`accordion-item ${expandedInsight === 'calibration' ? 'expanded' : ''}`}>
                 <button
                   className="accordion-header"
                   onClick={() => setExpandedInsight(expandedInsight === 'calibration' ? null : 'calibration')}
                 >
                   <div className="accordion-header-left">
-                    <span className={`accordion-icon calibration ${insights.calibration.status}`}>
+                    <span className={`accordion-icon calibration ${insights?.calibration?.status || ''}`}>
                       <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </span>
                     <span className="accordion-title">Difficulty</span>
                   </div>
                   <div className="accordion-header-right">
-                    <span className="accordion-preview">{insights.calibration.title}</span>
+                    <span className="accordion-preview">{insights?.calibration?.title || '—'}</span>
                     <svg className="accordion-chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </button>
+
                 <div className="accordion-content">
-                  <p className="insight-message">{insights.calibration.message}</p>
-                  {insights.calibration.suggestion && (
-                    <p className="insight-suggestion">{insights.calibration.suggestion}</p>
-                  )}
+                  <p className="insight-message">{insights?.calibration?.message}</p>
+                  {insights?.calibration?.suggestion && <p className="insight-suggestion">{insights.calibration.suggestion}</p>}
                   <button className="calibration-info-link" onClick={() => setShowCalibrationInfo(true)}>
                     Learn more about calibration
                   </button>
@@ -1205,21 +1205,21 @@ export default function HabitDetail() {
             </section>
           </>
         )}
-
       </div>
 
       {/* Calendar Day Detail Modal */}
       {selectedCalendarDay && (
         <div className="modal-overlay" onClick={() => setSelectedCalendarDay(null)}>
-          <div className="calendar-day-modal" onClick={e => e.stopPropagation()}>
+          <div className="calendar-day-modal" onClick={(e) => e.stopPropagation()}>
             <div className="calendar-day-modal-header">
               <h3>{selectedCalendarDay.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h3>
               <button className="modal-close-btn" onClick={() => setSelectedCalendarDay(null)}>
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
+
             <div className="calendar-day-modal-content">
               {getLogsForDay(selectedCalendarDay.date).map((log, idx) => (
                 <div key={idx} className="calendar-day-log">
@@ -1228,12 +1228,13 @@ export default function HabitDetail() {
                   </div>
                   <div className="calendar-log-details">
                     <span className="calendar-log-amount">
-                      {log.amount ? `${log.amount} ${log.unit || getUnitLabel()}` : 'Completed'}
+                      {isBinaryHabit ? 'Completed' : `${log.amount} ${log.unit || getUnitLabel()}`}
                     </span>
                     <span className="calendar-log-earnings">+{formatCurrency(log.totalEarnings || 0)}</span>
                   </div>
                 </div>
               ))}
+
               <div className="calendar-day-summary">
                 <span>Total:</span>
                 <span className="calendar-day-total">
@@ -1248,10 +1249,10 @@ export default function HabitDetail() {
       {/* Pause Confirmation Modal */}
       {showPauseConfirm && (
         <div className="modal-overlay" onClick={() => setShowPauseConfirm(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">Pause Habit?</h3>
             <p className="modal-text">
-              Pausing will stop this habit from appearing in your daily schedule. 
+              Pausing will stop this habit from appearing in your daily schedule.
               Your progress and earnings history will be preserved.
             </p>
             <div className="modal-actions">
@@ -1269,10 +1270,10 @@ export default function HabitDetail() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">Delete Habit?</h3>
             <p className="modal-text">
-              This will permanently delete this habit and all its activity history. 
+              This will permanently delete this habit and all its activity history.
               This action cannot be undone.
             </p>
             <div className="modal-actions">
@@ -1291,7 +1292,7 @@ export default function HabitDetail() {
       {showComingSoon && (
         <div className="coming-soon-toast">
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>Coming Soon</span>
         </div>
@@ -1300,21 +1301,20 @@ export default function HabitDetail() {
       {/* Calibration Info Modal */}
       {showCalibrationInfo && (
         <div className="modal-overlay" onClick={() => setShowCalibrationInfo(false)}>
-          <div className="info-modal-content" onClick={e => e.stopPropagation()}>
+          <div className="info-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="info-modal-header">
               <h3 className="info-modal-title">Difficulty Calibration</h3>
-              <button 
-                className="info-modal-close"
-                onClick={() => setShowCalibrationInfo(false)}
-              >
+              <button className="info-modal-close" onClick={() => setShowCalibrationInfo(false)}>
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
+
             <p className="info-modal-text">
               Difficulty calibration analyzes your completion rate to determine if this habit is set at the right level for you.
             </p>
+
             <ul className="info-modal-list">
               <li><strong>Building:</strong> Still gathering data (first 10 logs)</li>
               <li><strong>Struggling:</strong> Below 70% - consider making it easier</li>
@@ -1322,10 +1322,8 @@ export default function HabitDetail() {
               <li><strong>Well Calibrated:</strong> 80-95% - sustainable and challenging</li>
               <li><strong>Ready for More:</strong> Above 95% - consider increasing difficulty</li>
             </ul>
-            <button 
-              className="info-modal-button"
-              onClick={() => setShowCalibrationInfo(false)}
-            >
+
+            <button className="info-modal-button" onClick={() => setShowCalibrationInfo(false)}>
               Got it
             </button>
           </div>

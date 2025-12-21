@@ -1,740 +1,415 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { getHabitById, RATE_TYPES } from '../utils/HABIT_LIBRARY';
+// src/context/HabitContext.jsx
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { getHabitById, RATE_TYPES } from "@/utils/HABIT_LIBRARY";
 
-const HabitContext = createContext();
+import { bootstrapApi, habitsApi, logsApi, transfersApi } from "@/api/fluxApi";
+
+import { getOrCreateUserId } from "@/utils/userId";
+
+const HabitContext = createContext(null);
 
 export function useHabits() {
-  const context = useContext(HabitContext);
-  if (!context) {
-    throw new Error('useHabits must be used within HabitProvider');
-  }
-  return context;
+  const ctx = useContext(HabitContext);
+  if (!ctx) throw new Error("useHabits must be used within HabitProvider");
+  return ctx;
+}
+
+// ---------- money helpers ----------
+function microsToDollars(micros) {
+  // micros are ints; dollars are floats for UI
+  return (Number(micros || 0) / 1_000_000);
+}
+
+function dollarsToMicros(dollars) {
+  // round to nearest micro
+  return Math.round(Number(dollars || 0) * 1_000_000);
+}
+
+// ---------- time helpers ----------
+function msToISO(ms) {
+  if (!ms) return null;
+  return new Date(Number(ms)).toISOString();
+}
+
+function startOfTodayMs() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
 }
 
 export function HabitProvider({ children }) {
-  // ========== STATE ==========
-  
-  // User's active habits (selected from library)
-  const [habits, setHabits] = useState(() => {
-    const saved = localStorage.getItem('flux_habits');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  // Activity logs
-  const [logs, setLogs] = useState(() => {
-    const saved = localStorage.getItem('flux_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  // User profile and settings
+  // Ensure we always have a UUID to send as X-User-Id.
+  // Your http.js reads localStorage("flux_user_id"), so we seed it here.
+  useEffect(() => {
+    getOrCreateUserId();
+  }, []);
+
+  // UI-only user profile (NOT part of Step A backend)
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('flux_user');
-    return saved ? JSON.parse(saved) : {
-      name: '',
-      email: '',
-      hasCompletedOnboarding: false,
-    };
+    const saved = localStorage.getItem("flux_user");
+    return saved
+      ? JSON.parse(saved)
+      : { name: "", email: "", hasCompletedOnboarding: false };
   });
 
-  // Transfer history
-  const [transfers, setTransfers] = useState(() => {
-    const saved = localStorage.getItem('flux_transfers');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [lastTransferDate, setLastTransferDate] = useState(() => {
-    return localStorage.getItem('flux_last_transfer') || null;
-  });
-
-  // ========== PERSISTENCE ==========
-  
   useEffect(() => {
-    localStorage.setItem('flux_habits', JSON.stringify(habits));
-  }, [habits]);
-
-  useEffect(() => {
-    localStorage.setItem('flux_logs', JSON.stringify(logs));
-  }, [logs]);
-
-  useEffect(() => {
-    localStorage.setItem('flux_user', JSON.stringify(user));
+    localStorage.setItem("flux_user", JSON.stringify(user));
   }, [user]);
 
+  const updateUser = useCallback((updates) => {
+    setUser((prev) => ({ ...prev, ...(updates || {}) }));
+  }, []);
+
+  // Server bootstrap state
+  const [boot, setBoot] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const raw = await bootstrapApi.get(); // GET /api/bootstrap
+      setBoot(raw);
+    } catch (e) {
+      setError(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem('flux_transfers', JSON.stringify(transfers));
-  }, [transfers]);
+    refresh();
+  }, [refresh]);
 
-  useEffect(() => {
-    if (lastTransferDate) {
-      localStorage.setItem('flux_last_transfer', lastTransferDate);
-    }
-  }, [lastTransferDate]);
+  // ----- Derived “view models” for UI -----
+  const habits = useMemo(() => {
+    const hs = boot?.habits || [];
+    return hs.map((h) => {
+      const lib = getHabitById(h.libraryId);
+      return {
+        // raw fields
+        id: h.id,
+        libraryId: h.libraryId,
+        rateType: h.rateType,
+        rateMicros: h.rateMicros,
+        goal: h.goal,
+        createdAtMs: h.createdAtMs,
 
-  // ========== HABIT OPERATIONS ==========
-  
-  /**
-   * Add a habit from the library
-   * @param {Object} habitConfig - { libraryId, rate (optional custom rate), goal (required) }
-   */
-  const addHabit = (habitConfig) => {
-    const libraryHabit = getHabitById(habitConfig.libraryId);
+        // UI-enriched (presentation)
+        name: lib?.name || h.libraryId,
+        icon: lib?.icon || "✅",
+        unit: lib?.unit || "",
+        unitPlural: lib?.unitPlural || "",
+        defaultRate: lib?.defaultRate ?? 0,
 
-    if (!libraryHabit) {
-      console.error('Habit not found in library:', habitConfig.libraryId);
-      return null;
-    }
-
-    // Validate goal is provided
-    if (!habitConfig.goal || !habitConfig.goal.amount || !habitConfig.goal.period) {
-      console.error('Goal is required when adding a habit');
-      return null;
-    }
-
-    // Check if habit already exists
-    const existing = habits.find(h => h.libraryId === habitConfig.libraryId);
-    if (existing) {
-      console.warn('Habit already added:', habitConfig.libraryId);
-      return existing;
-    }
-
-    const newHabit = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      libraryId: habitConfig.libraryId,
-
-      // Copy from library
-      name: libraryHabit.name,
-      icon: libraryHabit.icon,
-      rateType: libraryHabit.rateType,
-      unit: libraryHabit.unit,
-      unitPlural: libraryHabit.unitPlural,
-
-      // Custom rate or default
-      rate: habitConfig.rate ?? libraryHabit.defaultRate,
-
-      // User-set goal (REQUIRED)
-      goal: {
-        amount: habitConfig.goal.amount,
-        period: habitConfig.goal.period,
-        setAt: Date.now()
-      },
-
-      // Timestamps
-      createdAt: new Date().toISOString(),
-
-      // Pattern recognition (populated after logs)
-      baseline: {
-        frequency: 0,
-        typicalGap: 0,
-        gapVariance: 0,
-        avgUnits: 0,
-        avgPerPeriod: 0,
-        status: 'building',
-        lastRatchet: null
-      }
-    };
-
-    setHabits(prev => [...prev, newHabit]);
-    return newHabit;
-  };
-
-  /**
-   * Add multiple habits at once (used during onboarding)
-   * @param {Array} habitConfigs - Array of { libraryId, rate, goal }
-   */
-  const addHabits = (habitConfigs) => {
-    const newHabits = habitConfigs
-      .filter(config => {
-        const libraryHabit = getHabitById(config.libraryId);
-        const exists = habits.find(h => h.libraryId === config.libraryId);
-        // Also validate goal is provided
-        const hasValidGoal = config.goal && config.goal.amount && config.goal.period;
-        return libraryHabit && !exists && hasValidGoal;
-      })
-      .map(config => {
-        const libraryHabit = getHabitById(config.libraryId);
-        return {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${config.libraryId}`,
-          libraryId: config.libraryId,
-          name: libraryHabit.name,
-          icon: libraryHabit.icon,
-          rateType: libraryHabit.rateType,
-          unit: libraryHabit.unit,
-          unitPlural: libraryHabit.unitPlural,
-          rate: config.rate ?? libraryHabit.defaultRate,
-          // User-set goal (REQUIRED)
-          goal: {
-            amount: config.goal.amount,
-            period: config.goal.period,
-            setAt: Date.now()
-          },
-          createdAt: new Date().toISOString(),
-          // Pattern recognition baseline
-          baseline: {
-            frequency: 0,
-            typicalGap: 0,
-            gapVariance: 0,
-            avgUnits: 0,
-            avgPerPeriod: 0,
-            status: 'building',
-            lastRatchet: null
-          }
-        };
-      });
-
-    if (newHabits.length > 0) {
-      setHabits(prev => [...prev, ...newHabits]);
-    }
-
-    return newHabits;
-  };
-
-  /**
-   * Update a habit's goal
-   * @param {string} habitId - The habit ID to update
-   * @param {Object} newGoal - { amount, period }
-   */
-  const updateHabitGoal = (habitId, newGoal) => {
-    if (!newGoal || !newGoal.amount || !newGoal.period) {
-      console.error('Invalid goal provided');
-      return;
-    }
-
-    setHabits(prev =>
-      prev.map(habit =>
-        habit.id === habitId
-          ? {
-              ...habit,
-              goal: {
-                amount: newGoal.amount,
-                period: newGoal.period,
-                setAt: Date.now()
-              }
-            }
-          : habit
-      )
-    );
-  };
-
-  /**
-   * Ratchet a habit's baseline up
-   * @param {string} habitId - The habit ID to update
-   * @param {number} newBaselineValue - The new avgPerPeriod value
-   */
-  const ratchetBaseline = (habitId, newBaselineValue) => {
-    setHabits(prev =>
-      prev.map(habit =>
-        habit.id === habitId
-          ? {
-              ...habit,
-              baseline: {
-                ...habit.baseline,
-                avgPerPeriod: newBaselineValue,
-                lastRatchet: Date.now()
-              }
-            }
-          : habit
-      )
-    );
-  };
-
-  /**
-   * Update habit (mainly for rate changes)
-   */
-  const updateHabit = (id, updates) => {
-    setHabits(prev =>
-      prev.map(habit => 
-        habit.id === id ? { ...habit, ...updates } : habit
-      )
-    );
-  };
-
-  /**
-   * Delete habit and its logs
-   */
-  const deleteHabit = (id) => {
-    setHabits(prev => prev.filter(habit => habit.id !== id));
-    setLogs(prev => prev.filter(log => log.habitId !== id));
-  };
-
-  /**
-   * Check if a library habit is already added
-   */
-  const isHabitAdded = (libraryId) => {
-    return habits.some(h => h.libraryId === libraryId);
-  };
-
-  // ========== LOG OPERATIONS ==========
-  
-  /**
-   * Add a log entry
-   * @param {Object} logData - { habitId, units (for non-binary), notes (optional) }
-   */
-  const addLog = (logData) => {
-    const habit = habits.find(h => h.id === logData.habitId);
-    if (!habit) {
-      console.error('Habit not found:', logData.habitId);
-      return null;
-    }
-
-    // Calculate earnings - use custom earnings if provided, otherwise calculate from rate
-    let totalEarnings;
-    if (logData.customEarnings !== undefined) {
-      totalEarnings = logData.customEarnings;
-    } else if (habit.rateType === RATE_TYPES.BINARY) {
-      totalEarnings = habit.rate || 0;
-    } else {
-      totalEarnings = (habit.rate || 0) * (logData.units || 1);
-    }
-
-    const newLog = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      habitId: logData.habitId,
-      timestamp: new Date().toISOString(),
-      units: logData.units || 1,
-      totalEarnings,
-      notes: logData.notes || ''
-    };
-
-    setLogs(prev => [...prev, newLog]);
-    return newLog;
-  };
-
-  /**
-   * Update a log entry
-   */
-  const updateLog = (id, updates) => {
-    setLogs(prev =>
-      prev.map(log => {
-        if (log.id !== id) return log;
-        
-        // Recalculate earnings if units changed
-        if (updates.units !== undefined) {
-          const habit = habits.find(h => h.id === log.habitId);
-          if (habit && habit.rateType !== RATE_TYPES.BINARY) {
-            updates.totalEarnings = habit.rate * updates.units;
-          }
-        }
-        
-        return { ...log, ...updates };
-      })
-    );
-  };
-
-  /**
-   * Delete a log entry
-   */
-  const deleteLog = (id) => {
-    setLogs(prev => prev.filter(log => log.id !== id));
-  };
-
-  /**
-   * Get logs for a specific habit
-   */
-  const getHabitLogs = (habitId) => {
-    return logs.filter(log => log.habitId === habitId);
-  };
-
-  /**
-   * Check if habit was logged on a specific date
-   */
-  const isHabitLoggedOnDate = (habitId, date) => {
-    const dateStr = new Date(date).toDateString();
-    return logs.some(log => 
-      log.habitId === habitId && 
-      new Date(log.timestamp).toDateString() === dateStr
-    );
-  };
-
-  /**
-   * Get today's logs
-   */
-  const getTodayLogs = () => {
-    const today = new Date().toDateString();
-    return logs.filter(log => 
-      new Date(log.timestamp).toDateString() === today
-    );
-  };
-
-  // ========== BALANCE CALCULATIONS ==========
-  
-  /**
-   * Get total transferred balance (completed transfers)
-   */
-  const getTransferredBalance = () => {
-    return transfers.reduce((sum, transfer) => {
-      if (transfer.status === 'completed') {
-        return sum + transfer.amount;
-      }
-      return sum;
-    }, 0);
-  };
-
-  /**
-   * Get pending balance (earnings not yet transferred)
-   */
-  const getPendingBalance = () => {
-    const totalEarnings = logs.reduce((sum, log) => sum + log.totalEarnings, 0);
-    const transferred = getTransferredBalance();
-    return totalEarnings - transferred;
-  };
-
-  /**
-   * Get total earnings (all time)
-   */
-  const getTotalEarnings = () => {
-    return logs.reduce((sum, log) => sum + log.totalEarnings, 0);
-  };
-
-  /**
-   * Get today's earnings
-   */
-  const getTodayEarnings = () => {
-    const today = new Date().toDateString();
-    return logs
-      .filter(log => new Date(log.timestamp).toDateString() === today)
-      .reduce((sum, log) => sum + log.totalEarnings, 0);
-  };
-
-  /**
-   * Get this week's earnings
-   */
-  const getWeekEarnings = () => {
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return logs
-      .filter(log => new Date(log.timestamp) >= weekAgo)
-      .reduce((sum, log) => sum + log.totalEarnings, 0);
-  };
-
-  // ========== TRANSFER OPERATIONS ==========
-  
-  /**
-   * Process Friday transfer (move pending to transferred)
-   */
-  const processTransfer = () => {
-    const pending = getPendingBalance();
-    
-    if (pending <= 0) {
-      return { success: false, message: 'No pending balance to transfer' };
-    }
-
-    const now = new Date().toISOString();
-    const newTransfer = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      amount: pending,
-      date: now,
-      status: 'completed',
-      breakdown: getTransferBreakdown()
-    };
-
-    setTransfers(prev => [...prev, newTransfer]);
-    setLastTransferDate(now);
-
-    return { 
-      success: true, 
-      message: `Transfer completed: $${pending.toFixed(2)}`,
-      amount: pending 
-    };
-  };
-
-  /**
-   * Get breakdown of pending earnings by habit
-   */
-  const getTransferBreakdown = () => {
-    // Get logs since last transfer
-    const lastDate = lastTransferDate ? new Date(lastTransferDate) : new Date(0);
-    const pendingLogs = logs.filter(log => new Date(log.timestamp) > lastDate);
-    
-    // Group by habit
-    const breakdown = {};
-    pendingLogs.forEach(log => {
-      if (!breakdown[log.habitId]) {
-        breakdown[log.habitId] = 0;
-      }
-      breakdown[log.habitId] += log.totalEarnings;
+        // legacy-ish convenience for UI
+        rate: microsToDollars(h.rateMicros),
+        createdAt: msToISO(h.createdAtMs),
+      };
     });
+  }, [boot]);
 
-    return Object.entries(breakdown).map(([habitId, amount]) => ({
-      habitId,
-      amount
+  const logs = useMemo(() => {
+    const ls = boot?.logs || [];
+    return ls.map((l) => ({
+      // raw
+      id: l.id,
+      habitId: l.habitId,
+      timestampMs: l.timestampMs,
+      earningsMicros: l.earningsMicros,
+      units: l.units,
+      notes: l.notes || "",
+
+      // UI convenience
+      timestamp: msToISO(l.timestampMs),
+      totalEarnings: microsToDollars(l.earningsMicros),
     }));
-  };
+  }, [boot]);
 
-  /**
-   * Manual transfer creation (for testing/example data)
-   */
-  const addTransfer = (transfer) => {
-    const newTransfer = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      date: new Date().toISOString(),
-      status: 'completed',
-      ...transfer
-    };
-    setTransfers(prev => [...prev, newTransfer]);
-    return newTransfer;
-  };
+  const transfers = useMemo(() => {
+    const ts = boot?.transfers || [];
+    return ts.map((t) => ({
+      // raw
+      id: t.id,
+      timestampMs: t.timestampMs,
+      amountMicros: t.amountMicros,
+      status: t.status,
+      weekKey: t.weekKey,
 
-  // ========== FLUX SCORE CALCULATIONS ==========
-  
-  /**
-   * Calculate Flux Score for a habit (0-100 scale)
-   * Components:
-   * - Frequency Trend (30 pts): Recent vs baseline frequency
-   * - Consistency (25 pts): Gap variance (lower = better)
-   * - Recency (20 pts): Days since last log vs typical gap
-   * - Volume/Intensity (15 pts): For non-binary habits only
-   * - Data Maturity (10 pts): Total logs (confidence indicator)
-   */
-  const calculateFluxScore = (habitId) => {
-    const habitLogs = getHabitLogs(habitId);
-    const habit = habits.find(h => h.id === habitId);
-    
-    if (!habit) return null;
-    
-    const totalLogs = habitLogs.length;
-    
-    // Not enough data - return building state
-    if (totalLogs < 10) {
-      return {
-        score: null,
-        status: 'building',
-        logsNeeded: 10 - totalLogs,
-        totalLogs
-      };
+      // UI convenience (matches your existing Transfers UI)
+      date: msToISO(t.timestampMs),
+      amount: microsToDollars(t.amountMicros),
+    }));
+  }, [boot]);
+
+  const totalsMicros = boot?.totals || { earnedMicros: 0, transferredMicros: 0, pendingMicros: 0 };
+
+  // ---- UI helper functions (thin; NOT recomputing totals/transfer logic) ----
+  const getPendingBalance = useCallback(() => microsToDollars(totalsMicros.pendingMicros), [totalsMicros.pendingMicros]);
+  const getTransferredBalance = useCallback(() => microsToDollars(totalsMicros.transferredMicros), [totalsMicros.transferredMicros]);
+  const getTotalEarnings = useCallback(() => microsToDollars(totalsMicros.earnedMicros), [totalsMicros.earnedMicros]);
+
+  const getTodayEarnings = useCallback(() => {
+    // This is UI-only aggregation (fine). Totals still come from backend.
+    const todayStart = startOfTodayMs();
+    let sum = 0;
+    for (const l of logs) {
+      if ((l.timestampMs || 0) >= todayStart) sum += (l.earningsMicros || 0);
     }
-    
-    const now = new Date();
-    const sortedLogs = [...habitLogs].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
-    
-    // Calculate date boundaries
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    
-    // Get logs in each window
-    const recentLogs = sortedLogs.filter(log => new Date(log.timestamp) >= fourteenDaysAgo);
-    const baselineLogs = sortedLogs.filter(log => new Date(log.timestamp) >= ninetyDaysAgo);
-    
-    // === COMPONENT 1: Frequency Trend (30 pts) ===
-    // Compare recent frequency to baseline frequency
-    const recentFrequency = recentLogs.length / 14; // logs per day (last 14 days)
-    const baselineDays = Math.min(90, Math.floor((now - new Date(sortedLogs[sortedLogs.length - 1].timestamp)) / (24 * 60 * 60 * 1000)));
-    const baselineFrequency = baselineLogs.length / Math.max(baselineDays, 1);
-    
-    const frequencyRatio = baselineFrequency > 0 ? recentFrequency / baselineFrequency : 1;
-    const frequencyScore = 30 * Math.min(1, frequencyRatio);
-    
-    // === COMPONENT 2: Consistency (25 pts) ===
-    // Calculate gap variance - lower variance = more consistent
-    const gaps = [];
-    for (let i = 1; i < sortedLogs.length; i++) {
-      const gap = (new Date(sortedLogs[i - 1].timestamp) - new Date(sortedLogs[i].timestamp)) / (24 * 60 * 60 * 1000);
-      gaps.push(gap);
+    return microsToDollars(sum);
+  }, [logs]);
+
+  const getWeekEarnings = useCallback(() => {
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    let sum = 0;
+    for (const l of logs) {
+      if ((l.timestampMs || 0) >= weekAgo) sum += (l.earningsMicros || 0);
     }
-    
-    const avgGap = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
-    const gapVariance = gaps.length > 0 
-      ? Math.sqrt(gaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / gaps.length)
-      : 0;
-    
-    const consistencyScore = 25 * Math.exp(-gapVariance / Math.max(avgGap, 0.5));
-    
-    // === COMPONENT 3: Recency (20 pts) ===
-    // How recently logged relative to typical gap
-    const daysSinceLog = sortedLogs.length > 0 
-      ? (now - new Date(sortedLogs[0].timestamp)) / (24 * 60 * 60 * 1000)
-      : 30;
-    
-    const recencyScore = 20 * Math.exp(-daysSinceLog / Math.max(avgGap, 1));
-    
-    // === COMPONENT 4: Volume/Intensity (15 pts) ===
-    // Only for non-binary habits
-    let volumeScore = 0;
-    if (habit.rateType !== 'BINARY') {
-      const recentUnits = recentLogs.reduce((sum, log) => sum + (log.units || 1), 0);
-      const baselineUnits = baselineLogs.reduce((sum, log) => sum + (log.units || 1), 0);
-      
-      const recentAvgUnits = recentLogs.length > 0 ? recentUnits / recentLogs.length : 0;
-      const baselineAvgUnits = baselineLogs.length > 0 ? baselineUnits / baselineLogs.length : 1;
-      
-      const volumeRatio = baselineAvgUnits > 0 ? recentAvgUnits / baselineAvgUnits : 1;
-      volumeScore = 15 * Math.min(1, volumeRatio);
-    }
-    
-    // === COMPONENT 5: Data Maturity (10 pts) ===
-    // More logs = higher confidence
-    const maturityScore = 10 * Math.min(1, totalLogs / 30);
-    
-    // === TOTAL SCORE ===
-    let totalScore;
-    if (habit.rateType === 'BINARY') {
-      // For binary habits, scale to 100 (max possible is 85 without volume)
-      const rawScore = frequencyScore + consistencyScore + recencyScore + maturityScore;
-      totalScore = (rawScore / 85) * 100;
-    } else {
-      totalScore = frequencyScore + consistencyScore + recencyScore + volumeScore + maturityScore;
-    }
-    
-    return {
-      score: Math.round(totalScore),
-      status: 'active',
-      components: {
-        frequency: Math.round(frequencyScore * 10) / 10,
-        consistency: Math.round(consistencyScore * 10) / 10,
-        recency: Math.round(recencyScore * 10) / 10,
-        volume: Math.round(volumeScore * 10) / 10,
-        maturity: Math.round(maturityScore * 10) / 10
-      },
-      meta: {
-        totalLogs,
-        avgGap: Math.round(avgGap * 10) / 10,
-        daysSinceLog: Math.round(daysSinceLog * 10) / 10,
-        recentLogs: recentLogs.length
+    return microsToDollars(sum);
+  }, [logs]);
+
+  const getHabitLogs = useCallback(
+    (habitId) => logs.filter((l) => l.habitId === habitId),
+    [logs]
+  );
+
+  const isHabitLoggedOnDate = useCallback(
+    (habitId, date) => {
+      const d = new Date(date);
+      const dayStart = new Date(d);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(d);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const start = dayStart.getTime();
+      const end = dayEnd.getTime();
+
+      return logs.some((l) => l.habitId === habitId && l.timestampMs >= start && l.timestampMs <= end);
+    },
+    [logs]
+  );
+
+  const getTodayLogs = useCallback(() => {
+    const todayStart = startOfTodayMs();
+    return logs.filter((l) => (l.timestampMs || 0) >= todayStart);
+  }, [logs]);
+
+  const isHabitAdded = useCallback(
+    (libraryId) => habits.some((h) => h.libraryId === libraryId),
+    [habits]
+  );
+
+  // ---- Flux Score (still FE for now; totals/transfer already moved) ----
+  const calculateFluxScore = useCallback(
+    (habitId) => {
+      const habitLogs = logs.filter((l) => l.habitId === habitId);
+      const habit = habits.find((h) => h.id === habitId);
+      if (!habit) return null;
+
+      const totalLogs = habitLogs.length;
+      if (totalLogs < 10) {
+        return { score: null, status: "building", logsNeeded: 10 - totalLogs, totalLogs };
       }
-    };
-  };
 
-  /**
-   * Calculate overall portfolio Flux Score
-   * Weighted average of all habits with 10+ logs
-   */
-  const getPortfolioFluxScore = () => {
-    const habitScores = habits
-      .map(habit => ({
-        habit,
-        fluxScore: calculateFluxScore(habit.id)
-      }))
-      .filter(item => item.fluxScore?.status === 'active');
-    
-    if (habitScores.length === 0) {
-      return {
-        score: null,
-        status: 'building',
-        habitsWithScore: 0,
-        totalHabits: habits.length
-      };
-    }
-    
-    // Simple average (could weight by earnings or logs later)
-    const avgScore = habitScores.reduce((sum, item) => sum + item.fluxScore.score, 0) / habitScores.length;
-    
-    return {
-      score: Math.round(avgScore),
-      status: 'active',
-      habitsWithScore: habitScores.length,
-      totalHabits: habits.length
-    };
-  };
+      const now = Date.now();
+      const sorted = [...habitLogs].sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
 
-  // ========== HABIT STATS ==========
-  
-  /**
-   * Get stats for a specific habit
-   */
-  const getHabitStats = (habitId) => {
-    const habitLogs = getHabitLogs(habitId);
-    const totalEarnings = habitLogs.reduce((sum, log) => sum + log.totalEarnings, 0);
-    
-    // Calculate current streak
-    let streak = 0;
-    const sortedLogs = [...habitLogs].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+      const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
+      const ninetyDaysAgo = now - 90 * 24 * 60 * 60 * 1000;
 
-    if (sortedLogs.length > 0) {
-      const today = new Date().toDateString();
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-      const lastLogDate = new Date(sortedLogs[0].timestamp).toDateString();
+      const recentLogs = sorted.filter((l) => (l.timestampMs || 0) >= fourteenDaysAgo);
+      const baselineLogs = sorted.filter((l) => (l.timestampMs || 0) >= ninetyDaysAgo);
 
-      // Only count streak if logged today or yesterday
-      if (lastLogDate === today || lastLogDate === yesterday) {
-        let currentDate = new Date(sortedLogs[0].timestamp);
-        streak = 1;
+      // 1) Frequency trend (30)
+      const recentFrequency = recentLogs.length / 14;
+      const oldestMs = sorted[sorted.length - 1]?.timestampMs || now;
+      const baselineDays = Math.min(90, Math.floor((now - oldestMs) / (24 * 60 * 60 * 1000)));
+      const baselineFrequency = baselineLogs.length / Math.max(baselineDays, 1);
 
-        for (let i = 1; i < sortedLogs.length; i++) {
-          const logDate = new Date(sortedLogs[i].timestamp);
-          const dayDiff = Math.floor(
-            (currentDate - logDate) / (1000 * 60 * 60 * 24)
-          );
+      const frequencyRatio = baselineFrequency > 0 ? recentFrequency / baselineFrequency : 1;
+      const frequencyScore = 30 * Math.min(1, frequencyRatio);
 
-          if (dayDiff === 1) {
-            streak++;
-            currentDate = logDate;
-          } else {
-            break;
-          }
-        }
+      // 2) Consistency (25)
+      const gaps = [];
+      for (let i = 1; i < sorted.length; i++) {
+        const gapDays = ((sorted[i - 1].timestampMs || 0) - (sorted[i].timestampMs || 0)) / (24 * 60 * 60 * 1000);
+        gaps.push(gapDays);
       }
+      const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
+      const gapVariance = gaps.length
+        ? Math.sqrt(gaps.reduce((sum, g) => sum + Math.pow(g - avgGap, 2), 0) / gaps.length)
+        : 0;
+      const consistencyScore = 25 * Math.exp(-gapVariance / Math.max(avgGap, 0.5));
+
+      // 3) Recency (20)
+      const daysSinceLog = sorted.length ? (now - (sorted[0].timestampMs || now)) / (24 * 60 * 60 * 1000) : 30;
+      const recencyScore = 20 * Math.exp(-daysSinceLog / Math.max(avgGap, 1));
+
+      // 4) Volume (15) - only non-binary
+      let volumeScore = 0;
+      if (habit.rateType !== RATE_TYPES.BINARY && habit.rateType !== "BINARY") {
+        const recentUnits = recentLogs.reduce((sum, l) => sum + (l.units || 1), 0);
+        const baselineUnits = baselineLogs.reduce((sum, l) => sum + (l.units || 1), 0);
+
+        const recentAvgUnits = recentLogs.length ? recentUnits / recentLogs.length : 0;
+        const baselineAvgUnits = baselineLogs.length ? baselineUnits / baselineLogs.length : 1;
+
+        const volumeRatio = baselineAvgUnits > 0 ? recentAvgUnits / baselineAvgUnits : 1;
+        volumeScore = 15 * Math.min(1, volumeRatio);
+      }
+
+      // 5) Maturity (10)
+      const maturityScore = 10 * Math.min(1, totalLogs / 30);
+
+      let totalScore;
+      if (habit.rateType === RATE_TYPES.BINARY || habit.rateType === "BINARY") {
+        const raw = frequencyScore + consistencyScore + recencyScore + maturityScore;
+        totalScore = (raw / 85) * 100;
+      } else {
+        totalScore = frequencyScore + consistencyScore + recencyScore + volumeScore + maturityScore;
+      }
+
+      return {
+        score: Math.round(totalScore),
+        status: "active",
+        components: {
+          frequency: Math.round(frequencyScore * 10) / 10,
+          consistency: Math.round(consistencyScore * 10) / 10,
+          recency: Math.round(recencyScore * 10) / 10,
+          volume: Math.round(volumeScore * 10) / 10,
+          maturity: Math.round(maturityScore * 10) / 10,
+        },
+        meta: {
+          totalLogs,
+          avgGap: Math.round(avgGap * 10) / 10,
+          daysSinceLog: Math.round(daysSinceLog * 10) / 10,
+          recentLogs: recentLogs.length,
+        },
+      };
+    },
+    [habits, logs]
+  );
+
+  const getPortfolioFluxScore = useCallback(() => {
+    const scored = habits
+      .map((h) => ({ habit: h, fluxScore: calculateFluxScore(h.id) }))
+      .filter((x) => x.fluxScore?.status === "active");
+
+    if (!scored.length) {
+      return { score: null, status: "building", habitsWithScore: 0, totalHabits: habits.length };
     }
 
-    return {
-      totalLogs: habitLogs.length,
-      totalEarnings,
-      currentStreak: streak,
-      lastLogDate: sortedLogs.length > 0 ? sortedLogs[0].timestamp : null,
-    };
-  };
+    const avg = scored.reduce((sum, x) => sum + x.fluxScore.score, 0) / scored.length;
+    return { score: Math.round(avg), status: "active", habitsWithScore: scored.length, totalHabits: habits.length };
+  }, [habits, calculateFluxScore]);
 
-  // ========== USER OPERATIONS ==========
-  
-  const updateUser = (updates) => {
-    setUser(prev => ({ ...prev, ...updates }));
-  };
+  // ---- Mutations (backend is source of truth) ----
+  const addHabit = useCallback(
+    async (habitConfig) => {
+      const lib = getHabitById(habitConfig.libraryId);
+      if (!lib) throw new Error(`Habit not found in library: ${habitConfig.libraryId}`);
 
-  // ========== CONTEXT VALUE ==========
-  
+      if (!habitConfig.goal?.amount || !habitConfig.goal?.period) {
+        throw new Error("Goal is required (amount + period)");
+      }
+
+      // Backend wants micros + UUIDs; backend will ignore duplicates by (user_id, library_id)
+      const payload = {
+        libraryId: habitConfig.libraryId,
+        rateType: lib.rateType,
+        rateMicros: dollarsToMicros(habitConfig.rate ?? lib.defaultRate ?? 0),
+        goal: { amount: habitConfig.goal.amount, period: habitConfig.goal.period },
+      };
+
+      const nextBoot = await habitsApi.create(payload); // POST /api/habits -> Bootstrap
+      setBoot(nextBoot);
+      return nextBoot;
+    },
+    []
+  );
+
+  const addHabits = useCallback(
+    async (habitConfigs) => {
+      // Simple + safe: sequential creates, then one final refresh.
+      for (const cfg of habitConfigs || []) {
+        // eslint-disable-next-line no-await-in-loop
+        await addHabit(cfg);
+      }
+      return true;
+    },
+    [addHabit]
+  );
+
+  const addLog = useCallback(
+    async (logData) => {
+      if (!logData?.habitId) throw new Error("habitId is required");
+
+      const payload = {
+        habitId: logData.habitId,
+        units: logData.units ?? 1,
+        notes: logData.notes || "",
+      };
+
+      // Optional override (if your UI supports it)
+      if (logData.customEarnings !== undefined && logData.customEarnings !== null) {
+        payload.customEarningsMicros = dollarsToMicros(logData.customEarnings);
+      }
+
+      const nextBoot = await logsApi.create(payload); // POST /api/logs -> Bootstrap
+      setBoot(nextBoot);
+      return nextBoot;
+    },
+    []
+  );
+
+  const processTransfer = useCallback(async () => {
+    // Backend owns eligibility/amount and returns updated Bootstrap.
+    const nextBoot = await transfersApi.create(); // POST /api/transfers -> Bootstrap
+    setBoot(nextBoot);
+    return nextBoot;
+  }, []);
+
   const value = {
-    // State
+    // UI profile (local only for now)
+    user,
+    updateUser,
+
+    // server-backed state
     habits,
     logs,
-    user,
     transfers,
-    lastTransferDate,
-    
-    // Habit operations
+    totalsMicros,
+
+    // load state
+    isLoading,
+    error,
+    refresh,
+
+    // actions
     addHabit,
     addHabits,
-    updateHabit,
-    updateHabitGoal,
-    ratchetBaseline,
-    deleteHabit,
-    isHabitAdded,
-    
-    // Log operations
     addLog,
-    updateLog,
-    deleteLog,
+    processTransfer,
+
+    // helpers used by screens
+    isHabitAdded,
     getHabitLogs,
     isHabitLoggedOnDate,
     getTodayLogs,
-    
-    // Balance calculations
-    getTransferredBalance,
+
+    // “earnings” helpers (UI)
     getPendingBalance,
+    getTransferredBalance,
     getTotalEarnings,
     getTodayEarnings,
     getWeekEarnings,
-    
-    // Transfer operations
-    processTransfer,
-    getTransferBreakdown,
-    addTransfer,
-    
-    // Stats
-    getHabitStats,
-    
-    // Flux Score
+
+    // flux score
     calculateFluxScore,
     getPortfolioFluxScore,
-    
-    // User operations
-    updateUser,
   };
 
-  return (
-    <HabitContext.Provider value={value}>
-      {children}
-    </HabitContext.Provider>
-  );
+  return <HabitContext.Provider value={value}>{children}</HabitContext.Provider>;
 }

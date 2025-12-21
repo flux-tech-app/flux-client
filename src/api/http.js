@@ -1,8 +1,15 @@
 // src/api/http.js
 import ky from "ky";
 
-function getUserId() {
-  return localStorage.getItem("flux_user_id") || "";
+const USER_ID_KEY = "flux_user_id";
+
+function ensureUserId() {
+  let uid = localStorage.getItem(USER_ID_KEY) || "";
+  if (!uid) {
+    uid = crypto.randomUUID(); // browser-native UUID v4
+    localStorage.setItem(USER_ID_KEY, uid);
+  }
+  return uid;
 }
 
 export class HttpError extends Error {
@@ -15,13 +22,13 @@ export class HttpError extends Error {
 }
 
 export const http = ky.create({
-  prefixUrl: "api",   // results in /api/...
+  prefixUrl: "/api", // ✅ absolute
   timeout: 15000,
   hooks: {
     beforeRequest: [
       (req) => {
-        const uid = getUserId();
-        if (uid) req.headers.set("X-User-Id", uid);
+        const uid = ensureUserId();
+        req.headers.set("X-User-Id", uid);
       },
     ],
     beforeError: [
