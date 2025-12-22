@@ -1,68 +1,99 @@
-import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { HabitProvider, useHabits } from './context/HabitContext';
+// src/App.jsx
+import { useEffect, useMemo, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { HabitProvider, useHabits } from "./context/HabitContext";
 
 // Scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
   return null;
 }
 
 // Pages
-import Onboarding from './pages/Onboarding';
-import Home from './pages/Home';
-import Portfolio from './pages/Portfolio';
-import Dashboard from './pages/Dashboard';
-import AddHabit from './pages/AddHabit';
-import LogActivity from './pages/LogActivity';
-import Activity from './pages/Activity';
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
-import DevTools from './pages/DevTools';
-import HabitDetail from './pages/HabitDetail';
-import Indices from './pages/Indices';
-import IndexDetail from './pages/IndexDetail';
-import Transfers from './pages/Transfers';
-import Growth from './pages/Growth';
+import Onboarding from "./pages/Onboarding";
+import Home from "./pages/Home";
+import Portfolio from "./pages/Portfolio";
+import Dashboard from "./pages/Dashboard";
+import AddHabit from "./pages/AddHabit";
+import LogActivity from "./pages/LogActivity";
+import Activity from "./pages/Activity";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import DevTools from "./pages/DevTools";
+import HabitDetail from "./pages/HabitDetail";
+import Indices from "./pages/Indices";
+import IndexDetail from "./pages/IndexDetail";
+import Transfers from "./pages/Transfers";
+import Growth from "./pages/Growth";
 
 // Components
-import Navigation from './components/Navigation';
+import Navigation from "./components/Navigation";
 
-/**
- * Main App Routes
- * - Onboarding guard for first-time users
- * - Bottom navigation bar (Home, Portfolio, Indices)
- */
 function AppRoutes() {
-  const { user, updateUser } = useHabits();
   const location = useLocation();
 
-  // Check if we should skip onboarding (for testing)
-  const urlParams = new URLSearchParams(window.location.search);
-  const skipOnboarding = urlParams.get('skip') === 'true';
+  // Optional context loading/error if you expose it (recommended during migration)
+  const { isLoading, error, refresh } = useHabits();
 
-  // If skip parameter is present and user hasn't completed onboarding, mark as complete
-  if (skipOnboarding && !user?.hasCompletedOnboarding) {
-    updateUser({ hasCompletedOnboarding: true });
+  const skipOnboarding = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("skip") === "true";
+  }, []);
+
+  const [onboarded, setOnboarded] = useState(() => {
+    return localStorage.getItem("flux_onboarded") === "1";
+  });
+
+  useEffect(() => {
+    if (skipOnboarding && !onboarded) {
+      localStorage.setItem("flux_onboarded", "1");
+      setOnboarded(true);
+    }
+  }, [skipOnboarding, onboarded]);
+
+  // If your HabitContext fetches bootstrap on mount, this prevents flashing onboarding/home
+  if (isLoading) {
+    return (
+      <>
+        <ScrollToTop />
+        <div style={{ padding: 24 }}>
+          <h3>Loading…</h3>
+        </div>
+      </>
+    );
   }
 
-  // Show onboarding flow for first-time users
-  if (!user?.hasCompletedOnboarding) {
+  if (error) {
+    return (
+      <>
+        <ScrollToTop />
+        <div style={{ padding: 24 }}>
+          <h3>Couldn’t load app</h3>
+          <p>{error?.message || "Unknown error"}</p>
+          {refresh && (
+            <button onClick={refresh} style={{ marginTop: 12 }}>
+              Retry
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  if (!onboarded) {
     return (
       <Onboarding
-        onComplete={() => updateUser({ hasCompletedOnboarding: true })}
+        onComplete={() => {
+          localStorage.setItem("flux_onboarded", "1");
+          setOnboarded(true);
+        }}
       />
     );
   }
 
-  // Determine which pages should show the Navigation
-  const hideNavPaths = ['/add', '/log'];
-  const shouldHideNav = hideNavPaths.some(path => location.pathname.startsWith(path));
+  const hideNavPaths = ["/add", "/log"];
+  const shouldHideNav = hideNavPaths.some((path) => location.pathname.startsWith(path));
 
   return (
     <>
@@ -94,7 +125,6 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* Navigation Bar */}
       {!shouldHideNav && <Navigation />}
     </>
   );
