@@ -1,16 +1,6 @@
 // src/api/http.js
 import ky from "ky";
-
-const USER_ID_KEY = "flux_user_id";
-
-function ensureUserId() {
-  let uid = localStorage.getItem(USER_ID_KEY) || "";
-  if (!uid) {
-    uid = crypto.randomUUID(); // browser-native UUID v4
-    localStorage.setItem(USER_ID_KEY, uid);
-  }
-  return uid;
-}
+import { supabase } from "@/auth/supabaseClient";
 
 export class HttpError extends Error {
   constructor(message, { status = 0, data = null } = {}) {
@@ -22,13 +12,19 @@ export class HttpError extends Error {
 }
 
 export const http = ky.create({
-  prefixUrl: "/api", // ✅ absolute
+  prefixUrl: "/api",
   timeout: 15000,
   hooks: {
     beforeRequest: [
-      (req) => {
-        const uid = ensureUserId();
-        req.headers.set("X-User-Id", uid);
+      async (req) => {
+        const { data } = await supabase.auth.getSession();
+        const token = data?.session?.access_token;
+
+        if (token) {
+          req.headers.set("Authorization", `Bearer ${token}`);
+        }
+        // If no token, we let the request go through and your backend returns 401.
+        // (Also fine: you can throw new HttpError("Not authenticated") here if you prefer.)
       },
     ],
     beforeError: [
@@ -46,7 +42,13 @@ export const http = ky.create({
           // ignore parse errors
         }
 
-        return new HttpError(message, { status: res.status, data });
+        // Keep ky's HTTPError type (so TS doesn’t explode), but enrich it
+        error.name = "HttpError";
+        error.message = message;
+        error.status = res.status;
+        error.data = data;
+
+        return error;
       },
     ],
   },

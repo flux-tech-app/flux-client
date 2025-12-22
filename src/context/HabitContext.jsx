@@ -1,10 +1,23 @@
 // src/context/HabitContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import { getHabitById, RATE_TYPES } from "@/utils/HABIT_LIBRARY";
-
-import { bootstrapApi, habitsApi, logsApi, transfersApi } from "@/api/fluxApi";
-
-import { getOrCreateUserId } from "@/utils/userId";
+import { useAuth } from "@/context/AuthContext";
+import {
+  bootstrapApi,
+  habitsApi,
+  logsApi,
+  transfersApi,
+  usersApi,
+} from "@/api/fluxApi";
 
 const HabitContext = createContext(null);
 
@@ -14,81 +27,133 @@ export function useHabits() {
   return ctx;
 }
 
-// ---------- money helpers ----------
+// ---------- money helpers (UI only) ----------
 function microsToDollars(micros) {
-  // micros are ints; dollars are floats for UI
-  return (Number(micros || 0) / 1_000_000);
+  return Number(micros || 0) / 1_000_000;
 }
-
 function dollarsToMicros(dollars) {
-  // round to nearest micro
   return Math.round(Number(dollars || 0) * 1_000_000);
 }
 
-// ---------- time helpers ----------
+// ---------- time helpers (UI only) ----------
 function msToISO(ms) {
   if (!ms) return null;
   return new Date(Number(ms)).toISOString();
 }
-
 function startOfTodayMs() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d.getTime();
 }
 
+// ---------- optional cache helpers (NOT identity) ----------
+const BOOT_CACHE_VERSION = "v1";
+function cacheKeyForUser(userId) {
+  return `flux_bootstrap_cache_${BOOT_CACHE_VERSION}:${userId}`;
+}
+function readBootCache(userId) {
+  try {
+    const raw = localStorage.getItem(cacheKeyForUser(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.boot ?? null;
+  } catch {
+    return null;
+  }
+}
+function writeBootCache(userId, boot) {
+  try {
+    localStorage.setItem(
+      cacheKeyForUser(userId),
+      JSON.stringify({ boot, cachedAtMs: Date.now() })
+    );
+  } catch {
+    // ignore quota errors
+  }
+}
+function clearBootCache(userId) {
+  try {
+    localStorage.removeItem(cacheKeyForUser(userId));
+  } catch {
+    // ignore
+  }
+}
+
 export function HabitProvider({ children }) {
-  // Ensure we always have a UUID to send as X-User-Id.
-  // Your http.js reads localStorage("flux_user_id"), so we seed it here.
-  useEffect(() => {
-    getOrCreateUserId();
-  }, []);
+  const { session, user: authUser, isAuthLoading } = useAuth();
 
-  // UI-only user profile (NOT part of Step A backend)
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("flux_user");
-    return saved
-      ? JSON.parse(saved)
-      : { name: "", email: "", hasCompletedOnboarding: false };
-  });
-
-  useEffect(() => {
-    localStorage.setItem("flux_user", JSON.stringify(user));
-  }, [user]);
-
-  const updateUser = useCallback((updates) => {
-    setUser((prev) => ({ ...prev, ...(updates || {}) }));
-  }, []);
-
-  // Server bootstrap state
+  // Server bootstrap state (source of truth)
   const [boot, setBoot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Avoid state updates from stale async requests
+  const requestSeq = useRef(0);
+
   const refresh = useCallback(async () => {
+    // If not authed, we shouldn't fetch
+    if (!session?.access_token) return null;
+
+    const seq = ++requestSeq.current;
     setIsLoading(true);
     setError(null);
+
     try {
       const raw = await bootstrapApi.get(); // GET /api/bootstrap
+      if (seq !== requestSeq.current) return null;
+
       setBoot(raw);
+
+      // Optional cache (perf only)
+      const uid = authUser?.id;
+      if (uid) writeBootCache(uid, raw);
+
+      return raw;
     } catch (e) {
+      if (seq !== requestSeq.current) return null;
       setError(e);
+      return null;
     } finally {
-      setIsLoading(false);
+      if (seq === requestSeq.current) setIsLoading(false);
     }
-  }, []);
+  }, [session?.access_token, authUser?.id]);
 
+  // Load: Auth gate first, then bootstrap
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (isAuthLoading) return;
 
-  // ----- Derived “view models” for UI -----
+    // Signed out => clear state
+    if (!session || !authUser?.id) {
+      setBoot(null);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Signed in => show cache immediately (optional)
+    const cached = readBootCache(authUser.id);
+    if (cached) {
+      setBoot(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    // Always refresh from backend after (authoritative)
+    refresh();
+  }, [isAuthLoading, session, authUser?.id, refresh]);
+
+  // -------------------------
+  // View models (UI-only mapping)
+  // -------------------------
+  const user = boot?.user ?? null;
+
   const habits = useMemo(() => {
     const hs = boot?.habits || [];
     return hs.map((h) => {
       const lib = getHabitById(h.libraryId);
       return {
-        // raw fields
+        // raw
         id: h.id,
         libraryId: h.libraryId,
         rateType: h.rateType,
@@ -96,14 +161,14 @@ export function HabitProvider({ children }) {
         goal: h.goal,
         createdAtMs: h.createdAtMs,
 
-        // UI-enriched (presentation)
+        // UI enrichment from local library catalog
         name: lib?.name || h.libraryId,
         icon: lib?.icon || "✅",
         unit: lib?.unit || "",
         unitPlural: lib?.unitPlural || "",
         defaultRate: lib?.defaultRate ?? 0,
 
-        // legacy-ish convenience for UI
+        // UI convenience
         rate: microsToDollars(h.rateMicros),
         createdAt: msToISO(h.createdAtMs),
       };
@@ -137,25 +202,37 @@ export function HabitProvider({ children }) {
       status: t.status,
       weekKey: t.weekKey,
 
-      // UI convenience (matches your existing Transfers UI)
+      // UI convenience
       date: msToISO(t.timestampMs),
       amount: microsToDollars(t.amountMicros),
     }));
   }, [boot]);
 
-  const totalsMicros = boot?.totals || { earnedMicros: 0, transferredMicros: 0, pendingMicros: 0 };
+  const totalsMicros =
+    boot?.totals || { earnedMicros: 0, transferredMicros: 0, pendingMicros: 0 };
 
-  // ---- UI helper functions (thin; NOT recomputing totals/transfer logic) ----
-  const getPendingBalance = useCallback(() => microsToDollars(totalsMicros.pendingMicros), [totalsMicros.pendingMicros]);
-  const getTransferredBalance = useCallback(() => microsToDollars(totalsMicros.transferredMicros), [totalsMicros.transferredMicros]);
-  const getTotalEarnings = useCallback(() => microsToDollars(totalsMicros.earnedMicros), [totalsMicros.earnedMicros]);
+  // -------------------------
+  // Minimal UI helpers (optional)
+  // -------------------------
+  const getPendingBalance = useCallback(
+    () => microsToDollars(totalsMicros.pendingMicros),
+    [totalsMicros.pendingMicros]
+  );
+  const getTransferredBalance = useCallback(
+    () => microsToDollars(totalsMicros.transferredMicros),
+    [totalsMicros.transferredMicros]
+  );
+  const getTotalEarnings = useCallback(
+    () => microsToDollars(totalsMicros.earnedMicros),
+    [totalsMicros.earnedMicros]
+  );
 
   const getTodayEarnings = useCallback(() => {
-    // This is UI-only aggregation (fine). Totals still come from backend.
+    // UI-only aggregation (totals are still server-owned)
     const todayStart = startOfTodayMs();
     let sum = 0;
     for (const l of logs) {
-      if ((l.timestampMs || 0) >= todayStart) sum += (l.earningsMicros || 0);
+      if ((l.timestampMs || 0) >= todayStart) sum += l.earningsMicros || 0;
     }
     return microsToDollars(sum);
   }, [logs]);
@@ -165,7 +242,7 @@ export function HabitProvider({ children }) {
     const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
     let sum = 0;
     for (const l of logs) {
-      if ((l.timestampMs || 0) >= weekAgo) sum += (l.earningsMicros || 0);
+      if ((l.timestampMs || 0) >= weekAgo) sum += l.earningsMicros || 0;
     }
     return microsToDollars(sum);
   }, [logs]);
@@ -186,7 +263,12 @@ export function HabitProvider({ children }) {
       const start = dayStart.getTime();
       const end = dayEnd.getTime();
 
-      return logs.some((l) => l.habitId === habitId && l.timestampMs >= start && l.timestampMs <= end);
+      return logs.some(
+        (l) =>
+          l.habitId === habitId &&
+          (l.timestampMs || 0) >= start &&
+          (l.timestampMs || 0) <= end
+      );
     },
     [logs]
   );
@@ -201,7 +283,94 @@ export function HabitProvider({ children }) {
     [habits]
   );
 
-  // ---- Flux Score (still FE for now; totals/transfer already moved) ----
+  // -------------------------
+  // Mutations (server is source of truth)
+  // -------------------------
+  const addHabit = useCallback(async (habitConfig) => {
+    const lib = getHabitById(habitConfig.libraryId);
+    if (!lib) throw new Error(`Habit not found in library: ${habitConfig.libraryId}`);
+
+    if (!habitConfig.goal?.amount || !habitConfig.goal?.period) {
+      throw new Error("Goal is required (amount + period)");
+    }
+
+    const payload = {
+      libraryId: habitConfig.libraryId,
+      rateType: lib.rateType,
+      rateMicros: dollarsToMicros(habitConfig.rate ?? lib.defaultRate ?? 0),
+      goal: { amount: habitConfig.goal.amount, period: habitConfig.goal.period },
+    };
+
+    const nextBoot = await habitsApi.create(payload); // POST /api/habits -> Bootstrap
+    setBoot(nextBoot);
+    if (authUser?.id) writeBootCache(authUser.id, nextBoot);
+    return nextBoot;
+  }, [authUser?.id]);
+
+  const addHabits = useCallback(async (habitConfigs) => {
+    // safe sequential; backend is idempotent on (user_id, library_id)
+    for (const cfg of habitConfigs || []) {
+      // eslint-disable-next-line no-await-in-loop
+      await addHabit(cfg);
+    }
+    return true;
+  }, [addHabit]);
+
+  const addLog = useCallback(async (logData) => {
+    if (!logData?.habitId) throw new Error("habitId is required");
+
+    const payload = {
+      habitId: logData.habitId,
+      units: logData.units ?? 1,
+      notes: logData.notes || "",
+    };
+
+    if (logData.customEarnings !== undefined && logData.customEarnings !== null) {
+      payload.customEarningsMicros = dollarsToMicros(logData.customEarnings);
+    }
+
+    const nextBoot = await logsApi.create(payload); // POST /api/logs -> Bootstrap
+    setBoot(nextBoot);
+    if (authUser?.id) writeBootCache(authUser.id, nextBoot);
+    return nextBoot;
+  }, [authUser?.id]);
+
+  const processTransfer = useCallback(async () => {
+    const nextBoot = await transfersApi.create(); // POST /api/transfers -> Bootstrap
+    setBoot(nextBoot);
+    if (authUser?.id) writeBootCache(authUser.id, nextBoot);
+    return nextBoot;
+  }, [authUser?.id]);
+
+  // User updates go to backend
+  const updateUser = useCallback(async (patch) => {
+    const nextUser = await usersApi.patchMe(patch);
+    setBoot((prev) => (prev ? { ...prev, user: nextUser } : prev));
+    if (authUser?.id) {
+      const cached = readBootCache(authUser.id);
+      if (cached) writeBootCache(authUser.id, { ...cached, user: nextUser });
+    }
+    return nextUser;
+  }, [authUser?.id]);
+
+  const completeOnboarding = useCallback(async () => {
+    const nextUser = await usersApi.completeOnboarding();
+    setBoot((prev) => (prev ? { ...prev, user: nextUser } : prev));
+    if (authUser?.id) {
+      const cached = readBootCache(authUser.id);
+      if (cached) writeBootCache(authUser.id, { ...cached, user: nextUser });
+    }
+    return nextUser;
+  }, [authUser?.id]);
+
+  // Optional: allow manual cache clear (useful during dev)
+  const clearCache = useCallback(() => {
+    if (authUser?.id) clearBootCache(authUser.id);
+  }, [authUser?.id]);
+
+  // -------------------------
+  // Flux Score (still FE for now)
+  // -------------------------
   const calculateFluxScore = useCallback(
     (habitId) => {
       const habitLogs = logs.filter((l) => l.habitId === habitId);
@@ -214,7 +383,9 @@ export function HabitProvider({ children }) {
       }
 
       const now = Date.now();
-      const sorted = [...habitLogs].sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
+      const sorted = [...habitLogs].sort(
+        (a, b) => (b.timestampMs || 0) - (a.timestampMs || 0)
+      );
 
       const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
       const ninetyDaysAgo = now - 90 * 24 * 60 * 60 * 1000;
@@ -222,19 +393,24 @@ export function HabitProvider({ children }) {
       const recentLogs = sorted.filter((l) => (l.timestampMs || 0) >= fourteenDaysAgo);
       const baselineLogs = sorted.filter((l) => (l.timestampMs || 0) >= ninetyDaysAgo);
 
-      // 1) Frequency trend (30)
+      // Frequency trend (30)
       const recentFrequency = recentLogs.length / 14;
       const oldestMs = sorted[sorted.length - 1]?.timestampMs || now;
-      const baselineDays = Math.min(90, Math.floor((now - oldestMs) / (24 * 60 * 60 * 1000)));
+      const baselineDays = Math.min(
+        90,
+        Math.floor((now - oldestMs) / (24 * 60 * 60 * 1000))
+      );
       const baselineFrequency = baselineLogs.length / Math.max(baselineDays, 1);
 
       const frequencyRatio = baselineFrequency > 0 ? recentFrequency / baselineFrequency : 1;
       const frequencyScore = 30 * Math.min(1, frequencyRatio);
 
-      // 2) Consistency (25)
+      // Consistency (25)
       const gaps = [];
       for (let i = 1; i < sorted.length; i++) {
-        const gapDays = ((sorted[i - 1].timestampMs || 0) - (sorted[i].timestampMs || 0)) / (24 * 60 * 60 * 1000);
+        const gapDays =
+          ((sorted[i - 1].timestampMs || 0) - (sorted[i].timestampMs || 0)) /
+          (24 * 60 * 60 * 1000);
         gaps.push(gapDays);
       }
       const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
@@ -243,11 +419,13 @@ export function HabitProvider({ children }) {
         : 0;
       const consistencyScore = 25 * Math.exp(-gapVariance / Math.max(avgGap, 0.5));
 
-      // 3) Recency (20)
-      const daysSinceLog = sorted.length ? (now - (sorted[0].timestampMs || now)) / (24 * 60 * 60 * 1000) : 30;
+      // Recency (20)
+      const daysSinceLog = sorted.length
+        ? (now - (sorted[0].timestampMs || now)) / (24 * 60 * 60 * 1000)
+        : 30;
       const recencyScore = 20 * Math.exp(-daysSinceLog / Math.max(avgGap, 1));
 
-      // 4) Volume (15) - only non-binary
+      // Volume (15) - only non-binary
       let volumeScore = 0;
       if (habit.rateType !== RATE_TYPES.BINARY && habit.rateType !== "BINARY") {
         const recentUnits = recentLogs.reduce((sum, l) => sum + (l.units || 1), 0);
@@ -260,7 +438,7 @@ export function HabitProvider({ children }) {
         volumeScore = 15 * Math.min(1, volumeRatio);
       }
 
-      // 5) Maturity (10)
+      // Maturity (10)
       const maturityScore = 10 * Math.min(1, totalLogs / 30);
 
       let totalScore;
@@ -305,110 +483,49 @@ export function HabitProvider({ children }) {
     return { score: Math.round(avg), status: "active", habitsWithScore: scored.length, totalHabits: habits.length };
   }, [habits, calculateFluxScore]);
 
-  // ---- Mutations (backend is source of truth) ----
-  const addHabit = useCallback(
-    async (habitConfig) => {
-      const lib = getHabitById(habitConfig.libraryId);
-      if (!lib) throw new Error(`Habit not found in library: ${habitConfig.libraryId}`);
-
-      if (!habitConfig.goal?.amount || !habitConfig.goal?.period) {
-        throw new Error("Goal is required (amount + period)");
-      }
-
-      // Backend wants micros + UUIDs; backend will ignore duplicates by (user_id, library_id)
-      const payload = {
-        libraryId: habitConfig.libraryId,
-        rateType: lib.rateType,
-        rateMicros: dollarsToMicros(habitConfig.rate ?? lib.defaultRate ?? 0),
-        goal: { amount: habitConfig.goal.amount, period: habitConfig.goal.period },
-      };
-
-      const nextBoot = await habitsApi.create(payload); // POST /api/habits -> Bootstrap
-      setBoot(nextBoot);
-      return nextBoot;
-    },
-    []
-  );
-
-  const addHabits = useCallback(
-    async (habitConfigs) => {
-      // Simple + safe: sequential creates, then one final refresh.
-      for (const cfg of habitConfigs || []) {
-        // eslint-disable-next-line no-await-in-loop
-        await addHabit(cfg);
-      }
-      return true;
-    },
-    [addHabit]
-  );
-
-  const addLog = useCallback(
-    async (logData) => {
-      if (!logData?.habitId) throw new Error("habitId is required");
-
-      const payload = {
-        habitId: logData.habitId,
-        units: logData.units ?? 1,
-        notes: logData.notes || "",
-      };
-
-      // Optional override (if your UI supports it)
-      if (logData.customEarnings !== undefined && logData.customEarnings !== null) {
-        payload.customEarningsMicros = dollarsToMicros(logData.customEarnings);
-      }
-
-      const nextBoot = await logsApi.create(payload); // POST /api/logs -> Bootstrap
-      setBoot(nextBoot);
-      return nextBoot;
-    },
-    []
-  );
-
-  const processTransfer = useCallback(async () => {
-    // Backend owns eligibility/amount and returns updated Bootstrap.
-    const nextBoot = await transfersApi.create(); // POST /api/transfers -> Bootstrap
-    setBoot(nextBoot);
-    return nextBoot;
-  }, []);
-
   const value = {
-    // UI profile (local only for now)
-    user,
-    updateUser,
+    // raw bootstrap (sometimes useful for debugging)
+    boot,
 
-    // server-backed state
+    // server-backed (canonical)
+    user,
     habits,
     logs,
     transfers,
     totalsMicros,
 
-    // load state
+    // loading state
     isLoading,
     error,
-    refresh,
 
-    // actions
+    // core actions
+    refresh,
     addHabit,
     addHabits,
     addLog,
     processTransfer,
+    updateUser,
+    completeOnboarding,
 
-    // helpers used by screens
+    // ui helpers (optional)
     isHabitAdded,
     getHabitLogs,
     isHabitLoggedOnDate,
     getTodayLogs,
 
-    // “earnings” helpers (UI)
+    // money helpers (UI)
     getPendingBalance,
     getTransferredBalance,
     getTotalEarnings,
     getTodayEarnings,
     getWeekEarnings,
 
-    // flux score
+    // flux score (temporary FE)
     calculateFluxScore,
     getPortfolioFluxScore,
+
+    // dev
+    clearCache,
   };
 
   return <HabitContext.Provider value={value}>{children}</HabitContext.Provider>;
