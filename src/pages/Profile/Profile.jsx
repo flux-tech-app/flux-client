@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Profile.css';
 

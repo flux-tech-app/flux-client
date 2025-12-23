@@ -4,7 +4,7 @@ import { getHabitById } from '../../utils/HABIT_LIBRARY';
 import { formatCurrency } from '../../utils/formatters';
 import { getCalibrationStatus } from '../../utils/calibrationStatus';
 import GoalSetup from '../GoalSetup/GoalSetup';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import Button from '../Button';
 import './GoalSection.css';
 

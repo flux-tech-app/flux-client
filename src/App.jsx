@@ -1,9 +1,16 @@
 // src/App.jsx
 import { useEffect, useMemo } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { HabitProvider, useHabits } from "@/context/HabitContext";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+
+import { HabitProvider } from "@/providers/HabitProvider";
+import useHabits from "@/hooks/useHabits";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { usersApi } from "@/api/fluxApi";
 
 // Pages
 import Auth from "@/pages/Auth";
@@ -35,30 +42,37 @@ function ScrollToTop() {
 function AppRoutes() {
   const location = useLocation();
   const { session, isAuthLoading } = useAuth();
-  const { isLoading, error, refresh, user } = useHabits();
+
+  // comes from HabitProvider (bootstrap + actions)
+  const { isLoading, error, refresh, user, completeOnboarding } = useHabits();
 
   const skipOnboarding = useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("skip") === "true";
   }, []);
 
-  // If dev wants to skip onboarding, do it the *right* way (backend flag)
+  const hasCompletedOnboarding = !!user?.hasCompletedOnboarding;
+
+  // Dev helper: ?skip=true => complete onboarding via backend
   useEffect(() => {
     if (!skipOnboarding) return;
     if (!session) return;
     if (!user) return;
-    if (user.hasCompletedOnboarding) return;
+    if (hasCompletedOnboarding) return;
 
     (async () => {
       try {
-        await usersApi.completeOnboarding();
+        await completeOnboarding();
+        // refresh is usually redundant because completeOnboarding updates boot.user,
+        // but keep this if your backend returns something else you want reloaded.
         await refresh?.();
       } catch (e) {
         console.error("skip onboarding failed:", e);
       }
     })();
-  }, [skipOnboarding, session, user, refresh]);
+  }, [skipOnboarding, session, user, hasCompletedOnboarding, completeOnboarding, refresh]);
 
+  // Auth is still initializing
   if (isAuthLoading) {
     return (
       <>
@@ -70,7 +84,7 @@ function AppRoutes() {
     );
   }
 
-  // Not signed in => show auth page
+  // Signed out => Auth page
   if (!session) {
     return (
       <>
@@ -80,7 +94,7 @@ function AppRoutes() {
     );
   }
 
-  // Signed in, waiting for bootstrap
+  // Signed in => waiting for bootstrap
   if (isLoading) {
     return (
       <>
@@ -92,6 +106,7 @@ function AppRoutes() {
     );
   }
 
+  // Bootstrap failed
   if (error) {
     return (
       <>
@@ -109,14 +124,29 @@ function AppRoutes() {
     );
   }
 
-  // Backend is source of truth for onboarding
-  const hasCompletedOnboarding = !!user?.hasCompletedOnboarding;
+  // Bootstrap succeeded but user missing (shouldn’t happen; keep safe)
+  if (!user) {
+    return (
+      <>
+        <ScrollToTop />
+        <div style={{ padding: 24 }}>
+          <h3>Couldn’t load user</h3>
+          {refresh && (
+            <button onClick={refresh} style={{ marginTop: 12 }}>
+              Retry
+            </button>
+          )}
+        </div>
+      </>
+    );
+  }
 
+  // Backend is source of truth for onboarding gate
   if (!hasCompletedOnboarding) {
     return (
       <Onboarding
         onComplete={async () => {
-          await usersApi.completeOnboarding();
+          await completeOnboarding();
           await refresh?.();
         }}
       />
@@ -124,11 +154,12 @@ function AppRoutes() {
   }
 
   const hideNavPaths = ["/add", "/log"];
-  const shouldHideNav = hideNavPaths.some((path) => location.pathname.startsWith(path));
+  const shouldHideNav = hideNavPaths.some((p) => location.pathname.startsWith(p));
 
   return (
     <>
       <ScrollToTop />
+
       <Routes location={location}>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />

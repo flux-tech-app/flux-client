@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useHabits } from "../../context/HabitContext";
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from "../../utils/formatters";
 import { getNextTransferDate } from "../../utils/calculations";
 import { getHabitById } from "../../utils/HABIT_LIBRARY";

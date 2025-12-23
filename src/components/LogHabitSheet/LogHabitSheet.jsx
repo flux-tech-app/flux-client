@@ -1,7 +1,7 @@
 // src/components/LogHabitSheet/LogHabitSheet.jsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useHabits } from "../../context/HabitContext";
+import useHabits from "@/hooks/useHabits";
 import { RATE_TYPES, ACTION_TYPES, getHabitById } from "../../utils/HABIT_LIBRARY";
 import HabitIcon from "../../utils/HabitIcons";
 import Button from "../Button";

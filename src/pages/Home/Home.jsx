@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useHabits } from '../../context/HabitContext'
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from '../../utils/formatters'
 import { ACTION_TYPES, getHabitById } from '../../utils/HABIT_LIBRARY'
 import BottomSheet from '../../components/BottomSheet'

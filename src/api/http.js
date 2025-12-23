@@ -2,13 +2,32 @@
 import ky from "ky";
 import { supabase } from "@/auth/supabaseClient";
 
-export class HttpError extends Error {
-  constructor(message, { status = 0, data = null } = {}) {
+export class ApiError extends Error {
+  /**
+   * @param {string} message
+   * @param {{status?: number, data?: any, url?: string}} meta
+   */
+  constructor(message, meta = {}) {
     super(message);
-    this.name = "HttpError";
-    this.status = status;
-    this.data = data;
+    this.name = "ApiError";
+    this.status = meta.status ?? 0;
+    this.data = meta.data ?? null;
+    this.url = meta.url ?? "";
   }
+}
+
+/**
+ * Convert unknown/ky errors into ApiError (single place).
+ * @param {any} e
+ * @returns {ApiError}
+ */
+export function toApiError(e) {
+  // ky HTTPError has .response
+  const status = e?.response?.status ?? e?.status ?? 0;
+  const url = e?.response?.url ?? e?.url ?? "";
+  const data = e?.cause?.data ?? null;
+  const message = e?.message || "Request failed";
+  return new ApiError(message, { status, data, url });
 }
 
 export const http = ky.create({
@@ -19,12 +38,7 @@ export const http = ky.create({
       async (req) => {
         const { data } = await supabase.auth.getSession();
         const token = data?.session?.access_token;
-
-        if (token) {
-          req.headers.set("Authorization", `Bearer ${token}`);
-        }
-        // If no token, we let the request go through and your backend returns 401.
-        // (Also fine: you can throw new HttpError("Not authenticated") here if you prefer.)
+        if (token) req.headers.set("Authorization", `Bearer ${token}`);
       },
     ],
     beforeError: [
@@ -42,11 +56,12 @@ export const http = ky.create({
           // ignore parse errors
         }
 
-        // Keep ky's HTTPError type (so TS doesn’t explode), but enrich it
-        error.name = "HttpError";
+        // Hook must return HTTPError — so we only mutate safe fields:
         error.message = message;
-        error.status = res.status;
-        error.data = data;
+
+        // Optional: stash parsed json somewhere typed as unknown
+        // (so we can surface it later via toApiError)
+        error.cause = { data };
 
         return error;
       },

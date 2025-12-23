@@ -1,6 +1,6 @@
 // src/pages/Onboarding/Onboarding.jsx
 import { useState } from "react";
-import { useHabits } from "../../context/HabitContext";
+import useHabits from "@/hooks/useHabits";
 import Welcome from "./Welcome";
 import HowItWorks from "./HowItWorks";
 import SelectHabits from "./SelectHabits";

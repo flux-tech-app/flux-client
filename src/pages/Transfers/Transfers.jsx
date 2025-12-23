@@ -1,6 +1,6 @@
 // src/pages/Transfers/Transfers.jsx
 import { useMemo, useState } from "react";
-import { useHabits } from "../../context/HabitContext";
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from "../../utils/formatters";
 import SidebarMenu from "../../components/SidebarMenu/SidebarMenu";
 import "./Transfers.css";

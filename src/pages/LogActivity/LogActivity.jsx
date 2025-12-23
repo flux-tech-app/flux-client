@@ -1,7 +1,7 @@
 // src\pages\LogActivity\LogActivity.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from '../../utils/formatters';
 import Button from '../../components/Button';
 import './LogActivity.css';

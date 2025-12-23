@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useHabits } from '../../context/HabitContext'
+import useHabits from "@/hooks/useHabits";
 import './Dashboard.css'
 
 // Default star color for MVT (no categories)

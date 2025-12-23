@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import { HABIT_LIBRARY, ACTION_TYPES } from '../../utils/HABIT_LIBRARY';
 import {
   generateAllIndexData,
