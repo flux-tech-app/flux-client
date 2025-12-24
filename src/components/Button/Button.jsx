@@ -28,7 +28,7 @@ const Button = ({
 
   return (
     <motion.button
-      type={type}
+      type='button'
       className={buttonClasses}
       onClick={onClick}
       disabled={isDisabled}

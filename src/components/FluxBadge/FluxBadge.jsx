@@ -8,8 +8,6 @@ import './FluxBadge.css';
  * - Gray (Fragile/Building): 26-65
  * - Blue (Strong/Automatic): 66-100
  *
- * @param {number} score - Flux score (0-100)
- * @param {string} size - 'xs' | 'sm' | 'md' | 'lg' (default: 'md')
  */
 export default function FluxBadge({ score, size = 'md' }) {
   // Determine color zone based on score

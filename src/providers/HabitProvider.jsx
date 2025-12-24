@@ -1,3 +1,4 @@
+// src/providers/HabitProvider.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import HabitContext from "@/context/HabitContext";
@@ -66,44 +67,76 @@ export function HabitProvider({ children }) {
   const { session, user: authUser, isAuthLoading } = useAuth();
 
   const [boot, setBoot] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Split “first load” from “background refresh”
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [error, setError] = useState(null);
 
   // helps prevent out-of-order state updates
   const requestSeq = useRef(0);
 
-  const refresh = useCallback(async () => {
-    if (!session?.access_token) return null;
+  // IMPORTANT: token refreshes change the session object even though the user is still signed in.
+  // We do NOT want that to trigger full re-bootstrap, so we gate bootstrap off stable identity.
+  const isSignedIn = !!authUser?.id;
 
-    const seq = ++requestSeq.current;
-    setIsLoading(true);
-    setError(null);
+  /**
+   * Refresh the server-derived app state.
+   * - silent=true: do NOT flip the whole app into a blocking "Loading..." state
+   * - silent=false: used when we have no cached data and must block initial render
+   */
+  const refresh = useCallback(
+    async ({ silent = true } = {}) => {
+      // Only require a stable user identity; do NOT depend on session/access_token
+      // to avoid calling bootstrap on TOKEN_REFRESHED.
+      if (!authUser?.id) return null;
 
-    try {
-      // GET /api/bootstrap (authoritative, computed on server)
-      const raw = await bootstrapApi.get();
-      if (seq !== requestSeq.current) return null;
+      const seq = ++requestSeq.current;
 
-      setBoot(raw);
-      if (authUser?.id) writeBootCache(authUser.id, raw);
-      return raw;
-    } catch (e) {
-      if (seq !== requestSeq.current) return null;
-      setError(e);
-      return null;
-    } finally {
-      if (seq === requestSeq.current) setIsLoading(false);
-    }
-  }, [session?.access_token, authUser?.id]);
+      // Only show full-page loading when we truly don't have anything yet.
+      if (silent) setIsRefreshing(true);
+      else setIsInitialLoading(true);
+
+      setError(null);
+
+      try {
+        // GET /api/bootstrap (authoritative, computed on server)
+        const raw = await bootstrapApi.get();
+        if (seq !== requestSeq.current) return null;
+
+        setBoot(raw);
+        writeBootCache(authUser.id, raw);
+
+        // Once we have a successful bootstrap, initial loading is complete.
+        setIsInitialLoading(false);
+
+        return raw;
+      } catch (e) {
+        if (seq !== requestSeq.current) return null;
+        setError(e);
+        return null;
+      } finally {
+        if (seq === requestSeq.current) {
+          setIsRefreshing(false);
+          // If this was a non-silent initial fetch attempt, we still stop "initial loading"
+          // so the UI can show an error state instead of being stuck on a loader.
+          if (!silent) setIsInitialLoading(false);
+        }
+      }
+    },
+    [authUser?.id]
+  );
 
   useEffect(() => {
     if (isAuthLoading) return;
 
     // signed out
-    if (!session || !authUser?.id) {
+    if (!isSignedIn) {
       setBoot(null);
       setError(null);
-      setIsLoading(false);
+      setIsInitialLoading(false);
+      setIsRefreshing(false);
       return;
     }
 
@@ -111,14 +144,15 @@ export function HabitProvider({ children }) {
     const cached = readBootCache(authUser.id);
     if (cached) {
       setBoot(cached);
-      setIsLoading(false);
+      setIsInitialLoading(false);
+      // refresh in the background (no full-screen loading)
+      refresh({ silent: true });
     } else {
-      setIsLoading(true);
+      // no cache: show initial loading until first bootstrap completes
+      setIsInitialLoading(true);
+      refresh({ silent: false });
     }
-
-    // then refresh from server
-    refresh();
-  }, [isAuthLoading, session, authUser?.id, refresh]);
+  }, [isAuthLoading, isSignedIn, authUser?.id, refresh]);
 
   // -------------------------
   // Normalize backend shapes
@@ -170,7 +204,6 @@ export function HabitProvider({ children }) {
     return (hs || []).map((h) => {
       const c = catalogById.get(h.libraryId);
 
-      // (optional) rateOptions: prefer catalog options if present
       const rateOptionsMicros = c?.rateOptionsMicros ?? c?.RateOptionsMicros ?? [];
       const rateOptions = Array.isArray(rateOptionsMicros)
         ? rateOptionsMicros.map(microsToDollars)
@@ -217,7 +250,7 @@ export function HabitProvider({ children }) {
   }, [boot]);
 
   // -------------------------
-  // Legacy-compatible selectors (so Home.jsx can stop importing old utils)
+  // Selectors / legacy compatibility
   // -------------------------
   const getWeekEarnings = useCallback(() => microsToDollars(statsMicros.weekEarnedMicros), [
     statsMicros.weekEarnedMicros,
@@ -226,6 +259,16 @@ export function HabitProvider({ children }) {
   const getTodayEarnings = useCallback(() => microsToDollars(statsMicros.todayEarnedMicros), [
     statsMicros.todayEarnedMicros,
   ]);
+
+  const getTransferredBalance = useCallback(
+    () => microsToDollars(totalsMicros.transferredMicros),
+    [totalsMicros.transferredMicros]
+  );
+
+  const getPendingBalance = useCallback(
+    () => microsToDollars(totalsMicros.pendingMicros),
+    [totalsMicros.pendingMicros]
+  );
 
   const isHabitLoggedOnDate = useCallback(
     (habitId, date) => {
@@ -236,11 +279,11 @@ export function HabitProvider({ children }) {
   );
 
   const calculateFluxScore = useCallback(
-    (habitId) => (fluxByHabit || []).find((x) => x?.habitId === habitId || x?.HabitID === habitId) ?? null,
+    (habitId) =>
+      (fluxByHabit || []).find((x) => x?.habitId === habitId || x?.HabitID === habitId) ?? null,
     [fluxByHabit]
   );
 
-  // handy for AddHabit screen
   const isHabitAdded = useCallback(
     (libraryId) => (boot?.habits || boot?.Habits || []).some((h) => h.libraryId === libraryId),
     [boot]
@@ -268,10 +311,8 @@ export function HabitProvider({ children }) {
 
       const payload = {
         libraryId,
-
         // backend should override/ignore this, but safe during migration
         rateType: c.rateType,
-
         rateMicros: Number(rateMicros),
         goal: { amount: goal.amount, period: goal.period },
       };
@@ -304,7 +345,6 @@ export function HabitProvider({ children }) {
       };
 
       // NOTE: Ideally remove custom earnings entirely (server computes).
-      // Keep temporarily if backend supports it; otherwise delete this block.
       if (logData.customEarningsMicros != null) {
         payload.customEarningsMicros = Number(logData.customEarningsMicros);
       } else if (logData.customEarnings != null) {
@@ -355,9 +395,10 @@ export function HabitProvider({ children }) {
     if (authUser?.id) clearBootCache(authUser.id);
   }, [authUser?.id]);
 
-  // -------------------------
-  // Value
-  // -------------------------
+  // Provide a legacy flag while shifting consumers gradually:
+  // - isLoading: only the initial blocking loader
+  const isLoading = isInitialLoading;
+
   const value = {
     // raw
     boot,
@@ -374,7 +415,8 @@ export function HabitProvider({ children }) {
     flux: { byHabit: fluxByHabit, portfolio: fluxPortfolio },
 
     // state
-    isLoading,
+    isLoading, // initial-only (prevents full-screen “Loading…” flashes)
+    isRefreshing, // background refresh indicator if you want it
     error,
 
     // actions
@@ -390,6 +432,8 @@ export function HabitProvider({ children }) {
     isHabitAdded,
     getWeekEarnings,
     getTodayEarnings,
+    getTransferredBalance,
+    getPendingBalance,
     isHabitLoggedOnDate,
     calculateFluxScore,
 
