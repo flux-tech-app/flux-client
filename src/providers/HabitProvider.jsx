@@ -2,25 +2,39 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import HabitContext from "@/context/HabitContext";
 import { useAuth } from "@/context/AuthContext";
-import {
-  bootstrapApi,
-  habitsApi,
-  logsApi,
-  transfersApi,
-  usersApi,
-} from "@/api/fluxApi";
+import { bootstrapApi, habitsApi, logsApi, transfersApi, usersApi } from "@/api/fluxApi";
 
-// UI helpers (still fine)
+// -------------------------
+// UI helpers (safe to keep)
+// -------------------------
 function microsToDollars(micros) {
   return Number(micros || 0) / 1_000_000;
 }
+
+function dollarsToMicros(dollars) {
+  const n = Number(dollars);
+  if (Number.isNaN(n)) return 0;
+  return Math.round(n * 1_000_000);
+}
+
 function msToISO(ms) {
   if (!ms) return null;
   return new Date(Number(ms)).toISOString();
 }
 
+// “Local day” key for “is logged today” checks (keeps behavior consistent with toDateString usage)
+function dayKeyFromMs(ms) {
+  if (!ms) return "";
+  return new Date(Number(ms)).toDateString();
+}
+function dayKeyFromDate(d) {
+  return new Date(d).toDateString();
+}
+
+// -------------------------
 // Optional cache (perf only)
-const BOOT_CACHE_VERSION = "v3";
+// -------------------------
+const BOOT_CACHE_VERSION = "v4";
 function cacheKeyForUser(userId) {
   return `flux_bootstrap_cache_${BOOT_CACHE_VERSION}:${userId}`;
 }
@@ -36,10 +50,7 @@ function readBootCache(userId) {
 }
 function writeBootCache(userId, boot) {
   try {
-    localStorage.setItem(
-      cacheKeyForUser(userId),
-      JSON.stringify({ boot, cachedAtMs: Date.now() })
-    );
+    localStorage.setItem(cacheKeyForUser(userId), JSON.stringify({ boot, cachedAtMs: Date.now() }));
   } catch {}
 }
 function clearBootCache(userId) {
@@ -48,6 +59,9 @@ function clearBootCache(userId) {
   } catch {}
 }
 
+// -------------------------
+// Provider
+// -------------------------
 export function HabitProvider({ children }) {
   const { session, user: authUser, isAuthLoading } = useAuth();
 
@@ -55,6 +69,7 @@ export function HabitProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // helps prevent out-of-order state updates
   const requestSeq = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -65,7 +80,8 @@ export function HabitProvider({ children }) {
     setError(null);
 
     try {
-      const raw = await bootstrapApi.get(); // GET /api/bootstrap (authoritative)
+      // GET /api/bootstrap (authoritative, computed on server)
+      const raw = await bootstrapApi.get();
       if (seq !== requestSeq.current) return null;
 
       setBoot(raw);
@@ -83,6 +99,7 @@ export function HabitProvider({ children }) {
   useEffect(() => {
     if (isAuthLoading) return;
 
+    // signed out
     if (!session || !authUser?.id) {
       setBoot(null);
       setError(null);
@@ -90,6 +107,7 @@ export function HabitProvider({ children }) {
       return;
     }
 
+    // show cached boot immediately if available
     const cached = readBootCache(authUser.id);
     if (cached) {
       setBoot(cached);
@@ -98,83 +116,139 @@ export function HabitProvider({ children }) {
       setIsLoading(true);
     }
 
+    // then refresh from server
     refresh();
   }, [isAuthLoading, session, authUser?.id, refresh]);
 
   // -------------------------
-  // Canonical server-backed data
+  // Normalize backend shapes
   // -------------------------
   const user = boot?.user ?? null;
 
-  // NEW: catalog comes from backend bootstrap
-  const catalog = boot?.catalog ?? [];
+  // Some backends return catalog as { habits: [...] } vs just [...]
+  const catalog = useMemo(() => {
+    const c = boot?.catalog;
+    if (!c) return [];
+    if (Array.isArray(c)) return c;
+    if (Array.isArray(c?.habits)) return c.habits;
+    return [];
+  }, [boot]);
 
   const catalogById = useMemo(() => {
     const m = new Map();
-    for (const c of catalog) m.set(c.id, c);
+    for (const item of catalog) {
+      if (item?.id) m.set(item.id, item);
+    }
     return m;
   }, [catalog]);
 
+  // flux normalization: { byHabit: [] } vs { ByHabit: [] }
+  const fluxByHabit = useMemo(() => {
+    const f = boot?.flux;
+    const arr = f?.byHabit ?? f?.ByHabit ?? [];
+    return Array.isArray(arr) ? arr : [];
+  }, [boot]);
+
+  const fluxPortfolio = boot?.flux?.portfolio ?? boot?.flux?.Portfolio ?? null;
+
+  // totals/stats normalization
+  const totalsMicros =
+    boot?.totals ??
+    boot?.Totals ??
+    { earnedMicros: 0, transferredMicros: 0, pendingMicros: 0 };
+
+  const statsMicros =
+    boot?.stats ??
+    boot?.Stats ??
+    { todayEarnedMicros: 0, weekEarnedMicros: 0 };
+
+  // -------------------------
+  // Canonical server-backed arrays
+  // -------------------------
   const habits = useMemo(() => {
-    const hs = boot?.habits || [];
-    return hs.map((h) => {
+    const hs = boot?.habits || boot?.Habits || [];
+    return (hs || []).map((h) => {
       const c = catalogById.get(h.libraryId);
+
+      // (optional) rateOptions: prefer catalog options if present
+      const rateOptionsMicros = c?.rateOptionsMicros ?? c?.RateOptionsMicros ?? [];
+      const rateOptions = Array.isArray(rateOptionsMicros)
+        ? rateOptionsMicros.map(microsToDollars)
+        : [];
 
       return {
         ...h,
 
-        // Enrichment from BACKEND catalog, not FE file
-        name: c?.name || h.libraryId,
-        ticker: c?.ticker || "",
-        description: c?.description || "",
-        icon: c?.icon || "✅",
-        unit: c?.unit || "",
-        unitPlural: c?.unitPlural || "",
-        actionType: c?.actionType || "log",
+        // Enrichment from BACKEND catalog (no HABIT_LIBRARY)
+        name: c?.name ?? h.libraryId,
+        ticker: c?.ticker ?? "",
+        description: c?.description ?? "",
+        icon: c?.icon ?? "✅",
+        unit: c?.unit ?? "",
+        unitPlural: c?.unitPlural ?? "",
+        actionType: c?.actionType ?? "log",
+        rateType: c?.rateType ?? h.rateType,
 
-        // convenience
+        // convenience for UI
         rate: microsToDollars(h.rateMicros),
+        rateOptions,
         createdAt: msToISO(h.createdAtMs),
       };
     });
   }, [boot, catalogById]);
 
   const logs = useMemo(() => {
-    const ls = boot?.logs || [];
-    return ls.map((l) => ({
+    const ls = boot?.logs || boot?.Logs || [];
+    return (ls || []).map((l) => ({
       ...l,
       timestamp: msToISO(l.timestampMs),
+      dayKey: dayKeyFromMs(l.timestampMs),
       totalEarnings: microsToDollars(l.earningsMicros),
     }));
   }, [boot]);
 
   const transfers = useMemo(() => {
-    const ts = boot?.transfers || [];
-    return ts.map((t) => ({
+    const ts = boot?.transfers || boot?.Transfers || [];
+    return (ts || []).map((t) => ({
       ...t,
       date: msToISO(t.timestampMs),
       amount: microsToDollars(t.amountMicros),
     }));
   }, [boot]);
 
-  const totalsMicros =
-    boot?.totals ?? { earnedMicros: 0, transferredMicros: 0, pendingMicros: 0 };
-  const statsMicros =
-    boot?.stats ?? { todayEarnedMicros: 0, weekEarnedMicros: 0 };
-  const flux = boot?.flux ?? { byHabit: [], portfolio: null };
+  // -------------------------
+  // Legacy-compatible selectors (so Home.jsx can stop importing old utils)
+  // -------------------------
+  const getWeekEarnings = useCallback(() => microsToDollars(statsMicros.weekEarnedMicros), [
+    statsMicros.weekEarnedMicros,
+  ]);
 
-  // Useful selector (used by AddHabitFlow)
+  const getTodayEarnings = useCallback(() => microsToDollars(statsMicros.todayEarnedMicros), [
+    statsMicros.todayEarnedMicros,
+  ]);
+
+  const isHabitLoggedOnDate = useCallback(
+    (habitId, date) => {
+      const key = dayKeyFromDate(date);
+      return (logs || []).some((l) => l?.habitId === habitId && l?.dayKey === key);
+    },
+    [logs]
+  );
+
+  const calculateFluxScore = useCallback(
+    (habitId) => (fluxByHabit || []).find((x) => x?.habitId === habitId || x?.HabitID === habitId) ?? null,
+    [fluxByHabit]
+  );
+
+  // handy for AddHabit screen
   const isHabitAdded = useCallback(
-    (libraryId) => (boot?.habits || []).some((h) => h.libraryId === libraryId),
+    (libraryId) => (boot?.habits || boot?.Habits || []).some((h) => h.libraryId === libraryId),
     [boot]
   );
 
   // -------------------------
   // Mutations (server source of truth)
   // -------------------------
-
-  // IMPORTANT CHANGE:
-  // We no longer look up lib in FE; we use backend catalog to determine rateType/defaults.
   const addHabit = useCallback(
     async (habitConfig) => {
       const libraryId = habitConfig?.libraryId;
@@ -186,16 +260,18 @@ export function HabitProvider({ children }) {
       const c = catalogById.get(libraryId);
       if (!c) throw new Error(`Catalog item not found for libraryId: ${libraryId}`);
 
-      // Prefer micros from UI; else fall back to catalog default
       const rateMicros =
         habitConfig?.rateMicros ??
-        (habitConfig?.rate != null ? Math.round(Number(habitConfig.rate) * 1_000_000) : null) ??
+        (habitConfig?.rate != null ? dollarsToMicros(habitConfig.rate) : null) ??
         c.defaultRateMicros ??
         0;
 
       const payload = {
         libraryId,
-        rateType: c.rateType, // <-- backend-controlled
+
+        // backend should override/ignore this, but safe during migration
+        rateType: c.rateType,
+
         rateMicros: Number(rateMicros),
         goal: { amount: goal.amount, period: goal.period },
       };
@@ -211,7 +287,6 @@ export function HabitProvider({ children }) {
   const addHabits = useCallback(
     async (habitConfigs) => {
       for (const cfg of habitConfigs || []) {
-        // sequential by design (can be replaced by backend bulk endpoint later)
         // eslint-disable-next-line no-await-in-loop
         await addHabit(cfg);
       }
@@ -228,11 +303,12 @@ export function HabitProvider({ children }) {
         notes: logData.notes || "",
       };
 
-      // Prefer micros; allow dollars fallback for older callers
+      // NOTE: Ideally remove custom earnings entirely (server computes).
+      // Keep temporarily if backend supports it; otherwise delete this block.
       if (logData.customEarningsMicros != null) {
         payload.customEarningsMicros = Number(logData.customEarningsMicros);
       } else if (logData.customEarnings != null) {
-        payload.customEarningsMicros = Math.round(Number(logData.customEarnings) * 1_000_000);
+        payload.customEarningsMicros = dollarsToMicros(logData.customEarnings);
       }
 
       const nextBoot = await logsApi.create(payload); // returns Bootstrap
@@ -255,7 +331,6 @@ export function HabitProvider({ children }) {
       const nextUser = await usersApi.patchMe(patch);
       setBoot((prev) => (prev ? { ...prev, user: nextUser } : prev));
 
-      // keep cache in sync too
       if (authUser?.id) {
         const cached = readBootCache(authUser.id);
         if (cached) writeBootCache(authUser.id, { ...cached, user: nextUser });
@@ -280,18 +355,23 @@ export function HabitProvider({ children }) {
     if (authUser?.id) clearBootCache(authUser.id);
   }, [authUser?.id]);
 
+  // -------------------------
+  // Value
+  // -------------------------
   const value = {
+    // raw
     boot,
 
-    // canonical
+    // canonical (server-backed)
     user,
     catalog,
+    catalogById,
     habits,
     logs,
     transfers,
     totalsMicros,
     statsMicros,
-    flux,
+    flux: { byHabit: fluxByHabit, portfolio: fluxPortfolio },
 
     // state
     isLoading,
@@ -306,8 +386,12 @@ export function HabitProvider({ children }) {
     updateUser,
     completeOnboarding,
 
-    // selectors
+    // selectors / legacy compatibility
     isHabitAdded,
+    getWeekEarnings,
+    getTodayEarnings,
+    isHabitLoggedOnDate,
+    calculateFluxScore,
 
     // dev
     clearCache,
