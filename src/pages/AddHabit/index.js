@@ -1,1 +1,1 @@
-export { default } from './AddHabit';
+export { default } from './AddHabit.jsx';

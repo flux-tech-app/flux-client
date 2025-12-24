@@ -1,1 +1,1 @@
-export { default } from './LogHabitSheet';
+export { default } from './LogHabitSheet.jsx';

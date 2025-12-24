@@ -1,1 +1,1 @@
-export { default } from './Sparkline';
+export { default } from './Sparkline.jsx';

@@ -1,1 +1,1 @@
-export { default } from './HabitCard';
+export { default } from './HabitCard.jsx';
