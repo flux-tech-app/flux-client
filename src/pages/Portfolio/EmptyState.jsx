@@ -1,12 +1,16 @@
-import React from 'react';
-import './EmptyState.css';
+// src/components/EmptyState/EmptyState.jsx
+import "./EmptyState.css";
 
 /**
- * Empty State for Portfolio
- * Shown when user has no habits yet
- * Updated to remove AI chat references - now guides to FAB
+ * Empty State for Portfolio/Home
+ * - "Add positions" green + box triggers AddHabitFlow (via onAdd)
  */
-function EmptyState() {
+function EmptyState({ onAdd = () => {}, disabled = false }) {
+  const handleAdd = () => {
+    if (disabled) return;
+    onAdd();
+  };
+
   return (
     <>
       {/* Empty State Illustration */}
@@ -18,6 +22,16 @@ function EmptyState() {
         <p className="empty-description">
           Add habits to start earning. Every activity you log moves money toward your savings.
         </p>
+      </div>
+
+      {/* Positions + (legacy small plus under Positions) - optional */}
+      <div className="positions-row">
+        <div className="positions-title">Positions</div>
+        {/* If you already have a plus here and want it clickable too, uncomment:
+        <button type="button" className="positions-plus" onClick={handleAdd} disabled={disabled} aria-label="Add habit">
+          +
+        </button>
+        */}
       </div>
 
       {/* Info Banner */}
@@ -36,14 +50,22 @@ function EmptyState() {
       {/* Feature Cards */}
       <div className="feature-cards">
         <div className="feature-card">
-          <div className="feature-icon-box green">
+          {/* ✅ Make the green box clickable */}
+          <button
+            type="button"
+            className="feature-icon-box green feature-icon-button"
+            onClick={handleAdd}
+            disabled={disabled}
+            aria-label="Add positions"
+          >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
-          </div>
+          </button>
+
           <div className="feature-content">
             <h3>Add positions</h3>
-            <p>Tap the + button to choose from 15 curated habits like running, meditation, or reading.</p>
+            <p>Tap the + button to choose from curated habits like running, meditation, or reading.</p>
           </div>
         </div>
 
@@ -76,7 +98,9 @@ function EmptyState() {
       <div className="cta-section">
         <div className="cta-hint">
           <span className="cta-hint-icon">👆</span>
-          <span className="cta-hint-text">Tap the <strong>+</strong> button below to add your first habit</span>
+          <span className="cta-hint-text">
+            Tap the <strong>+</strong> button to add your first habit
+          </span>
         </div>
       </div>
     </>

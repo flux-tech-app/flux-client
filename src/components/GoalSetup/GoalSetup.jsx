@@ -6,25 +6,38 @@ import {
   formatUSDFromMicros,
   isBinaryRateType,
   unitsToMicros,
-  MICRO_UNITS,
 } from "@/utils/micros";
 import "./GoalSetup.css";
 
 /**
  * GoalSetup (micros-native)
+ *
+ * Props:
+ * - habitLibraryData: CatalogHabit (rateType, goalUnit, suggestedGoals, defaultGoalPeriod, etc.)
+ * - selectedRateMicros: number (micros; money per unit, or flat per completion for BINARY)
+ * - onGoalSet(goal): goal = { amount: number, period: 'day'|'week'|'month' }
+ * - initialGoal: optional existing goal
  */
-export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, initialGoal }) {
+export default function GoalSetup({
+  habitLibraryData,
+  selectedRateMicros,
+  onGoalSet,
+  initialGoal,
+}) {
   const [amount, setAmount] = useState(initialGoal?.amount?.toString() || "");
   const [period, setPeriod] = useState(
     initialGoal?.period || habitLibraryData?.defaultGoalPeriod || "week"
   );
 
   const rateType = habitLibraryData?.rateType;
-  const goalUnit = habitLibraryData?.goalUnit || "units";
+  const binary = isBinaryRateType(rateType);
+
+  // What label to show beside the input
+  const goalUnit = habitLibraryData?.goalUnit || (binary ? "times" : "units");
 
   const projections = useMemo(() => {
     const numAmount = Number.parseFloat(amount);
-    const rateMicros = Number(selectedRate);
+    const rateMicros = Number(selectedRateMicros);
 
     if (!Number.isFinite(numAmount) || numAmount <= 0) return null;
     if (!Number.isFinite(rateMicros) || rateMicros <= 0) return null;
@@ -35,16 +48,25 @@ export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, i
     // Convert "goal amount per period" -> "weekly units"
     // ex: 10 miles/week => weeklyUnits = 10
     // ex: 30 minutes/day => weeklyUnits = 30*7
+    // ex: 40 miles/month => weeklyUnits ≈ 40/30*7
     const weeklyUnits = (numAmount / periodDays) * 7;
 
-    // For BINARY, units don't matter; UI helper ignores units for BINARY anyway.
-    const weeklyUnitsMicros = isBinaryRateType(rateType) ? MICRO_UNITS : unitsToMicros(weeklyUnits);
+    let weeklyEarnMicros = 0;
 
-    const weeklyEarnMicros = computeEarningsMicrosUI({
-      rateType,
-      rateMicros,
-      unitsMicros: weeklyUnitsMicros,
-    });
+    if (binary) {
+      // Binary habits are "per completion".
+      // Interpret goal amount as "completions per period".
+      // Since it’s “times”, treat it as a whole number for projections.
+      const weeklyCompletions = Math.max(0, Math.round(weeklyUnits));
+      weeklyEarnMicros = weeklyCompletions * rateMicros;
+    } else {
+      const weeklyUnitsMicros = unitsToMicros(weeklyUnits);
+      weeklyEarnMicros = computeEarningsMicrosUI({
+        rateType,
+        rateMicros,
+        unitsMicros: weeklyUnitsMicros,
+      });
+    }
 
     const annualEarnMicros = weeklyEarnMicros * 52;
 
@@ -52,16 +74,20 @@ export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, i
       weeklyMicros: weeklyEarnMicros,
       annualMicros: annualEarnMicros,
     };
-  }, [amount, period, rateType, selectedRate]);
+  }, [amount, period, rateType, selectedRateMicros, binary]);
 
-  const isValidGoal = Number.parseFloat(amount) > 0;
+  const parsedAmount = Number.parseFloat(amount);
+  const isValidGoal = Number.isFinite(parsedAmount) && parsedAmount > 0;
 
   const handleContinue = () => {
     const numAmount = Number.parseFloat(amount);
     if (!Number.isFinite(numAmount) || numAmount <= 0) return;
 
+    // For binary habits, store a clean integer goal
+    const finalAmount = binary ? Math.max(1, Math.round(numAmount)) : numAmount;
+
     onGoalSet?.({
-      amount: numAmount,
+      amount: finalAmount,
       period,
     });
   };
@@ -71,7 +97,7 @@ export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, i
     setPeriod(String(suggested.period));
   };
 
-  // “Annual” display: show whole dollars-ish (matches your prior UI intent)
+  // “Annual” display: show whole dollars-ish
   const formatAnnual = (annualMicros) => {
     const dollars = annualMicros / 1_000_000;
     const rounded = Math.round(dollars);
@@ -129,8 +155,8 @@ export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, i
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0"
-                min="0"
-                step="any"
+                min={binary ? "1" : "0"}
+                step={binary ? "1" : "any"}
               />
               <span className="goal-unit-label">{goalUnit}</span>
             </div>

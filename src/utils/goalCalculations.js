@@ -55,7 +55,7 @@ function logToDate(log) {
   return null;
 }
 
-function isSameDay(d1, d2) {
+function _isSameDay(d1, d2) {
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
@@ -505,7 +505,7 @@ export function calculateDistanceGoalData(habit, logs) {
   const recentRuns = [...(logs || [])]
     .map((l) => ({ log: l, d: logToDate(l) }))
     .filter((x) => x.d)
-    .sort((a, b) => b.d - a.d)
+    .sort((a, b) => b.d.getTime() - a.d.getTime())
     .slice(0, 5)
     .map(({ log, d }) => {
       const distance = logUnitsHuman(habit, log);

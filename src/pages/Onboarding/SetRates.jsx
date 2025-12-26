@@ -9,6 +9,7 @@ import {
   isBinaryRateType,
   unitsToMicros,
   computeEarningsMicrosUI,
+  MICRO_UNITS,
 } from "@/utils/micros";
 import "./Onboarding.css";
 
@@ -41,10 +42,8 @@ export default function SetRates({
   const allGoalsSet = (selectedHabits ?? []).every((libraryId) => !!habitGoals?.[libraryId]);
 
   function getRateLabel(index, total) {
-    // keep it simple + deterministic
     if (total <= 1) return "Default";
     if (total === 2) return index === 0 ? "Standard" : "High";
-    // 3+
     if (index === 0) return "Low";
     if (index === total - 1) return "High";
     return "Med";
@@ -56,9 +55,7 @@ export default function SetRates({
 
   function rateDisplayForHabit(habit, rateMicros) {
     if (!habit) return formatUSDFromMicros(rateMicros);
-    if (isBinaryRateType(habit.rateType)) {
-      return formatUSDFromMicros(rateMicros);
-    }
+    if (isBinaryRateType(habit.rateType)) return formatUSDFromMicros(rateMicros);
     return formatRateFromMicros(rateMicros, habit.unit);
   }
 
@@ -67,7 +64,7 @@ export default function SetRates({
     const ids = selectedHabits ?? [];
     let totalMicros = 0;
 
-    // goal.period meaning in your UI seems to be: "per day/week/month"
+    // goal.period meaning: "per day/week/month"
     const daysMap = { day: 1, week: 7, month: 30 };
 
     for (const libraryId of ids) {
@@ -82,7 +79,9 @@ export default function SetRates({
         const dailyUnits = Number(goal.amount) / periodDays;
         const weeklyUnits = dailyUnits * 7;
 
-        const weeklyUnitsMicros = unitsToMicros(weeklyUnits);
+        const weeklyUnitsMicros = isBinaryRateType(habit.rateType)
+          ? MICRO_UNITS
+          : unitsToMicros(weeklyUnits);
 
         totalMicros += computeEarningsMicrosUI({
           rateType: habit.rateType,
@@ -96,11 +95,9 @@ export default function SetRates({
         if (isBinaryRateType(habit.rateType)) {
           fallbackWeeklyUnits = 5; // 5 occurrences/week
         } else if (habit.rateType === "DURATION") {
-          // minutes
-          fallbackWeeklyUnits = 30 * 5;
+          fallbackWeeklyUnits = 30 * 5; // minutes
         } else if (habit.rateType === "DISTANCE") {
-          // miles
-          fallbackWeeklyUnits = 3 * 4;
+          fallbackWeeklyUnits = 3 * 4; // miles
         } else if (habit.rateType === "COUNT") {
           if (habit.unit === "step") fallbackWeeklyUnits = 8000 * 5;
           else if (habit.unit === "rep") fallbackWeeklyUnits = 20 * 5;
@@ -109,10 +106,14 @@ export default function SetRates({
           fallbackWeeklyUnits = 5;
         }
 
+        const unitsMicros = isBinaryRateType(habit.rateType)
+          ? MICRO_UNITS
+          : unitsToMicros(fallbackWeeklyUnits);
+
         totalMicros += computeEarningsMicrosUI({
           rateType: habit.rateType,
           rateMicros,
-          unitsMicros: unitsToMicros(fallbackWeeklyUnits),
+          unitsMicros,
         });
       }
     }
@@ -148,11 +149,9 @@ export default function SetRates({
 
     const rateMicros = Number(habitRates?.[activeGoalSetup] ?? habit.defaultRateMicros ?? 0);
 
-    // Adapter object: keep GoalSetup working while you migrate it off legacy expectations.
-    // If GoalSetup expects floats, you’ll update GoalSetup next — but this keeps the data available.
+    // Adapter object (safe, optional aliases)
     const habitLibraryData = {
       ...habit,
-      // provide some legacy-ish aliases (harmless if unused)
       defaultRate: habit.defaultRateMicros ? habit.defaultRateMicros / 1_000_000 : 0,
       rateOptions: (habit.rateOptionsMicros ?? []).map((m) => m / 1_000_000),
     };
@@ -193,8 +192,7 @@ export default function SetRates({
 
           <GoalSetup
             habitLibraryData={habitLibraryData}
-            // keep existing prop name, but this is MICROS now
-            selectedRate={rateMicros}
+            selectedRateMicros={rateMicros}
             initialGoal={habitGoals?.[activeGoalSetup]}
             onGoalSet={(goal) => handleGoalSet(activeGoalSetup, goal)}
           />
@@ -244,10 +242,9 @@ export default function SetRates({
                     const isSelected = Number(currentRateMicros) === Number(rateMicros);
                     const label = getRateLabel(index, options.length);
 
-                    // display only
                     const valueText = isBinaryRateType(habit.rateType)
                       ? formatUSDFromMicros(rateMicros)
-                      : formatUSDFromMicros(rateMicros);
+                      : formatRateFromMicros(rateMicros, habit.unit);
 
                     return (
                       <button
@@ -257,12 +254,7 @@ export default function SetRates({
                         onClick={() => onRateChange(libraryId, Number(rateMicros))}
                       >
                         <span className="rate-option-label">{label}</span>
-                        <span className="rate-option-value">
-                          {valueText}
-                          {!isBinaryRateType(habit.rateType) && habit.unit ? (
-                            <span className="rate-unit">/{habit.unit}</span>
-                          ) : null}
-                        </span>
+                        <span className="rate-option-value">{valueText}</span>
                       </button>
                     );
                   })}

@@ -11,12 +11,21 @@ import "./GoalSection.css";
 /**
  * GoalSection
  *
- * Minimal migration:
- * - use server catalog for GoalSetup data
- * - use micros formatter for earnings display
+ * Micros migration:
+ * - GoalSetup now expects selectedRateMicros (NOT selectedRate)
+ * - Catalog comes from HabitProvider as `catalogHabits` (preferred),
+ *   but we also support legacy `catalog.habits` for safety.
  */
 export default function GoalSection({ habit, logs }) {
-  const { updateHabitGoal, catalog } = useHabits();
+  // Support both new + legacy HabitProvider shapes
+  const habitsCtx = useHabits();
+  const updateHabitGoal = habitsCtx?.updateHabitGoal;
+
+  const catalogHabits =
+    habitsCtx?.catalogHabits ??
+    habitsCtx?.catalog?.habits ??
+    [];
+
   const [showEditGoal, setShowEditGoal] = useState(false);
 
   const goalData = useMemo(() => calculateGoalData(habit, logs), [habit, logs]);
@@ -25,14 +34,14 @@ export default function GoalSection({ habit, logs }) {
   const catalogHabit = useMemo(() => {
     const id = habit?.libraryId;
     if (!id) return null;
-    const list = catalog?.habits ?? [];
+    const list = Array.isArray(catalogHabits) ? catalogHabits : [];
     return list.find((h) => h?.id === id) ?? null;
-  }, [catalog, habit?.libraryId]);
+  }, [catalogHabits, habit?.libraryId]);
 
   if (!habit?.goal || !goalData) return null;
 
   const handleGoalUpdate = (newGoal) => {
-    updateHabitGoal(habit.id, newGoal);
+    updateHabitGoal?.(habit.id, newGoal);
     setShowEditGoal(false);
   };
 
@@ -53,10 +62,13 @@ export default function GoalSection({ habit, logs }) {
   // For GoalSetup we want rateMicros.
   const rateMicros = (() => {
     if (habit?.rateMicros != null) return Number(habit.rateMicros);
+
     const r = Number(habit?.rate);
     if (!Number.isFinite(r)) return 0;
+
     // if it looks like micros already, keep it
     if (Math.abs(r) >= 1_000) return r;
+
     return dollarsToMicros(r);
   })();
 
@@ -162,7 +174,7 @@ export default function GoalSection({ habit, logs }) {
 
             <GoalSetup
               habitLibraryData={catalogHabit}
-              selectedRate={rateMicros}
+              selectedRateMicros={rateMicros}
               initialGoal={habit.goal}
               onGoalSet={handleGoalUpdate}
             />
@@ -173,7 +185,7 @@ export default function GoalSection({ habit, logs }) {
   );
 }
 
-/* ====== Rest of your file unchanged below (helpers) ====== */
+/* ====== Rest of your file (helpers) ====== */
 
 function formatStatValue(goalData, type, habit) {
   let value = 0;
@@ -208,7 +220,8 @@ function formatStatValue(goalData, type, habit) {
       break;
   }
 
-  const formatted = value < 10 ? Number(value || 0).toFixed(1) : Math.round(value || 0).toLocaleString();
+  const formatted =
+    value < 10 ? Number(value || 0).toFixed(1) : Math.round(value || 0).toLocaleString();
   return `${formatted}${period}`;
 }
 
@@ -235,13 +248,19 @@ function getRawValue(goalData, type) {
   }
 }
 
+/**
+ * JSDoc is important here because your project is running TS checking on .jsx,
+ * and without an explicit props shape it can “stick” to a narrower inferred type.
+ *
+ * @param {{ goalData: any, habit: any, logs: any[] }} props
+ */
 function MetricsBarChart({ goalData, habit, logs }) {
   const baseline = getRawValue(goalData, "baseline");
   const current = getRawValue(goalData, "current");
   const goal = getRawValue(goalData, "goal");
 
   const calibrationStatus = getCalibrationStatus(logs);
-  const isBaselineCalibrating = !habit.baseline?.avgPerPeriod && calibrationStatus.isCalibrating;
+  const isBaselineCalibrating = !habit?.baseline?.avgPerPeriod && calibrationStatus.isCalibrating;
 
   const maxValue = Math.max(goal, current, isBaselineCalibrating ? 0 : baseline) || 1;
   const baselinePercent = isBaselineCalibrating ? 0 : Math.min(100, (baseline / maxValue) * 100);
@@ -287,7 +306,10 @@ function MetricsBarChart({ goalData, habit, logs }) {
   );
 }
 
-function CurrentWeekView({ goalData }) {
+/**
+ * @param {{ goalData: any, habit: any }} props
+ */
+function CurrentWeekView({ goalData, habit }) {
   const { currentWeekDays, daysAtGoalThisWeek, totalDaysThisWeek } = goalData;
   if (!currentWeekDays || currentWeekDays.length === 0) return null;
 
@@ -327,6 +349,7 @@ function CurrentWeekView({ goalData }) {
           const isToday = idx === todayIndex;
           const isFuture = idx > todayIndex;
           const value = day.total || 0;
+
           const isAtGoal = value >= threshold;
           const hasActivity = value > 0;
 
@@ -352,6 +375,9 @@ function CurrentWeekView({ goalData }) {
   );
 }
 
+/**
+ * @param {{ goalData: any, habit: any }} props
+ */
 function TodayProgress({ goalData, habit }) {
   const { todayTotal, goalDaily, todayRemaining } = goalData;
   const unit = habit.unit || "units";

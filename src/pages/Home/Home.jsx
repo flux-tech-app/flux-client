@@ -2,12 +2,17 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+
 import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from "@/utils/formatters";
+
 import BottomSheet from "@/components/BottomSheet";
 import LogHabitSheet from "@/components/LogHabitSheet";
 import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
+import AddHabitFlow from "@/components/AddHabitFlow";
+
 import EmptyState from "../Portfolio/EmptyState";
+
 import "./Home.css";
 
 // Animated counter hook - counts up from 0 to target value
@@ -27,8 +32,7 @@ const useAnimatedCounter = (targetValue, duration = 1200) => {
 
       // Easing function (ease-out cubic)
       const easeOut = 1 - Math.pow(1 - progress, 3);
-      const current =
-        startValue.current + (targetValue - startValue.current) * easeOut;
+      const current = startValue.current + (targetValue - startValue.current) * easeOut;
 
       setDisplayValue(current);
 
@@ -49,12 +53,21 @@ export default function Home() {
   const navigate = useNavigate();
 
   // STRICT provider: server is source of truth (no fallbacks, no FE math for money)
-  const { habits, logs, getWeekEarnings, getTodayEarnings, isHabitLoggedOnDate, calculateFluxScore } =
-    useHabits();
+  const {
+    habits,
+    logs,
+    getWeekEarnings,
+    getTodayEarnings,
+    isHabitLoggedOnDate,
+    calculateFluxScore,
+  } = useHabits();
 
   const [activeSheet, setActiveSheet] = useState(null); // "log" | "pass" | null
   const [selectedHabitId, setSelectedHabitId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ✅ AddHabitFlow sheet (for empty state + any future “+ Add” triggers)
+  const [showAddSheet, setShowAddSheet] = useState(false);
 
   const hasHabits = (habits || []).length > 0;
 
@@ -227,29 +240,15 @@ export default function Home() {
 
       <div className="home-container">
         {!hasHabits ? (
-          <EmptyState />
+          <EmptyState onAdd={() => setShowAddSheet(true)} />
         ) : (
           <>
             {/* Header */}
             <header className="home-header">
               <div className="header-row">
-                <button
-                  className="menu-button"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
+                <button className="menu-button" onClick={() => setSidebarOpen(true)}>
+                  <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
 
@@ -271,18 +270,14 @@ export default function Home() {
               <div className="week-summary-top">
                 <div className="week-earned">
                   <span className="earned-label">Earned this week</span>
-                  <span className="earned-value">
-                    {formatCurrency(animatedWeekEarnings)}
-                  </span>
+                  <span className="earned-value">{formatCurrency(animatedWeekEarnings)}</span>
                 </div>
               </div>
 
               {todayEarnings > 0 && (
                 <div className="today-earned">
                   <span className="today-label">Today</span>
-                  <span className="today-value">
-                    +{formatCurrency(todayEarnings)}
-                  </span>
+                  <span className="today-value">+{formatCurrency(todayEarnings)}</span>
                 </div>
               )}
             </section>
@@ -291,34 +286,21 @@ export default function Home() {
             <section className="today-section">
               <div className="section-header">
                 <span className="section-label">Today</span>
-                <span className="section-count">
-                  {loggedCount}/{(habits || []).length}
-                </span>
+                <span className="section-count">{loggedCount}/{(habits || []).length}</span>
               </div>
 
               <div className="today-list">
                 {todayHabits.map((habit) => (
                   <div
                     key={habit.id}
-                    className={`today-row ${
-                      habit.isLogged ? "logged" : "tappable"
-                    }`}
+                    className={`today-row ${habit.isLogged ? "logged" : "tappable"}`}
                     onClick={() => handleHabitTap(habit)}
                   >
                     <div className="today-status">
                       {habit.isLogged ? (
                         <div className="status-check">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="3"
-                              d="M5 13l4 4L19 7"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       ) : (
@@ -332,13 +314,9 @@ export default function Home() {
 
                     <div className="today-value">
                       {habit.isLogged ? (
-                        <span className="today-earned">
-                          +{formatCurrency(habit.todayEarnings)}
-                        </span>
+                        <span className="today-earned">+{formatCurrency(habit.todayEarnings)}</span>
                       ) : (
-                        <span className="today-progress">
-                          {habit.progressText}
-                        </span>
+                        <span className="today-progress">{habit.progressText}</span>
                       )}
                     </div>
                   </div>
@@ -352,10 +330,7 @@ export default function Home() {
                 <div className="section-label">This Week</div>
                 <div className="performers-scroll">
                   {weeklyPerformers.map((performer, index) => {
-                    const maxSparkline = Math.max(
-                      ...(performer.sparklineData || []),
-                      1
-                    );
+                    const maxSparkline = Math.max(...(performer.sparklineData || []), 1);
 
                     return (
                       <motion.div
@@ -368,34 +343,24 @@ export default function Home() {
                         whileTap={{ scale: 0.97 }}
                       >
                         <div className="performer-name">{performer.name}</div>
-                        <div className="performer-earnings">
-                          {formatCurrency(performer.thisWeekEarnings)}
-                        </div>
+                        <div className="performer-earnings">{formatCurrency(performer.thisWeekEarnings)}</div>
 
                         <div className="sparkline-container">
                           {(performer.sparklineData || []).map((value, i) => {
-                            const height =
-                              maxSparkline > 0
-                                ? (value / maxSparkline) * 100
-                                : 10;
-                            const isRecent =
-                              i >= performer.sparklineData.length - 2;
+                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
+                            const isRecent = i >= performer.sparklineData.length - 2;
 
                             return (
                               <div
                                 key={i}
-                                className={`spark-bar ${
-                                  isRecent ? "highlight" : ""
-                                }`}
+                                className={`spark-bar ${isRecent ? "highlight" : ""}`}
                                 style={{ height: `${Math.max(height, 10)}%` }}
                               />
                             );
                           })}
                         </div>
 
-                        <div className="performer-logs">
-                          {performer.thisWeekLogCount} logs
-                        </div>
+                        <div className="performer-logs">{performer.thisWeekLogCount} logs</div>
                       </motion.div>
                     );
                   })}
@@ -416,14 +381,7 @@ export default function Home() {
                     >
                       <div className="calibrating-progress">
                         <svg viewBox="0 0 36 36" className="calibrating-ring">
-                          <circle
-                            className="ring-bg"
-                            cx="18"
-                            cy="18"
-                            r="14"
-                            fill="none"
-                            strokeWidth="3"
-                          />
+                          <circle className="ring-bg" cx="18" cy="18" r="14" fill="none" strokeWidth="3" />
                           <circle
                             className="ring-progress"
                             cx="18"
@@ -440,9 +398,7 @@ export default function Home() {
 
                       <div className="calibrating-info">
                         <span className="calibrating-name">{habit.name}</span>
-                        <span className="calibrating-needed">
-                          {habit.logsNeeded} more logs
-                        </span>
+                        <span className="calibrating-needed">{habit.logsNeeded} more logs</span>
                       </div>
 
                       <svg
@@ -452,7 +408,7 @@ export default function Home() {
                         stroke="currentColor"
                         strokeWidth="2"
                       >
-                        <polyline points="9 18 15 12 9 6"></polyline>
+                        <polyline points="9 18 15 12 9 6" />
                       </svg>
                     </div>
                   ))}
@@ -492,6 +448,20 @@ export default function Home() {
           initialHabitId={selectedHabitId}
           onClose={closeSheet}
           onLogComplete={handleLogComplete}
+        />
+      </BottomSheet>
+
+      {/* ✅ Add Habit Bottom Sheet (triggered from EmptyState green +) */}
+      <BottomSheet
+        isOpen={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+        height="tall"
+        title="Add Habit"
+        headerRight={noopHeaderRight}
+      >
+        <AddHabitFlow
+          onComplete={() => setShowAddSheet(false)} // AddHabitFlow owns addHabit()
+          onClose={() => setShowAddSheet(false)}
         />
       </BottomSheet>
     </div>

@@ -4,18 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import useHabits from "@/hooks/useHabits";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "@/utils/formatters";
 
-import SidebarMenu from "../../components/SidebarMenu/SidebarMenu";
-import CalibratingFingerprint from "../../components/CalibratingFingerprint";
-import FluxBadge from "../../components/FluxBadge";
-import BottomSheet from "../../components/BottomSheet";
-import AddHabitFlow from "../../components/AddHabitFlow";
-import IndicesTicker from "../../components/IndicesTicker";
+import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
+import CalibratingFingerprint from "@/components/CalibratingFingerprint";
+import FluxBadge from "@/components/FluxBadge";
+import BottomSheet from "@/components/BottomSheet";
+import AddHabitFlow from "@/components/AddHabitFlow";
+import IndicesTicker from "@/components/IndicesTicker";
 
 import "./Portfolio.css";
 
-// UI-only animation (not business logic)
+// UI-only animation
 const useAnimatedCounter = (targetValue, duration = 1500) => {
   const [displayValue, setDisplayValue] = useState(0);
   const startTime = useRef(null);
@@ -40,7 +40,6 @@ const useAnimatedCounter = (targetValue, duration = 1500) => {
     };
 
     requestAnimationFrame(animate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetValue, duration]);
 
   return displayValue;
@@ -51,42 +50,32 @@ const microsToDollars = (micros) => Number(micros || 0) / 1_000_000;
 export default function Portfolio() {
   const navigate = useNavigate();
 
-  // Portfolio page should ONLY render server-derived state.
-  //
-  // Required from backend bootstrap:
-  // - habits[] must already include display fields (name/icon/etc) OR provider enriches from boot.catalog
-  // - totals must be in micros (pendingMicros + transferredMicros/ completedMicros)
-  // - flux.byHabit must be present for score/status/logsNeeded
-  // - each habit should include earnedMicros (lifetime earned for that habit) computed on backend
+  // STRICT: Portfolio should render server-derived state only.
+  // HabitProvider already:
+  // - enriches habits from catalog
+  // - exposes totals (micros)
+  // - exposes flux.byHabit
+  // - exposes habitTotals (micros per habit)
   const {
     habits,
-    totalsMicros,
+    totals,       // { pendingMicros, completedMicros, earnedMicros }
+    habitTotals,  // [{ habitId, pendingMicros, completedMicros, earnedMicros, ... }]
     flux,
-    addHabit,
     isLoading,
     error,
   } = useHabits();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const [isAdding, setIsAdding] = useState(false);
 
-  const handleHabitCreated = async (habitData) => {
-    if (!addHabit || isAdding) return;
-    setIsAdding(true);
-    try {
-      await addHabit(habitData); // should update bootstrap in provider
-      setShowAddSheet(false);
-    } catch (e) {
-      console.error(e);
-      alert(e?.message || "Failed to add habit. Please try again.");
-    } finally {
-      setIsAdding(false);
-    }
-  };
+  // Totals (micros -> dollars)
+  const transferredBalance = useMemo(() => {
+    return microsToDollars(totals?.completedMicros);
+  }, [totals?.completedMicros]);
 
-  const transferredBalance = microsToDollars(totalsMicros?.transferredMicros);
-  const pendingBalance = microsToDollars(totalsMicros?.pendingMicros);
+  const pendingBalance = useMemo(() => {
+    return microsToDollars(totals?.pendingMicros);
+  }, [totals?.pendingMicros]);
 
   const animatedBalance = useAnimatedCounter(transferredBalance, 1200);
 
@@ -95,40 +84,56 @@ export default function Portfolio() {
     const list = flux?.byHabit || [];
     for (const f of list) {
       const id = f?.habitId ?? f?.HabitID;
-      if (id) m.set(id, f);
+      if (id) m.set(String(id), f);
     }
     return m;
   }, [flux?.byHabit]);
 
-  // Holdings = server values only:
-  // - earnedMicros MUST be computed server-side and included on each habit (or you’ll still be forced to sum logs here).
+  const habitTotalsByHabitId = useMemo(() => {
+    const m = new Map();
+    for (const ht of habitTotals || []) {
+      const id = ht?.habitId;
+      if (id) m.set(String(id), ht);
+    }
+    return m;
+  }, [habitTotals]);
+
+console.log("PORTFOLIO totals:", totals);
+console.log("PORTFOLIO pendingMicros:", totals?.pendingMicros);
+console.log("PORTFOLIO pendingBalance:", pendingBalance);
+
+  // Holdings = server values only (earnedMicros from habitTotals)
   const holdings = useMemo(() => {
     const list = habits || [];
+
     return list
       .map((h) => {
-        const fx = fluxByHabitId.get(h.id) || null;
+        const fx = fluxByHabitId.get(String(h.id)) || null;
+        const ht = habitTotalsByHabitId.get(String(h.id)) || null;
 
         const status = fx?.status ?? fx?.Status ?? "building";
         const score = fx?.score ?? fx?.Score ?? null;
 
-        // backend should populate earnedMicros per habit
-        const earnedMicros = h.earnedMicros ?? 0;
+        const earnedMicros = Number(ht?.earnedMicros ?? 0);
 
-        // backend flux meta should carry these (already computed server-side)
-        const logsNeeded = fx?.logsNeeded ?? fx?.LogsNeeded ?? 0;
-        const totalLogs = fx?.meta?.totalLogs ?? fx?.Meta?.TotalLogs ?? 0;
+        // optional (only if you later add them to flux meta)
+        const logsNeeded = Number(fx?.logsNeeded ?? fx?.LogsNeeded ?? 0);
+        const totalLogs = Number(fx?.meta?.totalLogs ?? fx?.Meta?.TotalLogs ?? 0);
 
         return {
           ...h,
+          earnedMicros,
           totalEarned: microsToDollars(earnedMicros),
+
           fluxScoreStatus: status,
           fluxScore: typeof score === "number" ? score : null,
+
           logsNeeded,
           totalLogs,
         };
       })
-      .sort((a, b) => (b.earnedMicros ?? 0) - (a.earnedMicros ?? 0));
-  }, [habits, fluxByHabitId]);
+      .sort((a, b) => Number(b.earnedMicros || 0) - Number(a.earnedMicros || 0));
+  }, [habits, fluxByHabitId, habitTotalsByHabitId]);
 
   const hasHabits = (habits || []).length > 0;
 
@@ -143,19 +148,8 @@ export default function Portfolio() {
             aria-label="Open menu"
             onClick={() => setSidebarOpen(true)}
           >
-            <svg
-              width="24"
-              height="24"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
@@ -165,12 +159,7 @@ export default function Portfolio() {
               aria-label="View Indices"
               onClick={() => navigate("/indices")}
             >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 13h2v8H3v-8zm4-5h2v13H7V8zm4-5h2v18h-2V3zm4 8h2v10h-2V11zm4-3h2v13h-2V8z" />
               </svg>
             </button>
@@ -196,9 +185,7 @@ export default function Portfolio() {
 
             <section className="portfolio-value-section">
               <div className="value-label">Total Portfolio Value</div>
-              <div className="portfolio-value">
-                {formatCurrency(animatedBalance)}
-              </div>
+              <div className="portfolio-value">{formatCurrency(animatedBalance)}</div>
 
               {hasHabits && pendingBalance > 0 && (
                 <div className="pending-transfer">
@@ -217,10 +204,7 @@ export default function Portfolio() {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="pending-amount">
-                    {formatCurrency(pendingBalance)} pending
-                  </span>
-                  {/* Schedule string should come from backend when you add it (e.g. boot.transferSchedule.nextLabel) */}
+                  <span className="pending-amount">{formatCurrency(pendingBalance)} pending</span>
                 </div>
               )}
             </section>
@@ -229,12 +213,8 @@ export default function Portfolio() {
               <div className="holdings-section-flat">
                 <div className="section-header-row">
                   <span className="section-title-flat">Holdings</span>
-                  <button
-                    className="add-habit-btn"
-                    onClick={() => setShowAddSheet(true)}
-                    disabled={isAdding}
-                  >
-                    {isAdding ? "Adding..." : "+ Add"}
+                  <button className="add-habit-btn" onClick={() => setShowAddSheet(true)}>
+                    + Add
                   </button>
                 </div>
 
@@ -250,8 +230,7 @@ export default function Portfolio() {
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="holding-badge">
-                        {holding.fluxScoreStatus === "building" ||
-                        holding.fluxScore === null ? (
+                        {holding.fluxScoreStatus === "building" || holding.fluxScore === null ? (
                           <CalibratingFingerprint
                             logsNeeded={holding.logsNeeded}
                             daysRemaining={holding.daysRemaining}
@@ -268,9 +247,7 @@ export default function Portfolio() {
                         {holding.fluxScoreStatus === "active" && (
                           <div className="holding-rank-text">
                             {(() => {
-                              const rankPercent = Math.floor(
-                                Math.random() * 40 + 10
-                              );
+                              const rankPercent = Math.floor(Math.random() * 40 + 10);
                               return `Top ${rankPercent}%`;
                             })()}
                           </div>
@@ -278,9 +255,7 @@ export default function Portfolio() {
                       </div>
 
                       <div className="holding-value-section">
-                        <div className="holding-value">
-                          {formatCurrency(holding.totalEarned)}
-                        </div>
+                        <div className="holding-value">{formatCurrency(holding.totalEarned)}</div>
                         <div className="holding-label">earned</div>
                       </div>
 
@@ -300,13 +275,7 @@ export default function Portfolio() {
             ) : (
               <section className="empty-state-section">
                 <div className="empty-icon">
-                  <svg
-                    width="28"
-                    height="28"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -316,10 +285,7 @@ export default function Portfolio() {
                   </svg>
                 </div>
                 <h3>Start Building Your Portfolio</h3>
-                <p>
-                  Create your first habit to begin tracking your behavioral
-                  investments.
-                </p>
+                <p>Create your first habit to begin tracking your behavioral investments.</p>
               </section>
             )}
 
@@ -338,12 +304,9 @@ export default function Portfolio() {
                     </div>
 
                     <div className="goal-amount">
-                      <div className="goal-current">
-                        {formatCurrency(transferredBalance)}
-                      </div>
+                      <div className="goal-current">{formatCurrency(transferredBalance)}</div>
                       <div className="goal-remaining">
-                        {formatCurrency(Math.max(0, 5000 - transferredBalance))}{" "}
-                        to go
+                        {formatCurrency(Math.max(0, 5000 - transferredBalance))} to go
                       </div>
                     </div>
                   </div>
@@ -351,12 +314,7 @@ export default function Portfolio() {
                   <div className="goal-progress">
                     <div
                       className="goal-progress-bar"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (transferredBalance / 5000) * 100
-                        )}%`,
-                      }}
+                      style={{ width: `${Math.min(100, (transferredBalance / 5000) * 100)}%` }}
                     />
                   </div>
                 </div>
@@ -375,7 +333,7 @@ export default function Portfolio() {
         headerRight={null}
       >
         <AddHabitFlow
-          onComplete={handleHabitCreated}
+          onComplete={() => setShowAddSheet(false)}  // IMPORTANT: AddHabitFlow owns addHabit()
           onClose={() => setShowAddSheet(false)}
         />
       </BottomSheet>
