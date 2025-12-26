@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Account.css';
 

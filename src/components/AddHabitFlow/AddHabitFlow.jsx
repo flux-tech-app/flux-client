@@ -1,81 +1,126 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useHabits } from '../../context/HabitContext';
-import { HABIT_LIBRARY, getHabitById, formatRate, getRateLabel, RATE_TYPES } from '../../utils/HABIT_LIBRARY';
-import HabitIcon from '../../utils/HabitIcons';
-import GoalSetup from '../GoalSetup/GoalSetup';
-import Button from '../Button';
-import './AddHabitFlow.css';
+// src/components/AddHabitFlow/AddHabitFlow.jsx
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+import useHabits from "@/hooks/useHabits";
+import HabitIcon from "@/utils/HabitIcons";
+
+import GoalSetup from "../GoalSetup/GoalSetup";
+import Button from "../Button";
+
+import { microsToDollars, formatRateFromMicros } from "@/utils/micros";
+import "./AddHabitFlow.css";
 
 /**
- * Add Habit Flow - Modernized 2-Step Design
+ * STRICT Add Habit Flow (catalog-backed, micros):
+ * - Step 1 lists boot.catalog.habits via HabitProvider.catalogHabits
+ * - Step 2 configures rateMicros + goal then calls addHabit({ libraryId, rateMicros, goal })
  *
- * Step 1: Select from library (excluding already-added habits)
- * Step 2: Configure rate + goal (combined)
+ * IMPORTANT:
+ *   AddHabitFlow is the ONLY place that should call addHabit().
+ *   The parent should use onComplete just to close UI or refresh.
  */
 export default function AddHabitFlow({ onComplete, onClose }) {
-  const { isHabitAdded } = useHabits();
+  const { catalogHabits, isHabitAdded, addHabit } = useHabits();
+
   const [step, setStep] = useState(1);
-  const [selectedHabit, setSelectedHabit] = useState(null);
-  const [selectedRate, setSelectedRate] = useState(null);
+  const [selectedHabit, setSelectedHabit] = useState(null); // CatalogHabit
+  const [selectedRateMicros, setSelectedRateMicros] = useState(null); // int micros
   const [showRateOptions, setShowRateOptions] = useState(false);
   const [direction, setDirection] = useState(1);
 
-  // Filter out already-added habits
-  const availableHabits = HABIT_LIBRARY.filter(h => !isHabitAdded(h.id));
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  // Animation variants
+  // Only habits not already in portfolio (libraryId = catalogHabit.id)
+  const availableHabits = useMemo(() => {
+    const list = Array.isArray(catalogHabits) ? catalogHabits : [];
+    return list.filter((h) => h?.id && !isHabitAdded(h.id));
+  }, [catalogHabits, isHabitAdded]);
+
   const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0
-    }),
-    center: {
-      x: 0,
-      opacity: 1
-    },
-    exit: (direction) => ({
-      x: direction < 0 ? 300 : -300,
-      opacity: 0
-    })
+    enter: (dir) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir) => ({ x: dir < 0 ? 300 : -300, opacity: 0 }),
+  };
+
+  const formatRate = (habit) => {
+    if (!habit) return "";
+    // show "$X/unit" or "$X" for BINARY
+    return formatRateFromMicros(Number(habit.defaultRateMicros || 0), habit.unit || "");
   };
 
   const handleHabitSelect = (habit) => {
     setSelectedHabit(habit);
-    setSelectedRate(habit.defaultRate);
+
+    // Prefer defaultRateMicros; else first option; else 0
+    const opts = Array.isArray(habit?.rateOptionsMicros) ? habit.rateOptionsMicros : [];
+    const defaultMicros =
+      habit?.defaultRateMicros != null
+        ? Number(habit.defaultRateMicros)
+        : opts.length
+        ? Number(opts[0])
+        : 0;
+
+    setSelectedRateMicros(Number.isFinite(defaultMicros) ? Math.trunc(defaultMicros) : 0);
     setShowRateOptions(false);
+    setSaveError("");
     setDirection(1);
     setStep(2);
   };
 
   const handleBack = () => {
+    setSaveError("");
     if (step === 2) {
       setDirection(-1);
       setStep(1);
-    } else {
-      onClose?.();
+      return;
     }
+    onClose?.();
   };
 
-  const handleGoalSet = (goal) => {
+  const handleGoalSet = async (goal) => {
     if (!selectedHabit || !goal) return;
 
-    onComplete?.({
-      libraryId: selectedHabit.id,
-      rate: selectedRate,
-      goal: goal
-    });
+    setIsSaving(true);
+    setSaveError("");
+
+    try {
+      const rateMicros =
+        selectedRateMicros != null
+          ? Number(selectedRateMicros)
+          : Number(selectedHabit.defaultRateMicros || 0);
+
+      // AddHabitFlow owns addHabit() (prevents double-call bugs)
+      await addHabit({
+        libraryId: selectedHabit.id,
+        rateMicros,
+        goal, // { amount, period } matches backend GoalIn
+      });
+
+      // Parent should NOT treat this as "habitData"
+      onComplete?.();
+      onClose?.();
+    } catch (e) {
+      setSaveError(e?.message || "Failed to add habit");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="add-flow">
-      {/* Progress indicator - 2 dots */}
       <div className="flow-dots">
-        <div className={`flow-dot ${step >= 1 ? 'active' : ''}`} />
-        <div className={`flow-dot ${step >= 2 ? 'active' : ''}`} />
+        <div className={`flow-dot ${step >= 1 ? "active" : ""}`} />
+        <div className={`flow-dot ${step >= 2 ? "active" : ""}`} />
       </div>
 
-      {/* Step content */}
+      {!!saveError && (
+        <div className="flow-error" role="alert">
+          {saveError}
+        </div>
+      )}
+
       <div className="flow-content">
         <AnimatePresence mode="wait" custom={direction}>
           {step === 1 && (
@@ -86,12 +131,13 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ type: 'tween', duration: 0.25 }}
+              transition={{ type: "tween", duration: 0.25 }}
               className="flow-step"
             >
               <StepSelectHabit
                 habits={availableHabits}
                 onSelect={handleHabitSelect}
+                formatRate={formatRate}
               />
             </motion.div>
           )}
@@ -104,17 +150,18 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ type: 'tween', duration: 0.25 }}
+              transition={{ type: "tween", duration: 0.25 }}
               className="flow-step"
             >
               <StepConfigure
                 habit={selectedHabit}
-                selectedRate={selectedRate}
+                selectedRateMicros={selectedRateMicros}
                 showRateOptions={showRateOptions}
-                onRateSelect={setSelectedRate}
-                onToggleRateOptions={() => setShowRateOptions(!showRateOptions)}
+                onRateSelectMicros={setSelectedRateMicros}
+                onToggleRateOptions={() => setShowRateOptions((v) => !v)}
                 onBack={handleBack}
                 onGoalSet={handleGoalSet}
+                isSaving={isSaving}
               />
             </motion.div>
           )}
@@ -125,16 +172,14 @@ export default function AddHabitFlow({ onComplete, onClose }) {
 }
 
 /**
- * Step 1: Select Habit from Library
+ * Step 1: Select Habit from Catalog
  */
-function StepSelectHabit({ habits, onSelect }) {
-  if (habits.length === 0) {
+function StepSelectHabit({ habits, onSelect, formatRate }) {
+  if (!habits || habits.length === 0) {
     return (
       <div className="step-content">
         <h2 className="step-title">All Habits Added!</h2>
-        <p className="step-subtitle">
-          You've added all available habits to your portfolio.
-        </p>
+        <p className="step-subtitle">You've added all available habits to your portfolio.</p>
         <div className="empty-icon">🎉</div>
       </div>
     );
@@ -155,70 +200,87 @@ function StepSelectHabit({ habits, onSelect }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
             whileTap={{ scale: 0.98 }}
+            type="button"
           >
             <div className="habit-select-icon">
               <HabitIcon habitId={habit.id} size={24} />
             </div>
+
             <span className="habit-select-name">{habit.name}</span>
+
             <div className="habit-select-right">
               <span className="habit-select-rate">{formatRate(habit)}</span>
-              <svg className="habit-select-chevron" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              <svg
+                className="habit-select-chevron"
+                width="16"
+                height="16"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           </motion.button>
         ))}
-
-        {/* Request Habit */}
-        <div className="request-card">
-          <div className="request-icon">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          <div className="request-text">
-            <span className="request-title">Request a Habit</span>
-            <span className="request-desc">Custom habits coming soon</span>
-          </div>
-          <span className="coming-badge">Soon</span>
-        </div>
       </div>
     </div>
   );
 }
 
 /**
- * Step 2: Configure Rate + Goal (Combined)
+ * Step 2: Configure Rate + Goal (Catalog-backed)
  */
 function StepConfigure({
   habit,
-  selectedRate,
+  selectedRateMicros,
   showRateOptions,
-  onRateSelect,
+  onRateSelectMicros,
   onToggleRateOptions,
   onBack,
-  onGoalSet
+  onGoalSet,
+  isSaving,
 }) {
-  const rateLabels = ['Low', 'Default', 'High'];
+  const rateOptionsMicros = Array.isArray(habit?.rateOptionsMicros) ? habit.rateOptionsMicros : [];
+  const unit = habit?.unit || "";
+
+  const defaultRateMicros =
+    habit?.defaultRateMicros != null
+      ? Number(habit.defaultRateMicros)
+      : rateOptionsMicros[0] ?? 0;
+
+  const rateMicros =
+    selectedRateMicros != null ? Number(selectedRateMicros) : Number(defaultRateMicros || 0);
+
+  // Only convert for display
+  const rateDollars = microsToDollars(rateMicros);
+  const rateText = rateDollars < 0.01 ? rateDollars.toFixed(4) : rateDollars.toFixed(2);
 
   return (
     <div className="step-content">
-      {/* Back button */}
       <Button
         variant="ghost"
         size="sm"
         onClick={onBack}
         leftIcon={
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
         }
+        rightIcon={null}
         className="config-back-btn"
+        disabled={isSaving}
       >
         Back
       </Button>
 
-      {/* Habit Header */}
       <div className="config-header">
         <div className="config-header-icon">
           <HabitIcon habitId={habit.id} size={32} />
@@ -226,65 +288,86 @@ function StepConfigure({
         <div className="config-header-info">
           <h2 className="config-header-name">{habit.name}</h2>
           <span className="config-header-rate">
-            ${selectedRate < 0.01 ? selectedRate.toFixed(4) : selectedRate.toFixed(2)}/{habit.unit}
+            ${rateText}
+            {unit ? `/${unit}` : ""}
           </span>
         </div>
       </div>
 
-      {/* Description */}
-      {habit.description && (
-        <p className="config-description">{habit.description}</p>
+      {habit.description && <p className="config-description">{habit.description}</p>}
+
+      {rateOptionsMicros.length > 0 && (
+        <div className="config-rate-section">
+          <button
+            className={`rate-toggle ${showRateOptions ? "expanded" : ""}`}
+            onClick={onToggleRateOptions}
+            type="button"
+            disabled={isSaving}
+          >
+            <span className="rate-toggle-label">
+              {rateMicros === Math.trunc(defaultRateMicros)
+                ? "Using default rate"
+                : "Using custom rate"}
+            </span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              className="rate-toggle-icon"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L8 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          <AnimatePresence>
+            {showRateOptions && (
+              <motion.div
+                className="rate-options-panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="rate-options-grid">
+                  {rateOptionsMicros.map((m, index) => {
+                    const micros = Math.trunc(Number(m || 0));
+                    const dollars = microsToDollars(micros);
+                    const txt = dollars < 0.01 ? dollars.toFixed(4) : dollars.toFixed(2);
+
+                    return (
+                      <button
+                        key={`${habit.id}:${micros}:${index}`}
+                        className={`rate-option-btn ${rateMicros === micros ? "active" : ""}`}
+                        onClick={() => onRateSelectMicros(micros)}
+                        type="button"
+                        disabled={isSaving}
+                      >
+                        <span className="rate-option-label">Rate</span>
+                        <span className="rate-option-value">${txt}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
-      {/* Rate Customization - Collapsed by default */}
-      <div className="config-rate-section">
-        <button
-          className={`rate-toggle ${showRateOptions ? 'expanded' : ''}`}
-          onClick={onToggleRateOptions}
-        >
-          <span className="rate-toggle-label">
-            {selectedRate === habit.defaultRate ? 'Using default rate' : 'Using custom rate'}
-          </span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="rate-toggle-icon">
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L8 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
-
-        <AnimatePresence>
-          {showRateOptions && (
-            <motion.div
-              className="rate-options-panel"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="rate-options-grid">
-                {habit.rateOptions.map((rate, index) => (
-                  <button
-                    key={rate}
-                    className={`rate-option-btn ${selectedRate === rate ? 'active' : ''}`}
-                    onClick={() => onRateSelect(rate)}
-                  >
-                    <span className="rate-option-label">{rateLabels[index] || 'Rate'}</span>
-                    <span className="rate-option-value">
-                      ${rate < 0.01 ? rate.toFixed(4) : rate.toFixed(2)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Goal Setup - Integrated */}
       <div className="config-goal-section">
+        {/* GoalSetup expects micros; it will format only for display */}
         <GoalSetup
           habitLibraryData={habit}
-          selectedRate={selectedRate}
+          selectedRateMicros={rateMicros}
           onGoalSet={onGoalSet}
+          initialGoal={undefined}
         />
+        {isSaving && <div className="flow-saving">Saving…</div>}
       </div>
     </div>
   );

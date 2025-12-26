@@ -14,7 +14,7 @@ import {
   Filler
 } from 'chart.js';
 
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from '../../utils/formatters';
 import { generateHabitInsights } from '../../utils/habitInsights';
 import { getCalibrationStatus } from '../../utils/calibrationStatus';

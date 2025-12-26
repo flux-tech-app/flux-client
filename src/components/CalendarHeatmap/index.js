@@ -1,1 +1,1 @@
-export { default } from './CalendarHeatmap';
+export { default } from './CalendarHeatmap.jsx';

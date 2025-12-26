@@ -1,70 +1,101 @@
 // src/components/LogHabitSheet/LogHabitSheet.jsx
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useHabits } from "../../context/HabitContext";
-import { RATE_TYPES, ACTION_TYPES, getHabitById } from "../../utils/HABIT_LIBRARY";
-import HabitIcon from "../../utils/HabitIcons";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import useHabits from "@/hooks/useHabits";
+import HabitIcon from "@/utils/HabitIcons";
 import Button from "../Button";
+import { formatUSDFromMicros, formatRateFromMicros } from "@/utils/micros";
 import "./LogHabitSheet.css";
 
 /**
- * Log Habit Sheet - Modernized Design
- * Clean, minimal interface for quick habit logging
- *
- * @param {string} actionType - 'log' or 'pass'
- * @param {string} initialHabitId - Optional habit ID to pre-select
- * @param {function} onClose - Called when sheet closes
- * @param {function} onLogComplete - Called after successful log
+ * STRICT (no legacy fallbacks):
+ * - habits are enriched by provider (name, unit, unitPlural, actionType, rateType, etc.)
+ * - rate comes from backend as rateMicros (int)
+ * - logging sends ONLY: habitId + unitsMicros (+ notes)
+ * - server computes earnings/transfers; FE does not compute earnings
  */
-export default function LogHabitSheet({ actionType, initialHabitId, onClose, onLogComplete }) {
+
+/**
+ * @param {{
+ *  actionType: "log" | "pass",
+ *  initialHabitId?: string | null,
+ *  onClose?: () => void,
+ *  onLogComplete?: () => void
+ * }} props
+ */
+export default function LogHabitSheet({
+  actionType,
+  initialHabitId,
+  onClose,
+  onLogComplete,
+}) {
   const { habits, isHabitLoggedOnDate, addLog } = useHabits();
 
   const [selectedHabit, setSelectedHabit] = useState(null);
-  const [logValue, setLogValue] = useState("");
-  const [customRate, setCustomRate] = useState(null);
-  const [showRateOptions, setShowRateOptions] = useState(false);
+  const [logValue, setLogValue] = useState(""); // human units (string for input)
   const [searchQuery, setSearchQuery] = useState("");
   const [isLogging, setIsLogging] = useState(false);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
 
-  // Pre-select habit if initialHabitId is provided
+  const isBinaryHabit = useCallback((h) => {
+    const rt = String(h?.rateType || "").toUpperCase();
+    return rt === "BINARY";
+  }, []);
+
+  // Convert "human units" -> micros (int) to match API
+  const unitsToMicros = useCallback((unitsFloatLike) => {
+    const n = Number(unitsFloatLike);
+    if (Number.isNaN(n) || n <= 0) return 0;
+    return Math.round(n * 1_000_000);
+  }, []);
+
+  const filteredHabits = useMemo(() => {
+    const list = habits || [];
+    return list.filter((h) => (h?.actionType ?? "log") === actionType);
+  }, [habits, actionType]);
+
+  const searchedHabits = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredHabits;
+    return filteredHabits.filter((h) =>
+      String(h?.name || "").toLowerCase().includes(q)
+    );
+  }, [filteredHabits, searchQuery]);
+
   useEffect(() => {
     if (!initialHabitId) return;
     if (!habits?.length) return;
 
-    const habit = habits.find((h) => h.id === initialHabitId);
-    if (habit) handleHabitSelect(habit);
+    const h = habits.find((x) => x.id === initialHabitId);
+    if (h) {
+      setSelectedHabit(h);
+
+      if (!isBinaryHabit(h)) {
+        const u = h?.unit;
+        if (u === "minute") setLogValue("30");
+        else if (u === "mile") setLogValue("3");
+        else if (u === "step") setLogValue("5000");
+        else if (u === "rep") setLogValue("20");
+        else if (u === "chapter") setLogValue("1");
+        else setLogValue("1");
+      } else {
+        setLogValue("");
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialHabitId, habits]);
 
-  // Filter habits by action type
-  const filteredHabits = (habits || []).filter((habit) => {
-    const libraryHabit = getHabitById(habit.libraryId);
-    return libraryHabit && libraryHabit.actionType === actionType;
-  });
-
-  // Apply search filter
-  const searchedHabits = searchQuery.trim()
-    ? filteredHabits.filter((habit) => habit.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : filteredHabits;
-
-  const isBinaryHabit = (habit) => {
-    if (!habit) return false;
-    return habit.rateType === RATE_TYPES.BINARY || habit.rateType === "BINARY";
-  };
-
   const handleHabitSelect = (habit) => {
     setSelectedHabit(habit);
-    setCustomRate(null);
-    setShowRateOptions(false);
 
     if (!isBinaryHabit(habit)) {
-      if (habit.unit === "minute") setLogValue("30");
-      else if (habit.unit === "mile") setLogValue("3");
-      else if (habit.unit === "step") setLogValue("5000");
-      else if (habit.unit === "rep") setLogValue("20");
-      else if (habit.unit === "chapter") setLogValue("1");
+      const u = habit?.unit;
+      if (u === "minute") setLogValue("30");
+      else if (u === "mile") setLogValue("3");
+      else if (u === "step") setLogValue("5000");
+      else if (u === "rep") setLogValue("20");
+      else if (u === "chapter") setLogValue("1");
       else setLogValue("1");
     } else {
       setLogValue("");
@@ -72,79 +103,50 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
   };
 
   const handleLog = async () => {
-    if (!selectedHabit) return;
-    if (isLogging) return;
-
+    if (!selectedHabit || isLogging) return;
     setIsLogging(true);
 
     try {
-      const isBinary = isBinaryHabit(selectedHabit);
+      const binary = isBinaryHabit(selectedHabit);
 
-      const units = !isBinary ? Number.parseFloat(logValue) || 0 : 1;
-      if (!isBinary && units <= 0) {
+      // For binary habits the server ignores unitsMicros; we can send 0.
+      const unitsMicros = binary ? 0 : unitsToMicros(logValue);
+
+      if (!binary && unitsMicros <= 0) {
         alert("Please enter a value greater than 0.");
         setIsLogging(false);
         return;
       }
 
-      const logData = {
+      await addLog({
         habitId: selectedHabit.id,
-        units: isBinary ? 1 : units,
-      };
+        unitsMicros,
+        notes: "",
+      });
 
-      // Use custom rate if set
-      if (customRate !== null && customRate !== undefined) {
-        const cr = Number.parseFloat(customRate);
-        if (!Number.isNaN(cr)) {
-          if (isBinary) {
-            logData.customEarnings = cr;
-          } else {
-            logData.customEarnings = cr * (Number.parseFloat(logValue) || 1);
-          }
-        }
-      }
-
-      await addLog(logData);
-
-      setIsLogging(false);
       onLogComplete?.();
       onClose?.();
-    } catch (error) {
-      console.error("Error logging activity:", error);
+    } catch (e) {
+      console.error("Error logging activity:", e);
+      alert(e?.message || "Failed to log activity. Please try again.");
+    } finally {
       setIsLogging(false);
-      alert(error?.message || "Failed to log activity. Please try again.");
     }
   };
 
-  // Calculate earnings preview in dollars (UI-only)
-  const getEarningsPreview = () => {
-    if (!selectedHabit) return 0;
-
-    const isBinary = isBinaryHabit(selectedHabit);
-    const rate = customRate !== null ? Number.parseFloat(customRate) : Number(selectedHabit.rate || 0);
-
-    if (Number.isNaN(rate)) return 0;
-
-    if (isBinary) return rate;
-
-    const units = Number.parseFloat(logValue) || 0;
-    return rate * units;
-  };
-
-  const getRateOptions = () => {
-    if (!selectedHabit) return [];
-    const libraryHabit = getHabitById(selectedHabit.libraryId);
-    if (!libraryHabit) return [Number(selectedHabit.rate || 0)];
-    return libraryHabit.rateOptions || [Number(selectedHabit.rate || 0)];
-  };
-
-  const currentRate = customRate !== null ? Number(customRate) : Number(selectedHabit?.rate || 0);
-
-  // ==================== LOGGING MODAL ====================
+  // ==================== DETAIL VIEW ====================
   if (selectedHabit) {
-    const isBinary = isBinaryHabit(selectedHabit);
-    const rateOptions = getRateOptions();
-    const rateLabels = ["Low", "Default", "High"];
+    const binary = isBinaryHabit(selectedHabit);
+
+    // STRICT: rates are micros from backend
+    const rateMicros = Number(selectedHabit.rateMicros ?? 0);
+
+    // Display only (no earnings math)
+    const rateLabel = binary
+      ? formatUSDFromMicros(rateMicros)
+      : formatRateFromMicros(rateMicros, selectedHabit.unit);
+
+    const canSubmit = binary ? true : unitsToMicros(logValue) > 0;
 
     return (
       <div className="log-sheet">
@@ -161,6 +163,7 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
               />
             </svg>
           }
+          rightIcon={null}
           className="sheet-back-btn"
         >
           Back
@@ -170,28 +173,41 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
           <div className="log-header-icon">
             <HabitIcon habitId={selectedHabit.libraryId} size={32} />
           </div>
+
           <div className="log-header-info">
             <h2 className="log-header-name">{selectedHabit.name}</h2>
-            <span className="log-header-rate">
-              ${currentRate < 0.01 ? currentRate.toFixed(4) : currentRate.toFixed(2)}
-              {!isBinary && `/${selectedHabit.unit}`}
-            </span>
+            <span className="log-header-rate">{rateLabel}</span>
           </div>
         </div>
 
-        {!isBinary && (
+        {!binary && (
           <div className="log-quantity-section">
-            <label className="log-label">How many {selectedHabit.unitPlural}?</label>
+            <label className="log-label">
+              How many{" "}
+              {selectedHabit.unitPlural || selectedHabit.unit || "units"}?
+            </label>
+
             <div className="quantity-input-wrapper">
               <button
                 className="quantity-btn"
                 onClick={() => {
-                  const step = selectedHabit.unit === "step" ? 1000 : selectedHabit.unit === "minute" ? 5 : 1;
-                  setLogValue(Math.max(0, (Number.parseFloat(logValue) || 0) - step).toString());
+                  const step =
+                    selectedHabit.unit === "step"
+                      ? 1000
+                      : selectedHabit.unit === "minute"
+                      ? 5
+                      : 1;
+
+                  const next = Math.max(
+                    0,
+                    (Number.parseFloat(logValue) || 0) - step
+                  );
+                  setLogValue(String(next));
                 }}
               >
                 −
               </button>
+
               <input
                 type="number"
                 className="quantity-input"
@@ -199,11 +215,19 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
                 onChange={(e) => setLogValue(e.target.value)}
                 min="0"
               />
+
               <button
                 className="quantity-btn"
                 onClick={() => {
-                  const step = selectedHabit.unit === "step" ? 1000 : selectedHabit.unit === "minute" ? 5 : 1;
-                  setLogValue(((Number.parseFloat(logValue) || 0) + step).toString());
+                  const step =
+                    selectedHabit.unit === "step"
+                      ? 1000
+                      : selectedHabit.unit === "minute"
+                      ? 5
+                      : 1;
+
+                  const next = (Number.parseFloat(logValue) || 0) + step;
+                  setLogValue(String(next));
                 }}
               >
                 +
@@ -212,96 +236,53 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
           </div>
         )}
 
-        {isBinary && (
+        {binary && (
           <div className="log-binary-section">
             <div className="binary-check">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="24" r="24" fill="rgba(34, 197, 94, 0.1)" />
-                <path d="M15 24l6 6 12-12" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <circle
+                  cx="24"
+                  cy="24"
+                  r="24"
+                  fill="rgba(34, 197, 94, 0.1)"
+                />
+                <path
+                  d="M15 24l6 6 12-12"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
             <p className="binary-text">
-              {actionType === ACTION_TYPES.LOG ? `Log ${selectedHabit.name}?` : `Successfully passed on ${selectedHabit.name}?`}
+              {actionType === "log"
+                ? `Log ${selectedHabit.name}?`
+                : `Log pass for ${selectedHabit.name}?`}
             </p>
           </div>
         )}
-
-        <div className="rate-section">
-          <button
-            className={`rate-toggle ${showRateOptions ? "expanded" : ""}`}
-            onClick={() => setShowRateOptions(!showRateOptions)}
-          >
-            <span className="rate-toggle-label">
-              {customRate !== null ? "Using custom rate" : "Using default rate"}
-            </span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="rate-toggle-icon">
-              <path
-                fillRule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L8 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-
-          <AnimatePresence>
-            {showRateOptions && (
-              <motion.div
-                className="rate-options-panel"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="rate-options-grid">
-                  {rateOptions.map((rate, index) => {
-                    const isDefault = customRate === null && rate === selectedHabit.rate;
-                    const isCustom = customRate !== null && rate === customRate;
-
-                    return (
-                      <button
-                        key={`${rate}-${index}`}
-                        className={`rate-option-btn ${(isDefault || isCustom) ? "active" : ""}`}
-                        onClick={() => {
-                          if (rate === selectedHabit.rate) setCustomRate(null);
-                          else setCustomRate(rate);
-                        }}
-                      >
-                        <span className="rate-option-label">{rateLabels[index] || "Rate"}</span>
-                        <span className="rate-option-value">
-                          ${rate < 0.01 ? Number(rate).toFixed(4) : Number(rate).toFixed(2)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div className="earnings-inline">
-          <span className="earnings-label">You'll earn</span>
-          <span className="earnings-value">+${getEarningsPreview().toFixed(2)}</span>
-        </div>
 
         <Button
           variant="success"
           size="lg"
           fullWidth
           onClick={handleLog}
-          disabled={isLogging || (!isBinary && !(Number.parseFloat(logValue) > 0))}
+          disabled={isLogging || !canSubmit}
           loading={isLogging}
+          leftIcon={null}
+          rightIcon={null}
         >
-          {actionType === ACTION_TYPES.LOG ? "Log Activity" : "Log Pass"}
+          {actionType === "log" ? "Log Activity" : "Log Pass"}
         </Button>
       </div>
     );
   }
 
-  // ==================== HABIT LIST VIEW ====================
-  const title = actionType === ACTION_TYPES.LOG ? "Log Activity" : "Log Pass";
+  // ==================== LIST VIEW ====================
+  const title = actionType === "log" ? "Log Activity" : "Log Pass";
   const emptyText =
-    actionType === ACTION_TYPES.LOG
+    actionType === "log"
       ? "Add Log habits to your portfolio to start tracking"
       : "Add Pass habits to track impulse resistance";
 
@@ -309,14 +290,25 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
     <div className="log-sheet">
       <h2 className="sheet-title">{title}</h2>
 
-      {filteredHabits.length > 0 && <p className="sheet-subtitle">Select a habit to log</p>}
+      {filteredHabits.length > 0 && (
+        <p className="sheet-subtitle">Select a habit to log</p>
+      )}
 
       {filteredHabits.length > 3 && (
         <div className="search-wrapper">
-          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            className="search-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
+
           <input
             type="text"
             className="search-field"
@@ -324,6 +316,7 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+
           {searchQuery && (
             <button className="search-clear" onClick={() => setSearchQuery("")}>
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
@@ -341,7 +334,14 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
       <div className="habit-list">
         {searchedHabits.map((habit, index) => {
           const isLogged = isHabitLoggedOnDate(habit.id, today);
-          const rateDisplay = habit.rate < 0.01 ? `$${habit.rate.toFixed(4)}` : `$${habit.rate.toFixed(2)}`;
+          const binary = isBinaryHabit(habit);
+
+          const rateMicros = Number(habit.rateMicros ?? 0);
+
+          // List view: keep it compact (no unit for binary; unit for non-binary is fine)
+          const rateDisplay = binary
+            ? formatUSDFromMicros(rateMicros)
+            : formatRateFromMicros(rateMicros, habit.unit);
 
           return (
             <motion.button
@@ -357,7 +357,9 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
               <div className="habit-row-icon">
                 <HabitIcon habitId={habit.libraryId} size={24} />
               </div>
+
               <span className="habit-row-name">{habit.name}</span>
+
               <div className="habit-row-right">
                 {isLogged ? (
                   <span className="done-badge">
@@ -373,10 +375,16 @@ export default function LogHabitSheet({ actionType, initialHabitId, onClose, onL
                 ) : (
                   <>
                     <span className="habit-row-rate">{rateDisplay}</span>
-                    <svg className="habit-row-chevron" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <svg
+                      className="habit-row-chevron"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 0 01-1.414 0z"
                         clipRule="evenodd"
                       />
                     </svg>

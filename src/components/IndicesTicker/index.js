@@ -1,1 +1,1 @@
-export { default } from './IndicesTicker';
+export { default } from './IndicesTicker.jsx';

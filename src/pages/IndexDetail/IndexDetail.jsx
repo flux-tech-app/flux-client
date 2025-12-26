@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import { getCalibrationStatus } from '../../utils/calibrationStatus';
 import { getBehaviorIndexData, hasIndexData, calculateUserPercentile } from '../../utils/indexDataGenerator';
 import { getHabitById } from '../../utils/HABIT_LIBRARY';

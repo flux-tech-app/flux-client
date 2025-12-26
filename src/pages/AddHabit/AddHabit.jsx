@@ -1,287 +1,303 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useHabits } from '../../context/HabitContext';
-import Button from '../../components/Button';
-import './AddHabit.css';
+// src/pages/AddHabit/AddHabit.jsx
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import useHabits from "@/hooks/useHabits";
+import Button from "@/components/Button";
+import { dollarsToMicros } from "@/utils/micros";
+import "./AddHabit.css";
 
 export default function AddHabit() {
   const navigate = useNavigate();
-  const { addHabit } = useHabits();
+  const { addHabit, catalogHabits, getCatalogHabit, habits } = useHabits();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'build',
-    rateType: 'duration',
-    rate: 0.05,
-    allowTopUp: false
+    type: "build", // build => actionType log, break => actionType pass
+    libraryId: "",
+    rate: "0.05", // dollars string
+    goalAmount: "",
+    goalPeriod: "week",
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim()) {
-      alert('Please enter a position name');
-      return;
+  // ---- existing habit ids (source of truth) ----
+  const addedLibraryIds = useMemo(() => {
+    const set = new Set();
+    for (const h of habits || []) {
+      if (h?.libraryId) set.add(String(h.libraryId));
     }
+    return set;
+  }, [habits]);
 
-    if (parseFloat(formData.rate) <= 0) {
-      alert('Please enter a valid rate amount');
-      return;
-    }
+  // ---- catalog filtering ----
+  const wantedActionType = useMemo(() => {
+    // backend spec: "log" | "pass"
+    return formData.type === "build" ? "log" : "pass";
+  }, [formData.type]);
 
-    // Create the habit - different structure for build vs break
-    const habitData = {
-      name: formData.name.trim(),
-      type: formData.type,
-      rate: parseFloat(formData.rate),
-      createdAt: new Date().toISOString()
-    };
+  const filteredCatalog = useMemo(() => {
+    const list = catalogHabits || [];
+    return list.filter((h) => String(h?.actionType || "").toLowerCase() === wantedActionType);
+  }, [catalogHabits, wantedActionType]);
 
-    // Only add rateType for build habits
-    if (formData.type === 'build') {
-      habitData.rateType = formData.rateType;
-    }
+  // only show catalog habits that are NOT already in portfolio
+  const availableCatalog = useMemo(() => {
+    return filteredCatalog.filter((h) => !addedLibraryIds.has(String(h.id)));
+  }, [filteredCatalog, addedLibraryIds]);
 
-    // Only add allowTopUp for break habits
-    if (formData.type === 'break') {
-      habitData.allowTopUp = formData.allowTopUp;
-    }
+  const selectedCatalogHabit = useMemo(() => {
+    if (!formData.libraryId) return null;
+    return getCatalogHabit(formData.libraryId);
+  }, [formData.libraryId, getCatalogHabit]);
 
-    addHabit(habitData);
+  const rateNumber = useMemo(() => {
+    const n = Number(String(formData.rate ?? "").trim());
+    return Number.isFinite(n) ? n : 0;
+  }, [formData.rate]);
 
-    // Navigate back to portfolio with back direction
-    navigate('/', { state: { direction: 'back' } });
-  };
+  const goalAmountNumber = useMemo(() => {
+    const n = Number(String(formData.goalAmount ?? "").trim());
+    return Number.isFinite(n) ? n : 0;
+  }, [formData.goalAmount]);
 
-  const handleCancel = () => {
-    navigate('/', { state: { direction: 'back' } });
-  };
+  const isBinary = useMemo(() => {
+    const rt = String(selectedCatalogHabit?.rateType ?? "").toUpperCase();
+    return rt === "BINARY";
+  }, [selectedCatalogHabit]);
+
+  const unitLabel = selectedCatalogHabit?.unit || (isBinary ? "" : "unit");
+
+  const isValid =
+    !!selectedCatalogHabit &&
+    rateNumber > 0 &&
+    goalAmountNumber > 0 &&
+    !!String(formData.goalPeriod || "").trim();
 
   const updateField = (field, value) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      
-      // Auto-adjust rate type when switching between build/break
-      if (field === 'type') {
-        if (value === 'build') {
-          updated.rateType = 'duration';
-          updated.rate = 0.05;
-          updated.allowTopUp = false;
-        } else {
-          // Break habits don't have rateType, just flat rate
-          updated.rate = 1.00;
-          updated.allowTopUp = false;
-        }
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+
+      if (field === "type") {
+        next.libraryId = "";
+        next.goalAmount = "";
+        next.goalPeriod = "week";
+        next.rate = value === "build" ? "0.05" : "1.00";
       }
-      
-      return updated;
+
+      if (field === "libraryId") {
+        const c = getCatalogHabit(value);
+        if (c?.defaultRateMicros != null) {
+          const dollars = Number(c.defaultRateMicros) / 1_000_000;
+          next.rate = dollars < 0.01 ? dollars.toFixed(4) : dollars.toFixed(2);
+        }
+        if (c?.defaultGoalPeriod) next.goalPeriod = c.defaultGoalPeriod;
+      }
+
+      return next;
     });
   };
 
-  // Calculate weekly earnings estimate - ensure rate is a number
-  const weeklyEstimate = () => {
-    const rate = parseFloat(formData.rate) || 0;
-    if (formData.type === 'build' && formData.rateType === 'duration') {
-      return rate * 30 * 7; // 30 min/day * 7 days
-    } else if (formData.type === 'build' && formData.rateType === 'completion') {
-      return rate * 7; // 1x/day * 7 days
-    } else {
-      // Break habits - flat rate per day
-      return rate * 7; // resist 1x/day * 7 days
+  const handleCancel = () => {
+    if (isSubmitting) return;
+    navigate("/", { state: { direction: "back" } });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    if (!selectedCatalogHabit) {
+      alert("Please select a position from the catalog.");
+      return;
+    }
+    if (addedLibraryIds.has(String(selectedCatalogHabit.id))) {
+      alert("That habit is already in your portfolio.");
+      return;
+    }
+    if (rateNumber <= 0) {
+      alert("Please enter a valid rate amount.");
+      return;
+    }
+    if (goalAmountNumber <= 0) {
+      alert("Please set a goal amount.");
+      return;
+    }
+
+    const rateMicros = dollarsToMicros(rateNumber);
+
+    setIsSubmitting(true);
+    try {
+      await addHabit({
+        libraryId: String(selectedCatalogHabit.id),
+        rateMicros,
+        goal: {
+          amount: goalAmountNumber,
+          period: String(formData.goalPeriod),
+        },
+      });
+
+      navigate("/", { state: { direction: "back" } });
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "Failed to add habit. Please try again.");
+      setIsSubmitting(false);
     }
   };
 
-  const isValid = formData.name.trim().length > 0 && parseFloat(formData.rate) > 0;
-  
-  // Ensure rate is always a number for display
-  const displayRate = parseFloat(formData.rate) || 0;
+  // ---- empty states ----
+  const catalogLoaded = (catalogHabits || []).length > 0;
+  const showAllAdded = catalogLoaded && availableCatalog.length === 0;
 
   return (
-      <div className="add-habit-page">
-        <div className="add-habit-container">
-          {/* Header */}
-          <header className="add-header">
-            <div className="header-left">
-              <Button variant="ghost" size="sm" onClick={handleCancel}>
-                Cancel
-              </Button>
-            </div>
-            <div className="header-title">Add Position</div>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSubmit}
-              disabled={!isValid}
-            >
-              Create
+    <div className="add-habit-page">
+      <div className="add-habit-container">
+        <header className="add-header">
+          <div className="header-left">
+            <Button variant="ghost" size="sm" leftIcon={null} rightIcon={null} onClick={handleCancel}>
+              Cancel
             </Button>
-          </header>
+          </div>
 
-          {/* Form Content */}
-          <form className="form-content" onSubmit={handleSubmit}>
-            
-            {/* Habit Type */}
+          <div className="header-title">Add Position</div>
+
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={null}
+            rightIcon={null}
+            onClick={handleSubmit}
+            disabled={!isValid || isSubmitting}
+            loading={isSubmitting}
+          >
+            Create
+          </Button>
+        </header>
+
+        <form className="form-content" onSubmit={handleSubmit}>
+          <div className="form-section">
+            <div className="section-label">Position Type</div>
+            <div className="type-toggle">
+              <div
+                className={`type-option ${formData.type === "build" ? "selected" : ""}`}
+                onClick={() => !isSubmitting && updateField("type", "build")}
+              >
+                <div className="type-title">Build</div>
+                <div className="type-desc">Positive habits to do</div>
+              </div>
+
+              <div
+                className={`type-option ${formData.type === "break" ? "selected" : ""}`}
+                onClick={() => !isSubmitting && updateField("type", "break")}
+              >
+                <div className="type-title">Break</div>
+                <div className="type-desc">Habits to resist</div>
+              </div>
+            </div>
+          </div>
+
+          {showAllAdded ? (
             <div className="form-section">
-              <div className="section-label">Position Type</div>
-              <div className="type-toggle">
-                <div 
-                  className={`type-option ${formData.type === 'build' ? 'selected' : ''}`}
-                  onClick={() => updateField('type', 'build')}
-                >
-                  <div className="type-icon">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="type-title">Build</div>
-                  <div className="type-desc">Positive habits to do</div>
-                </div>
-                <div 
-                  className={`type-option ${formData.type === 'break' ? 'selected' : ''}`}
-                  onClick={() => updateField('type', 'break')}
-                >
-                  <div className="type-icon">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="type-title">Break</div>
-                  <div className="type-desc">Habits to resist</div>
+              <div className="info-card">
+                <div className="info-title">All Habits Added!</div>
+                <div className="info-text">
+                  You’ve added all available {formData.type === "build" ? "build" : "break"} habits from the server
+                  catalog.
+                  <br />
+                  Add more catalog entries on the backend to allow more positions.
                 </div>
               </div>
             </div>
-
-            {/* Habit Name */}
-            <div className="form-section">
-              <div className="section-label">Position Details</div>
-              <div className="input-group">
-                <label className="input-label">Position Name</label>
-                <input
-                  type="text"
-                  className="text-input"
-                  placeholder={formData.type === 'build' ? 'e.g. Morning Cardio' : 'e.g. Resist Doordash'}
-                  value={formData.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  autoFocus
-                />
-                <div className="input-helper">
-                  Choose a clear, specific name for your position
-                </div>
-              </div>
-            </div>
-
-            {/* Rate Type (only for build habits) */}
-            {formData.type === 'build' && (
+          ) : (
+            <>
               <div className="form-section">
-                <div className="section-label">Rate Structure</div>
-                <div className="rate-options">
-                  <div 
-                    className={`rate-option ${formData.rateType === 'duration' ? 'selected' : ''}`}
-                    onClick={() => updateField('rateType', 'duration')}
+                <div className="section-label">Position</div>
+                <div className="input-group">
+                  <label className="input-label">Choose from catalog</label>
+                  <select
+                    className="goal-period-select"
+                    value={formData.libraryId}
+                    onChange={(e) => updateField("libraryId", e.target.value)}
+                    disabled={isSubmitting}
                   >
-                    <div className="rate-option-title">Per Minute</div>
-                    <div className="rate-option-desc">Track duration</div>
-                  </div>
-                  <div 
-                    className={`rate-option ${formData.rateType === 'completion' ? 'selected' : ''}`}
-                    onClick={() => updateField('rateType', 'completion')}
-                  >
-                    <div className="rate-option-title">Flat Rate</div>
-                    <div className="rate-option-desc">Per completion</div>
-                  </div>
+                    <option value="">{catalogLoaded ? "Select…" : "Loading…"}</option>
+                    {availableCatalog.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="input-helper">Only shows habits not already in your portfolio.</div>
                 </div>
               </div>
-            )}
 
-            {/* Base Rate */}
-            <div className="form-section">
-              <div className="section-label">Base Rate</div>
-              <div className="input-group">
-                <label className="input-label">
-                  {formData.type === 'build' && formData.rateType === 'duration' 
-                    ? 'Amount Per Minute'
-                    : 'Amount Per Completion'
-                  }
-                </label>
-                <div className="amount-input-group">
-                  <span className="currency-symbol">$</span>
-                  <input
-                    type="number"
-                    className="amount-input"
-                    step="0.01"
-                    min="0.01"
-                    max="10"
-                    value={formData.rate}
-                    onChange={(e) => updateField('rate', e.target.value)}
-                  />
-                  {formData.type === 'build' && formData.rateType === 'duration' && (
-                    <span className="per-label">/ min</span>
-                  )}
-                </div>
-                <div className="input-helper">
-                  Keep rates small for sustainable motivation
-                </div>
-              </div>
-            </div>
+              <div className="form-section">
+                <div className="section-label">Base Rate</div>
 
-            {/* Top-up Toggle (only for break habits) */}
-            {formData.type === 'break' && (
-              <div className="topup-section">
-                <div className="topup-header">
-                  <div className="topup-title">Allow Money Saved Top-up</div>
-                  <div 
-                    className={`toggle-switch ${formData.allowTopUp ? 'on' : ''}`}
-                    onClick={() => updateField('allowTopUp', !formData.allowTopUp)}
-                  >
-                    <div className="toggle-knob" />
-                  </div>
-                </div>
-                <div className="topup-desc">
-                  When logging resistance, optionally add the money you saved (e.g., $28.50 for skipped Doordash)
-                </div>
-              </div>
-            )}
+                <div className="input-group">
+                  <label className="input-label">
+                    {isBinary ? "Amount per completion" : `Amount per ${unitLabel || "unit"}`}
+                  </label>
 
-            {/* Preview Card */}
-            <div className="form-section">
-              <div className="section-label">Preview</div>
-              <div className="preview-card">
-                <div className="preview-label">How this position will appear:</div>
-                <div className="preview-habit-name">
-                  {formData.name || 'Position Name'}
-                </div>
-                <div className="preview-details">
-                  {formData.type === 'build' 
-                    ? formData.rateType === 'duration'
-                      ? `$${displayRate.toFixed(2)}/min`
-                      : `$${displayRate.toFixed(2)} per completion`
-                    : `$${displayRate.toFixed(2)} per resistance${formData.allowTopUp ? ' + optional top-up' : ''}`
-                  }
-                </div>
-                <div className="preview-estimate">
-                  Weekly earnings estimate:
-                  <div className="preview-amount">
-                    ${weeklyEstimate().toFixed(2)}
+                  <div className="amount-input-group">
+                    <span className="currency-symbol">$</span>
+                    <input
+                      type="number"
+                      className="amount-input"
+                      step="0.01"
+                      min="0.01"
+                      max="10"
+                      value={formData.rate}
+                      onChange={(e) => updateField("rate", e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    {!isBinary && unitLabel ? <span className="per-label">/ {unitLabel}</span> : null}
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Info Card */}
-            <div className="info-card">
-              <div className="info-title">
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                Tip
-              </div>
-              <div className="info-text">
-                Start with small rates. Even $0.05/min for exercise adds up to $10.50/week for daily 30-minute sessions.
-              </div>
-            </div>
+              <div className="form-section">
+                <div className="section-label">Goal</div>
 
-          </form>
-        </div>
+                <div className="goal-input-row">
+                  <div className="goal-input-group">
+                    <label className="goal-input-label">Amount</label>
+                    <div className="goal-input-wrapper">
+                      <input
+                        type="number"
+                        className="goal-input"
+                        value={formData.goalAmount}
+                        onChange={(e) => updateField("goalAmount", e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        step="any"
+                        disabled={isSubmitting}
+                      />
+                      <span className="goal-unit-label">
+                        {selectedCatalogHabit?.goalUnit || unitLabel || "units"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="goal-input-group">
+                    <label className="goal-input-label">Period</label>
+                    <select
+                      className="goal-period-select"
+                      value={formData.goalPeriod}
+                      onChange={(e) => updateField("goalPeriod", e.target.value)}
+                      disabled={isSubmitting}
+                    >
+                      <option value="day">per day</option>
+                      <option value="week">per week</option>
+                      <option value="month">per month</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </form>
       </div>
+    </div>
   );
 }

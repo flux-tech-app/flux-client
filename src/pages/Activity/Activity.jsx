@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useHabits } from '../../context/HabitContext';
+import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from '../../utils/formatters';
 import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
 import './Activity.css';

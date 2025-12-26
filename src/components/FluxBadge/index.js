@@ -1,1 +1,1 @@
-export { default } from './FluxBadge';
+export { default } from './FluxBadge.jsx';

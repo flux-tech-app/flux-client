@@ -1,217 +1,237 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { useHabits } from '../../context/HabitContext'
-import { formatCurrency } from '../../utils/formatters'
-import { ACTION_TYPES, getHabitById } from '../../utils/HABIT_LIBRARY'
-import BottomSheet from '../../components/BottomSheet'
-import LogHabitSheet from '../../components/LogHabitSheet'
-import SidebarMenu from '../../components/SidebarMenu/SidebarMenu'
-import EmptyState from '../Portfolio/EmptyState'
-import './Home.css'
+// src/pages/Home/Home.jsx
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
+import useHabits from "@/hooks/useHabits";
+import { formatCurrency } from "@/utils/formatters";
+
+import BottomSheet from "@/components/BottomSheet";
+import LogHabitSheet from "@/components/LogHabitSheet";
+import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
+import AddHabitFlow from "@/components/AddHabitFlow";
+
+import EmptyState from "../Portfolio/EmptyState";
+
+import "./Home.css";
 
 // Animated counter hook - counts up from 0 to target value
 const useAnimatedCounter = (targetValue, duration = 1200) => {
-  const [displayValue, setDisplayValue] = useState(0)
-  const startTime = useRef(null)
-  const startValue = useRef(0)
+  const [displayValue, setDisplayValue] = useState(0);
+  const startTime = useRef(null);
+  const startValue = useRef(0);
 
   useEffect(() => {
-    startValue.current = displayValue
-    startTime.current = Date.now()
+    startValue.current = displayValue;
+    startTime.current = Date.now();
 
     const animate = () => {
-      const now = Date.now()
-      const elapsed = now - startTime.current
-      const progress = Math.min(elapsed / duration, 1)
+      const now = Date.now();
+      const elapsed = now - startTime.current;
+      const progress = Math.min(elapsed / duration, 1);
 
       // Easing function (ease-out cubic)
-      const easeOut = 1 - Math.pow(1 - progress, 3)
-      const current = startValue.current + (targetValue - startValue.current) * easeOut
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = startValue.current + (targetValue - startValue.current) * easeOut;
 
-      setDisplayValue(current)
+      setDisplayValue(current);
 
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      }
-    }
+      if (progress < 1) requestAnimationFrame(animate);
+    };
 
-    requestAnimationFrame(animate)
-  }, [targetValue, duration])
+    requestAnimationFrame(animate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetValue, duration]);
 
-  return displayValue
-}
+  return displayValue;
+};
+
+// helper for BottomSheet typing: provide required prop
+const noopHeaderRight = () => null;
 
 export default function Home() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+
+  // STRICT provider: server is source of truth (no fallbacks, no FE math for money)
   const {
     habits,
     logs,
     getWeekEarnings,
     getTodayEarnings,
     isHabitLoggedOnDate,
-    calculateFluxScore
-  } = useHabits()
+    calculateFluxScore,
+  } = useHabits();
 
-  const [activeSheet, setActiveSheet] = useState(null) // 'log' | 'pass' | null
-  const [selectedHabitId, setSelectedHabitId] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeSheet, setActiveSheet] = useState(null); // "log" | "pass" | null
+  const [selectedHabitId, setSelectedHabitId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const hasHabits = habits.length > 0
-  const weekEarnings = getWeekEarnings()
-  const todayEarnings = getTodayEarnings()
-  const animatedWeekEarnings = useAnimatedCounter(weekEarnings)
+  // ✅ AddHabitFlow sheet (for empty state + any future “+ Add” triggers)
+  const [showAddSheet, setShowAddSheet] = useState(false);
 
-  // Calculate pace projection (assuming 7-day week, project based on days elapsed)
-  const now = new Date()
-  const dayOfWeek = now.getDay() || 7 // Sunday = 7
-  const dailyAverage = dayOfWeek > 0 ? weekEarnings / dayOfWeek : 0
-  const projectedWeekTotal = dailyAverage * 7
+  const hasHabits = (habits || []).length > 0;
 
-  // Get calibrating habits (status === 'building')
-  const getCalibratingHabits = () => {
-    return habits
-      .map(habit => {
-        const fluxScore = calculateFluxScore(habit.id)
+  // server-derived values (provider just returns boot.stats)
+  const weekEarnings = Number(getWeekEarnings());
+  const todayEarnings = Number(getTodayEarnings());
+  const animatedWeekEarnings = useAnimatedCounter(weekEarnings);
+
+  // STRICT log shape from provider:
+  // - log.timestampMs is the timestamp
+  // - log.amount is transfer amount (joined by provider)
+  const getLogTimestampMs = (log) => log?.timestampMs ?? null;
+  const getLogAmount = (log) => Number(log?.amount ?? 0);
+
+  const normalizeToDate = (ms) => {
+    if (ms == null) return null;
+    const d = new Date(Number(ms));
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const closeSheet = () => {
+    setActiveSheet(null);
+    setSelectedHabitId(null);
+  };
+
+  const handleLogComplete = () => {
+    closeSheet();
+  };
+
+  // Handle tapping a habit in the Today section
+  const handleHabitTap = (habit) => {
+    if (habit.isLogged) return;
+
+    setSelectedHabitId(habit.id);
+    setActiveSheet(habit.actionType === "pass" ? "pass" : "log");
+  };
+
+  // Calibrating habits (based on server-computed flux)
+  const calibratingHabits = useMemo(() => {
+    return (habits || [])
+      .map((habit) => {
+        const fluxScore = calculateFluxScore(habit.id);
+
         return {
           ...habit,
           fluxScore,
-          isCalibrating: fluxScore?.status === 'building',
+          isCalibrating: fluxScore?.status === "building",
           logsNeeded: fluxScore?.logsNeeded ?? 0,
-          totalLogs: fluxScore?.totalLogs ?? 0
-        }
+          totalLogs: fluxScore?.meta?.totalLogs ?? 0,
+        };
       })
-      .filter(h => h.isCalibrating)
-  }
+      .filter((h) => h.isCalibrating);
+  }, [habits, calculateFluxScore]);
 
-  const calibratingHabits = getCalibratingHabits()
+  // Weekly performers (UI-only aggregation; money per-log comes from transfers join)
+  const weeklyPerformers = useMemo(() => {
+    const hs = habits || [];
+    const ls = logs || [];
+    if (hs.length === 0) return [];
 
-  // Get weekly performance data for horizontal cards
-  const getWeeklyPerformers = () => {
-    if (!habits || !logs) return []
+    const now = new Date();
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - now.getDay());
+    startOfThisWeek.setHours(0, 0, 0, 0);
 
-    const now = new Date()
-    const startOfThisWeek = new Date(now)
-    startOfThisWeek.setDate(now.getDate() - now.getDay())
-    startOfThisWeek.setHours(0, 0, 0, 0)
+    return hs
+      .map((habit) => {
+        const habitLogs = ls.filter((log) => log?.habitId === habit.id);
 
-    return habits
-      .map(habit => {
-        const habitLogs = (logs || []).filter(log => log && log.habitId === habit.id)
-        const thisWeekLogs = habitLogs.filter(log => {
-          if (!log.timestamp) return false
-          return new Date(log.timestamp) >= startOfThisWeek
-        })
-        const thisWeekEarnings = thisWeekLogs.reduce((sum, log) => sum + (log.totalEarnings || 0), 0)
+        const thisWeekLogs = habitLogs.filter((log) => {
+          const d = normalizeToDate(getLogTimestampMs(log));
+          return d ? d >= startOfThisWeek : false;
+        });
 
-        // Generate sparkline data (last 6 days)
-        const sparklineData = []
+        const thisWeekEarnings = thisWeekLogs.reduce(
+          (sum, log) => sum + getLogAmount(log),
+          0
+        );
+
+        // sparkline: last 6 days (UI-only), still uses transfer-backed amounts
+        const sparklineData = [];
         for (let i = 5; i >= 0; i--) {
-          const date = new Date(now)
-          date.setDate(date.getDate() - i)
-          date.setHours(0, 0, 0, 0)
-          const nextDate = new Date(date)
-          nextDate.setDate(nextDate.getDate() + 1)
+          const dayStart = new Date(now);
+          dayStart.setDate(dayStart.getDate() - i);
+          dayStart.setHours(0, 0, 0, 0);
+
+          const nextDay = new Date(dayStart);
+          nextDay.setDate(nextDay.getDate() + 1);
 
           const dayEarnings = habitLogs
-            .filter(log => {
-              if (!log.timestamp) return false
-              const logDate = new Date(log.timestamp)
-              return logDate >= date && logDate < nextDate
+            .filter((log) => {
+              const d = normalizeToDate(getLogTimestampMs(log));
+              return d ? d >= dayStart && d < nextDay : false;
             })
-            .reduce((sum, log) => sum + (log.totalEarnings || 0), 0)
-          sparklineData.push(dayEarnings)
+            .reduce((sum, log) => sum + getLogAmount(log), 0);
+
+          sparklineData.push(dayEarnings);
         }
 
         return {
           ...habit,
           thisWeekEarnings,
           thisWeekLogCount: thisWeekLogs.length,
-          sparklineData
-        }
+          sparklineData,
+        };
       })
-      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings)
-  }
+      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
+  }, [habits, logs]);
 
-  const weeklyPerformers = getWeeklyPerformers()
+  // Today habits list (logged state is based on logs; earnings is transfer-backed)
+  const todayHabits = useMemo(() => {
+    const hs = habits || [];
+    const ls = logs || [];
 
-  // Get today's habits with logged status and progress info
-  const getTodayHabits = () => {
-    const today = new Date()
-    const startOfWeek = new Date(today)
-    startOfWeek.setDate(today.getDate() - today.getDay())
-    startOfWeek.setHours(0, 0, 0, 0)
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
 
-    return habits.map(habit => {
-      const isLogged = isHabitLoggedOnDate(habit.id, today)
-      const todayLog = logs.find(log =>
-        log.habitId === habit.id &&
-        new Date(log.timestamp).toDateString() === today.toDateString()
-      )
+    return hs.map((habit) => {
+      const isLogged = isHabitLoggedOnDate(habit.id, today);
 
-      // Get action type from library
-      const libraryHabit = getHabitById(habit.libraryId)
-      const actionType = libraryHabit?.actionType || ACTION_TYPES.LOG
+      const todayLog = ls.find((log) => {
+        if (!log || log.habitId !== habit.id) return false;
+        const d = normalizeToDate(getLogTimestampMs(log));
+        return d ? d.toDateString() === today.toDateString() : false;
+      });
 
-      // Count logs this week
-      const weekLogs = logs.filter(log => {
-        if (log.habitId !== habit.id) return false
-        const logDate = new Date(log.timestamp)
-        return logDate >= startOfWeek
-      })
-      const weekLogCount = weekLogs.length
+      // week log count (UI-only)
+      const weekLogs = ls.filter((log) => {
+        if (!log || log.habitId !== habit.id) return false;
+        const d = normalizeToDate(getLogTimestampMs(log));
+        return d ? d >= startOfWeek : false;
+      });
+      const weekLogCount = weekLogs.length;
 
-      // Calculate progress info
-      let progressText = `${weekLogCount} this week`
-      if (habit.goal && habit.goal.period === 'week') {
-        const remaining = Math.max(0, habit.goal.amount - weekLogCount)
-        if (remaining === 0) {
-          progressText = 'Goal reached!'
-        } else {
-          progressText = `${remaining} more to goal`
-        }
+      // progress text (UI-only; goal units will be updated later)
+      let progressText = `${weekLogCount} this week`;
+      if (habit.goal?.period === "week") {
+        const goalAmount = Number(habit.goal.amount ?? 0);
+        const remaining = Math.max(0, goalAmount - weekLogCount);
+        if (remaining === 0) progressText = "Goal reached!";
+        else progressText = `${remaining} more to goal`;
       }
 
       return {
         ...habit,
         isLogged,
-        todayEarnings: todayLog?.totalEarnings || 0,
-        actionType,
+        todayEarnings: todayLog ? getLogAmount(todayLog) : 0,
         weekLogCount,
-        progressText
-      }
-    })
-  }
+        progressText,
+      };
+    });
+  }, [habits, logs, isHabitLoggedOnDate]);
 
-  const todayHabits = getTodayHabits()
-  const loggedCount = todayHabits.filter(h => h.isLogged).length
-
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
-
-  const closeSheet = () => {
-    setActiveSheet(null)
-    setSelectedHabitId(null)
-  }
-
-  const handleLogComplete = () => {
-    closeSheet()
-  }
-
-  // Handle tapping a habit in the Today section
-  const handleHabitTap = (habit) => {
-    // If already logged, do nothing
-    if (habit.isLogged) return
-
-    // Set the selected habit and open the appropriate sheet
-    setSelectedHabitId(habit.id)
-    setActiveSheet(habit.actionType === ACTION_TYPES.PASS ? 'pass' : 'log')
-  }
+  const loggedCount = todayHabits.filter((h) => h.isLogged).length;
 
   return (
     <div className="home-page">
@@ -220,7 +240,7 @@ export default function Home() {
 
       <div className="home-container">
         {!hasHabits ? (
-          <EmptyState />
+          <EmptyState onAdd={() => setShowAddSheet(true)} />
         ) : (
           <>
             {/* Header */}
@@ -231,13 +251,14 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
+
                 <div className="header-content">
                   <h1 className="home-greeting">{getGreeting()}</h1>
                   <p className="home-date">
-                    {new Date().toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric'
+                    {new Date().toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
                     })}
                   </p>
                 </div>
@@ -251,13 +272,8 @@ export default function Home() {
                   <span className="earned-label">Earned this week</span>
                   <span className="earned-value">{formatCurrency(animatedWeekEarnings)}</span>
                 </div>
-                {projectedWeekTotal > 0 && (
-                  <div className="week-pace">
-                    <span className="pace-label">On pace for</span>
-                    <span className="pace-value">{formatCurrency(projectedWeekTotal)}</span>
-                  </div>
-                )}
               </div>
+
               {todayEarnings > 0 && (
                 <div className="today-earned">
                   <span className="today-label">Today</span>
@@ -270,29 +286,32 @@ export default function Home() {
             <section className="today-section">
               <div className="section-header">
                 <span className="section-label">Today</span>
-                <span className="section-count">{loggedCount}/{habits.length}</span>
+                <span className="section-count">{loggedCount}/{(habits || []).length}</span>
               </div>
+
               <div className="today-list">
-                {todayHabits.map(habit => (
+                {todayHabits.map((habit) => (
                   <div
                     key={habit.id}
-                    className={`today-row ${habit.isLogged ? 'logged' : 'tappable'}`}
+                    className={`today-row ${habit.isLogged ? "logged" : "tappable"}`}
                     onClick={() => handleHabitTap(habit)}
                   >
                     <div className="today-status">
                       {habit.isLogged ? (
                         <div className="status-check">
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       ) : (
                         <div className="status-circle" />
                       )}
                     </div>
+
                     <div className="today-info">
                       <span className="today-name">{habit.name}</span>
                     </div>
+
                     <div className="today-value">
                       {habit.isLogged ? (
                         <span className="today-earned">+{formatCurrency(habit.todayEarnings)}</span>
@@ -311,7 +330,8 @@ export default function Home() {
                 <div className="section-label">This Week</div>
                 <div className="performers-scroll">
                   {weeklyPerformers.map((performer, index) => {
-                    const maxSparkline = Math.max(...performer.sparklineData, 1)
+                    const maxSparkline = Math.max(...(performer.sparklineData || []), 1);
+
                     return (
                       <motion.div
                         key={performer.id}
@@ -324,22 +344,25 @@ export default function Home() {
                       >
                         <div className="performer-name">{performer.name}</div>
                         <div className="performer-earnings">{formatCurrency(performer.thisWeekEarnings)}</div>
+
                         <div className="sparkline-container">
-                          {performer.sparklineData.map((value, i) => {
-                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10
-                            const isRecent = i >= performer.sparklineData.length - 2
+                          {(performer.sparklineData || []).map((value, i) => {
+                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
+                            const isRecent = i >= performer.sparklineData.length - 2;
+
                             return (
                               <div
                                 key={i}
-                                className={`spark-bar ${isRecent ? 'highlight' : ''}`}
+                                className={`spark-bar ${isRecent ? "highlight" : ""}`}
                                 style={{ height: `${Math.max(height, 10)}%` }}
                               />
-                            )
+                            );
                           })}
                         </div>
+
                         <div className="performer-logs">{performer.thisWeekLogCount} logs</div>
                       </motion.div>
-                    )
+                    );
                   })}
                 </div>
               </section>
@@ -350,7 +373,7 @@ export default function Home() {
               <section className="calibrating-section">
                 <div className="section-label">Calibrating</div>
                 <div className="calibrating-list">
-                  {calibratingHabits.map(habit => (
+                  {calibratingHabits.map((habit) => (
                     <div
                       key={habit.id}
                       className="calibrating-row"
@@ -358,27 +381,34 @@ export default function Home() {
                     >
                       <div className="calibrating-progress">
                         <svg viewBox="0 0 36 36" className="calibrating-ring">
-                          <circle
-                            className="ring-bg"
-                            cx="18" cy="18" r="14"
-                            fill="none" strokeWidth="3"
-                          />
+                          <circle className="ring-bg" cx="18" cy="18" r="14" fill="none" strokeWidth="3" />
                           <circle
                             className="ring-progress"
-                            cx="18" cy="18" r="14"
-                            fill="none" strokeWidth="3"
-                            strokeDasharray={`${(habit.totalLogs / 10) * 88} 88`}
+                            cx="18"
+                            cy="18"
+                            r="14"
+                            fill="none"
+                            strokeWidth="3"
                             strokeLinecap="round"
+                            strokeDasharray={`${(habit.totalLogs / 10) * 88} 88`}
                           />
                         </svg>
                         <span className="calibrating-count">{habit.totalLogs}</span>
                       </div>
+
                       <div className="calibrating-info">
                         <span className="calibrating-name">{habit.name}</span>
                         <span className="calibrating-needed">{habit.logsNeeded} more logs</span>
                       </div>
-                      <svg className="calibrating-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
+
+                      <svg
+                        className="calibrating-chevron"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="9 18 15 12 9 6" />
                       </svg>
                     </div>
                   ))}
@@ -391,12 +421,14 @@ export default function Home() {
 
       {/* Log Activity Bottom Sheet */}
       <BottomSheet
-        isOpen={activeSheet === 'log'}
+        isOpen={activeSheet === "log"}
         onClose={closeSheet}
         height="tall"
+        title="Log Activity"
+        headerRight={noopHeaderRight}
       >
         <LogHabitSheet
-          actionType={ACTION_TYPES.LOG}
+          actionType="log"
           initialHabitId={selectedHabitId}
           onClose={closeSheet}
           onLogComplete={handleLogComplete}
@@ -405,17 +437,33 @@ export default function Home() {
 
       {/* Pass Activity Bottom Sheet */}
       <BottomSheet
-        isOpen={activeSheet === 'pass'}
+        isOpen={activeSheet === "pass"}
         onClose={closeSheet}
         height="tall"
+        title="Log Pass"
+        headerRight={noopHeaderRight}
       >
         <LogHabitSheet
-          actionType={ACTION_TYPES.PASS}
+          actionType="pass"
           initialHabitId={selectedHabitId}
           onClose={closeSheet}
           onLogComplete={handleLogComplete}
         />
       </BottomSheet>
+
+      {/* ✅ Add Habit Bottom Sheet (triggered from EmptyState green +) */}
+      <BottomSheet
+        isOpen={showAddSheet}
+        onClose={() => setShowAddSheet(false)}
+        height="tall"
+        title="Add Habit"
+        headerRight={noopHeaderRight}
+      >
+        <AddHabitFlow
+          onComplete={() => setShowAddSheet(false)} // AddHabitFlow owns addHabit()
+          onClose={() => setShowAddSheet(false)}
+        />
+      </BottomSheet>
     </div>
-  )
+  );
 }

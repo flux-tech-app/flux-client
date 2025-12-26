@@ -1,1 +1,1 @@
-export { default } from './IndexDetail';
+export { default } from './IndexDetail.jsx';

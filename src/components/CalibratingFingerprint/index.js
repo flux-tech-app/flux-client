@@ -1,1 +1,1 @@
-export { default } from './CalibratingFingerprint';
+export { default } from './CalibratingFingerprint.jsx';

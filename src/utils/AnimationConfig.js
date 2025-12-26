@@ -1,17 +1,21 @@
+// src/utils/AnimationConfig.js
 // Centralized animation configuration for component interactions
 // Following iOS and professional app standards
+
+// Force literal inference for TS (prevents: type: string -> type: "spring")
+const SPRING = "spring";
 
 export const animations = {
   // Bottom sheet - iOS-style slide with spring
   sheet: {
-    initial: { y: '100%' },
+    initial: { y: "100%" },
     animate: { y: 0 },
-    exit: { y: '100%' },
+    exit: { y: "100%" },
     transition: {
-      type: 'spring',
+      type: SPRING,
       damping: 30,
-      stiffness: 300
-    }
+      stiffness: 300,
+    },
   },
 
   // Backdrop fade
@@ -20,8 +24,8 @@ export const animations = {
     animate: { opacity: 1 },
     exit: { opacity: 0 },
     transition: {
-      duration: 0.2
-    }
+      duration: 0.2,
+    },
   },
 
   // FAB main button interactions - enhanced
@@ -29,11 +33,11 @@ export const animations = {
     tap: { scale: 0.92 },
     hover: { scale: 1.05 },
     transition: {
-      type: 'spring',
+      type: SPRING,
       stiffness: 350,
       damping: 20,
-      mass: 0.8
-    }
+      mass: 0.8,
+    },
   },
 
   // FAB expand animation for action bubbles
@@ -43,22 +47,22 @@ export const animations = {
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: 20 },
       transition: {
-        type: 'spring',
+        type: SPRING,
         stiffness: 400,
-        damping: 28
-      }
+        damping: 28,
+      },
     },
     item: {
       initial: { opacity: 0, scale: 0.8, y: 10 },
       animate: { opacity: 1, scale: 1, y: 0 },
       exit: { opacity: 0, scale: 0.8, y: 10 },
       transition: {
-        type: 'spring',
+        type: SPRING,
         stiffness: 400,
-        damping: 25
-      }
+        damping: 25,
+      },
     },
-    staggerDelay: 0.05
+    staggerDelay: 0.05,
   },
 
   // Button interactions - premium feel
@@ -66,20 +70,20 @@ export const animations = {
     tap: { scale: 0.98 },
     hover: { y: -2, scale: 1.01 },
     transition: {
-      type: 'spring',
+      type: SPRING,
       stiffness: 400,
-      damping: 25
-    }
+      damping: 25,
+    },
   },
 
   // Card press feedback - subtle and nice
   cardPress: {
     tap: { scale: 0.98 },
     transition: {
-      type: 'spring',
+      type: SPRING,
       stiffness: 400,
-      damping: 17
-    }
+      damping: 17,
+    },
   },
 
   // List item stagger
@@ -87,17 +91,17 @@ export const animations = {
     container: {
       animate: {
         transition: {
-          staggerChildren: 0.05
-        }
-      }
+          staggerChildren: 0.05,
+        },
+      },
     },
     item: {
       initial: { opacity: 0, y: 10 },
       animate: { opacity: 1, y: 0 },
       transition: {
-        duration: 0.3
-      }
-    }
+        duration: 0.3,
+      },
+    },
   },
 
   // Scale fade for modals and popups
@@ -106,9 +110,9 @@ export const animations = {
     animate: { opacity: 1, scale: 1 },
     exit: { opacity: 0, scale: 0.95 },
     transition: {
-      type: 'spring',
+      type: SPRING,
       stiffness: 350,
-      damping: 25
-    }
-  }
+      damping: 25,
+    },
+  },
 };

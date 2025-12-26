@@ -1,3 +1,4 @@
+// tsconfig.checkjs.json
 {
   "compilerOptions": {
     "allowJs": true,

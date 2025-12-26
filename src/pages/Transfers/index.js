@@ -1,1 +1,1 @@
-export { default } from './Transfers';
+export { default } from './Transfers.jsx';

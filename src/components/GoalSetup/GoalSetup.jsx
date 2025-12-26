@@ -1,74 +1,112 @@
-import { useState, useEffect } from 'react';
-import Button from '../Button';
-import './GoalSetup.css';
+// src/components/GoalSetup/GoalSetup.jsx
+import { useMemo, useState } from "react";
+import Button from "../Button";
+import {
+  computeEarningsMicrosUI,
+  formatUSDFromMicros,
+  isBinaryRateType,
+  unitsToMicros,
+} from "@/utils/micros";
+import "./GoalSetup.css";
 
 /**
- * GoalSetup Component
+ * GoalSetup (micros-native)
  *
- * Allows users to set/edit goals for a habit.
- * Shows suggested goals and earnings projections.
- *
- * @param {Object} habitLibraryData - The habit data from HABIT_LIBRARY
- * @param {number} selectedRate - The rate the user selected for this habit
- * @param {Function} onGoalSet - Callback when goal is confirmed: (goal) => void
- * @param {Object} initialGoal - Optional initial goal for editing
+ * Props:
+ * - habitLibraryData: CatalogHabit (rateType, goalUnit, suggestedGoals, defaultGoalPeriod, etc.)
+ * - selectedRateMicros: number (micros; money per unit, or flat per completion for BINARY)
+ * - onGoalSet(goal): goal = { amount: number, period: 'day'|'week'|'month' }
+ * - initialGoal: optional existing goal
  */
 export default function GoalSetup({
   habitLibraryData,
-  selectedRate,
+  selectedRateMicros,
   onGoalSet,
-  initialGoal
+  initialGoal,
 }) {
-  const [amount, setAmount] = useState(initialGoal?.amount?.toString() || '');
+  const [amount, setAmount] = useState(initialGoal?.amount?.toString() || "");
   const [period, setPeriod] = useState(
-    initialGoal?.period || habitLibraryData.defaultGoalPeriod || 'week'
+    initialGoal?.period || habitLibraryData?.defaultGoalPeriod || "week"
   );
 
-  // Calculate earnings projections
-  const calculateProjections = () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0 || !selectedRate) return null;
+  const rateType = habitLibraryData?.rateType;
+  const binary = isBinaryRateType(rateType);
+
+  // What label to show beside the input
+  const goalUnit = habitLibraryData?.goalUnit || (binary ? "times" : "units");
+
+  const projections = useMemo(() => {
+    const numAmount = Number.parseFloat(amount);
+    const rateMicros = Number(selectedRateMicros);
+
+    if (!Number.isFinite(numAmount) || numAmount <= 0) return null;
+    if (!Number.isFinite(rateMicros) || rateMicros <= 0) return null;
 
     const daysMap = { day: 1, week: 7, month: 30 };
-    const periodDays = daysMap[period];
-    const dailyAmount = numAmount / periodDays;
-    const weeklyAmount = dailyAmount * 7;
-    const weeklyEarnings = weeklyAmount * selectedRate;
-    const annualEarnings = weeklyEarnings * 52;
+    const periodDays = daysMap[String(period)] ?? 7;
 
-    return {
-      weekly: weeklyEarnings,
-      annual: annualEarnings
-    };
-  };
+    // Convert "goal amount per period" -> "weekly units"
+    // ex: 10 miles/week => weeklyUnits = 10
+    // ex: 30 minutes/day => weeklyUnits = 30*7
+    // ex: 40 miles/month => weeklyUnits ≈ 40/30*7
+    const weeklyUnits = (numAmount / periodDays) * 7;
 
-  const projections = calculateProjections();
+    let weeklyEarnMicros = 0;
 
-  const handleContinue = () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
-      return;
+    if (binary) {
+      // Binary habits are "per completion".
+      // Interpret goal amount as "completions per period".
+      // Since it’s “times”, treat it as a whole number for projections.
+      const weeklyCompletions = Math.max(0, Math.round(weeklyUnits));
+      weeklyEarnMicros = weeklyCompletions * rateMicros;
+    } else {
+      const weeklyUnitsMicros = unitsToMicros(weeklyUnits);
+      weeklyEarnMicros = computeEarningsMicrosUI({
+        rateType,
+        rateMicros,
+        unitsMicros: weeklyUnitsMicros,
+      });
     }
 
-    onGoalSet({
-      amount: numAmount,
-      period: period
+    const annualEarnMicros = weeklyEarnMicros * 52;
+
+    return {
+      weeklyMicros: weeklyEarnMicros,
+      annualMicros: annualEarnMicros,
+    };
+  }, [amount, period, rateType, selectedRateMicros, binary]);
+
+  const parsedAmount = Number.parseFloat(amount);
+  const isValidGoal = Number.isFinite(parsedAmount) && parsedAmount > 0;
+
+  const handleContinue = () => {
+    const numAmount = Number.parseFloat(amount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0) return;
+
+    // For binary habits, store a clean integer goal
+    const finalAmount = binary ? Math.max(1, Math.round(numAmount)) : numAmount;
+
+    onGoalSet?.({
+      amount: finalAmount,
+      period,
     });
   };
 
   const selectSuggestedGoal = (suggested) => {
-    setAmount(suggested.amount.toString());
-    setPeriod(suggested.period);
+    setAmount(String(suggested.amount));
+    setPeriod(String(suggested.period));
   };
 
-  const isValidGoal = parseFloat(amount) > 0;
-
-  // Format large numbers with commas
-  const formatNumber = (num) => {
-    if (num >= 1000) {
-      return num.toLocaleString();
-    }
-    return num.toString();
+  // “Annual” display: show whole dollars-ish
+  const formatAnnual = (annualMicros) => {
+    const dollars = annualMicros / 1_000_000;
+    const rounded = Math.round(dollars);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(rounded);
   };
 
   return (
@@ -81,18 +119,20 @@ export default function GoalSetup({
       </div>
 
       {/* Suggested Goals */}
-      {habitLibraryData.suggestedGoals && habitLibraryData.suggestedGoals.length > 0 && (
+      {habitLibraryData?.suggestedGoals?.length ? (
         <div className="suggested-goals">
           <p className="suggested-goals-label">Quick Select:</p>
           <div className="suggested-goals-buttons">
             {habitLibraryData.suggestedGoals.map((suggested, idx) => {
               const isSelected =
-                parseFloat(amount) === suggested.amount &&
-                period === suggested.period;
+                Number.parseFloat(amount) === Number(suggested.amount) &&
+                String(period) === String(suggested.period);
+
               return (
                 <button
                   key={idx}
-                  className={`suggested-goal-btn ${isSelected ? 'selected' : ''}`}
+                  type="button"
+                  className={`suggested-goal-btn ${isSelected ? "selected" : ""}`}
                   onClick={() => selectSuggestedGoal(suggested)}
                 >
                   {suggested.label}
@@ -101,7 +141,7 @@ export default function GoalSetup({
             })}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Custom Goal Input */}
       <div className="goal-input-section">
@@ -115,10 +155,10 @@ export default function GoalSetup({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0"
-                min="0"
-                step="any"
+                min={binary ? "1" : "0"}
+                step={binary ? "1" : "any"}
               />
-              <span className="goal-unit-label">{habitLibraryData.goalUnit}</span>
+              <span className="goal-unit-label">{goalUnit}</span>
             </div>
           </div>
 
@@ -138,21 +178,23 @@ export default function GoalSetup({
       </div>
 
       {/* Earnings Projection */}
-      {projections && (
+      {projections ? (
         <div className="earnings-projection">
           <p className="projection-title">At this goal, you'd earn:</p>
           <div className="projection-values">
             <div className="projection-row">
-              <span className="projection-amount">${projections.weekly.toFixed(2)}</span>
+              <span className="projection-amount">
+                {formatUSDFromMicros(projections.weeklyMicros)}
+              </span>
               <span className="projection-period">/ week</span>
             </div>
             <div className="projection-row annual">
-              <span className="projection-amount">${formatNumber(Math.round(projections.annual))}</span>
+              <span className="projection-amount">{formatAnnual(projections.annualMicros)}</span>
               <span className="projection-period">/ year</span>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <Button
         variant="primary"
@@ -160,6 +202,8 @@ export default function GoalSetup({
         fullWidth
         onClick={handleContinue}
         disabled={!isValidGoal}
+        leftIcon={null}
+        rightIcon={null}
       >
         Set Goal
       </Button>

@@ -1,1 +1,1 @@
-export { default } from './LogActivity';
+export { default } from './LogActivity.jsx';
