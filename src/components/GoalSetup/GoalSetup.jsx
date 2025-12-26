@@ -1,74 +1,86 @@
-import { useState, useEffect } from 'react';
-import Button from '../Button';
-import './GoalSetup.css';
+// src/components/GoalSetup/GoalSetup.jsx
+import { useMemo, useState } from "react";
+import Button from "../Button";
+import {
+  computeEarningsMicrosUI,
+  formatUSDFromMicros,
+  isBinaryRateType,
+  unitsToMicros,
+  MICRO_UNITS,
+} from "@/utils/micros";
+import "./GoalSetup.css";
 
 /**
- * GoalSetup Component
- *
- * Allows users to set/edit goals for a habit.
- * Shows suggested goals and earnings projections.
- *
- * @param {Object} habitLibraryData - The habit data from HABIT_LIBRARY
- * @param {number} selectedRate - The rate the user selected for this habit
- * @param {Function} onGoalSet - Callback when goal is confirmed: (goal) => void
- * @param {Object} initialGoal - Optional initial goal for editing
+ * GoalSetup (micros-native)
  */
-export default function GoalSetup({
-  habitLibraryData,
-  selectedRate,
-  onGoalSet,
-  initialGoal
-}) {
-  const [amount, setAmount] = useState(initialGoal?.amount?.toString() || '');
+export default function GoalSetup({ habitLibraryData, selectedRate, onGoalSet, initialGoal }) {
+  const [amount, setAmount] = useState(initialGoal?.amount?.toString() || "");
   const [period, setPeriod] = useState(
-    initialGoal?.period || habitLibraryData.defaultGoalPeriod || 'week'
+    initialGoal?.period || habitLibraryData?.defaultGoalPeriod || "week"
   );
 
-  // Calculate earnings projections
-  const calculateProjections = () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0 || !selectedRate) return null;
+  const rateType = habitLibraryData?.rateType;
+  const goalUnit = habitLibraryData?.goalUnit || "units";
+
+  const projections = useMemo(() => {
+    const numAmount = Number.parseFloat(amount);
+    const rateMicros = Number(selectedRate);
+
+    if (!Number.isFinite(numAmount) || numAmount <= 0) return null;
+    if (!Number.isFinite(rateMicros) || rateMicros <= 0) return null;
 
     const daysMap = { day: 1, week: 7, month: 30 };
-    const periodDays = daysMap[period];
-    const dailyAmount = numAmount / periodDays;
-    const weeklyAmount = dailyAmount * 7;
-    const weeklyEarnings = weeklyAmount * selectedRate;
-    const annualEarnings = weeklyEarnings * 52;
+    const periodDays = daysMap[String(period)] ?? 7;
+
+    // Convert "goal amount per period" -> "weekly units"
+    // ex: 10 miles/week => weeklyUnits = 10
+    // ex: 30 minutes/day => weeklyUnits = 30*7
+    const weeklyUnits = (numAmount / periodDays) * 7;
+
+    // For BINARY, units don't matter; UI helper ignores units for BINARY anyway.
+    const weeklyUnitsMicros = isBinaryRateType(rateType) ? MICRO_UNITS : unitsToMicros(weeklyUnits);
+
+    const weeklyEarnMicros = computeEarningsMicrosUI({
+      rateType,
+      rateMicros,
+      unitsMicros: weeklyUnitsMicros,
+    });
+
+    const annualEarnMicros = weeklyEarnMicros * 52;
 
     return {
-      weekly: weeklyEarnings,
-      annual: annualEarnings
+      weeklyMicros: weeklyEarnMicros,
+      annualMicros: annualEarnMicros,
     };
-  };
+  }, [amount, period, rateType, selectedRate]);
 
-  const projections = calculateProjections();
+  const isValidGoal = Number.parseFloat(amount) > 0;
 
   const handleContinue = () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
-      return;
-    }
+    const numAmount = Number.parseFloat(amount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0) return;
 
-    onGoalSet({
+    onGoalSet?.({
       amount: numAmount,
-      period: period
+      period,
     });
   };
 
   const selectSuggestedGoal = (suggested) => {
-    setAmount(suggested.amount.toString());
-    setPeriod(suggested.period);
+    setAmount(String(suggested.amount));
+    setPeriod(String(suggested.period));
   };
 
-  const isValidGoal = parseFloat(amount) > 0;
-
-  // Format large numbers with commas
-  const formatNumber = (num) => {
-    if (num >= 1000) {
-      return num.toLocaleString();
-    }
-    return num.toString();
+  // “Annual” display: show whole dollars-ish (matches your prior UI intent)
+  const formatAnnual = (annualMicros) => {
+    const dollars = annualMicros / 1_000_000;
+    const rounded = Math.round(dollars);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(rounded);
   };
 
   return (
@@ -81,18 +93,20 @@ export default function GoalSetup({
       </div>
 
       {/* Suggested Goals */}
-      {habitLibraryData.suggestedGoals && habitLibraryData.suggestedGoals.length > 0 && (
+      {habitLibraryData?.suggestedGoals?.length ? (
         <div className="suggested-goals">
           <p className="suggested-goals-label">Quick Select:</p>
           <div className="suggested-goals-buttons">
             {habitLibraryData.suggestedGoals.map((suggested, idx) => {
               const isSelected =
-                parseFloat(amount) === suggested.amount &&
-                period === suggested.period;
+                Number.parseFloat(amount) === Number(suggested.amount) &&
+                String(period) === String(suggested.period);
+
               return (
                 <button
                   key={idx}
-                  className={`suggested-goal-btn ${isSelected ? 'selected' : ''}`}
+                  type="button"
+                  className={`suggested-goal-btn ${isSelected ? "selected" : ""}`}
                   onClick={() => selectSuggestedGoal(suggested)}
                 >
                   {suggested.label}
@@ -101,7 +115,7 @@ export default function GoalSetup({
             })}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Custom Goal Input */}
       <div className="goal-input-section">
@@ -118,7 +132,7 @@ export default function GoalSetup({
                 min="0"
                 step="any"
               />
-              <span className="goal-unit-label">{habitLibraryData.goalUnit}</span>
+              <span className="goal-unit-label">{goalUnit}</span>
             </div>
           </div>
 
@@ -138,21 +152,23 @@ export default function GoalSetup({
       </div>
 
       {/* Earnings Projection */}
-      {projections && (
+      {projections ? (
         <div className="earnings-projection">
           <p className="projection-title">At this goal, you'd earn:</p>
           <div className="projection-values">
             <div className="projection-row">
-              <span className="projection-amount">${projections.weekly.toFixed(2)}</span>
+              <span className="projection-amount">
+                {formatUSDFromMicros(projections.weeklyMicros)}
+              </span>
               <span className="projection-period">/ week</span>
             </div>
             <div className="projection-row annual">
-              <span className="projection-amount">${formatNumber(Math.round(projections.annual))}</span>
+              <span className="projection-amount">{formatAnnual(projections.annualMicros)}</span>
               <span className="projection-period">/ year</span>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <Button
         variant="primary"
@@ -160,6 +176,8 @@ export default function GoalSetup({
         fullWidth
         onClick={handleContinue}
         disabled={!isValidGoal}
+        leftIcon={null}
+        rightIcon={null}
       >
         Set Goal
       </Button>

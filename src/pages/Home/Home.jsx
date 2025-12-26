@@ -1,12 +1,12 @@
 // src/pages/Home/Home.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import useHabits from "@/hooks/useHabits";
-import { formatCurrency } from "../../utils/formatters";
-import BottomSheet from "../../components/BottomSheet";
-import LogHabitSheet from "../../components/LogHabitSheet";
-import SidebarMenu from "../../components/SidebarMenu/SidebarMenu";
+import { formatCurrency } from "@/utils/formatters";
+import BottomSheet from "@/components/BottomSheet";
+import LogHabitSheet from "@/components/LogHabitSheet";
+import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
 import EmptyState from "../Portfolio/EmptyState";
 import "./Home.css";
 
@@ -42,180 +42,38 @@ const useAnimatedCounter = (targetValue, duration = 1200) => {
   return displayValue;
 };
 
+// helper for BottomSheet typing: provide required prop
+const noopHeaderRight = () => null;
+
 export default function Home() {
   const navigate = useNavigate();
 
-  // IMPORTANT: useHabits() should now be backed by boot.catalog (server truth),
-  // and should enrich each habit with name/actionType/unit/etc.
-  const {
-    habits = [],
-    logs = [],
-    getWeekEarnings,
-    getTodayEarnings,
-    isHabitLoggedOnDate,
-    calculateFluxScore,
-  } = useHabits();
+  // STRICT provider: server is source of truth (no fallbacks, no FE math for money)
+  const { habits, logs, getWeekEarnings, getTodayEarnings, isHabitLoggedOnDate, calculateFluxScore } =
+    useHabits();
 
   const [activeSheet, setActiveSheet] = useState(null); // "log" | "pass" | null
   const [selectedHabitId, setSelectedHabitId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const hasHabits = habits.length > 0;
-  const weekEarnings = typeof getWeekEarnings === "function" ? getWeekEarnings() : 0;
-  const todayEarnings = typeof getTodayEarnings === "function" ? getTodayEarnings() : 0;
+  const hasHabits = (habits || []).length > 0;
+
+  // server-derived values (provider just returns boot.stats)
+  const weekEarnings = Number(getWeekEarnings());
+  const todayEarnings = Number(getTodayEarnings());
   const animatedWeekEarnings = useAnimatedCounter(weekEarnings);
 
-  // Calculate pace projection (assuming 7-day week, project based on days elapsed)
-  const now = new Date();
-  const dayOfWeek = now.getDay() || 7; // Sunday = 7
-  const dailyAverage = dayOfWeek > 0 ? weekEarnings / dayOfWeek : 0;
-  const projectedWeekTotal = dailyAverage * 7;
+  // STRICT log shape from provider:
+  // - log.timestampMs is the timestamp
+  // - log.amount is transfer amount (joined by provider)
+  const getLogTimestampMs = (log) => log?.timestampMs ?? null;
+  const getLogAmount = (log) => Number(log?.amount ?? 0);
 
-  // Helpers for log fields (migration-safe)
-  const getLogTimestamp = (log) => log?.timestamp ?? log?.timestampMs ?? null;
-  const getLogEarnings = (log) =>
-    // new provider should use `earnings` (number in dollars)
-    // old provider might use `totalEarnings`
-    log?.earnings ?? log?.totalEarnings ?? 0;
-
-  const normalizeToDate = (ts) => {
-    if (!ts) return null;
-    // if provider passes ms, accept it; if string, accept it
-    const d = typeof ts === "number" ? new Date(ts) : new Date(ts);
+  const normalizeToDate = (ms) => {
+    if (ms == null) return null;
+    const d = new Date(Number(ms));
     return Number.isNaN(d.getTime()) ? null : d;
   };
-
-  // Get calibrating habits (status === "building")
-  const getCalibratingHabits = () => {
-    return habits
-      .map((habit) => {
-        const fluxScore =
-          typeof calculateFluxScore === "function"
-            ? calculateFluxScore(habit.id)
-            : null;
-
-        return {
-          ...habit,
-          fluxScore,
-          isCalibrating: fluxScore?.status === "building",
-          logsNeeded: fluxScore?.logsNeeded ?? 0,
-          totalLogs: fluxScore?.meta?.totalLogs ?? fluxScore?.totalLogs ?? 0,
-        };
-      })
-      .filter((h) => h.isCalibrating);
-  };
-
-  const calibratingHabits = getCalibratingHabits();
-
-  // Get weekly performance data for horizontal cards
-  const getWeeklyPerformers = () => {
-    if (!habits || !logs) return [];
-
-    const now = new Date();
-    const startOfThisWeek = new Date(now);
-    startOfThisWeek.setDate(now.getDate() - now.getDay());
-    startOfThisWeek.setHours(0, 0, 0, 0);
-
-    return habits
-      .map((habit) => {
-        const habitLogs = (logs || []).filter(
-          (log) => log && log.habitId === habit.id
-        );
-
-        const thisWeekLogs = habitLogs.filter((log) => {
-          const d = normalizeToDate(getLogTimestamp(log));
-          return d ? d >= startOfThisWeek : false;
-        });
-
-        const thisWeekEarnings = thisWeekLogs.reduce(
-          (sum, log) => sum + getLogEarnings(log),
-          0
-        );
-
-        // Generate sparkline data (last 6 days)
-        const sparklineData = [];
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - i);
-          date.setHours(0, 0, 0, 0);
-
-          const nextDate = new Date(date);
-          nextDate.setDate(nextDate.getDate() + 1);
-
-          const dayEarnings = habitLogs
-            .filter((log) => {
-              const d = normalizeToDate(getLogTimestamp(log));
-              return d ? d >= date && d < nextDate : false;
-            })
-            .reduce((sum, log) => sum + getLogEarnings(log), 0);
-
-          sparklineData.push(dayEarnings);
-        }
-
-        return {
-          ...habit,
-          thisWeekEarnings,
-          thisWeekLogCount: thisWeekLogs.length,
-          sparklineData,
-        };
-      })
-      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
-  };
-
-  const weeklyPerformers = getWeeklyPerformers();
-
-  // Get today's habits with logged status and progress info
-  const getTodayHabits = () => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    return habits.map((habit) => {
-      const isLogged =
-        typeof isHabitLoggedOnDate === "function"
-          ? isHabitLoggedOnDate(habit.id, today)
-          : false;
-
-      const todayLog = (logs || []).find((log) => {
-        if (!log || log.habitId !== habit.id) return false;
-        const d = normalizeToDate(getLogTimestamp(log));
-        return d ? d.toDateString() === today.toDateString() : false;
-      });
-
-      // actionType comes from server-backed catalog join (provider)
-      const actionType = habit.actionType || "log";
-
-      // Count logs this week (count-based; keep until you switch goals to units-based)
-      const weekLogs = (logs || []).filter((log) => {
-        if (!log || log.habitId !== habit.id) return false;
-        const d = normalizeToDate(getLogTimestamp(log));
-        return d ? d >= startOfWeek : false;
-      });
-      const weekLogCount = weekLogs.length;
-
-      // Calculate progress info
-      let progressText = `${weekLogCount} this week`;
-      if (habit.goal && habit.goal.period === "week") {
-        const goalAmount = Number(habit.goal.amount ?? 0);
-        const remaining = Math.max(0, goalAmount - weekLogCount);
-        if (remaining === 0) progressText = "Goal reached!";
-        else progressText = `${remaining} more to goal`;
-      }
-
-      return {
-        ...habit,
-        isLogged,
-        todayEarnings: todayLog ? getLogEarnings(todayLog) : 0,
-        actionType,
-        weekLogCount,
-        progressText,
-      };
-    });
-  };
-
-  const todayHabits = getTodayHabits();
-  const loggedCount = todayHabits.filter((h) => h.isLogged).length;
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -241,6 +99,126 @@ export default function Home() {
     setSelectedHabitId(habit.id);
     setActiveSheet(habit.actionType === "pass" ? "pass" : "log");
   };
+
+  // Calibrating habits (based on server-computed flux)
+  const calibratingHabits = useMemo(() => {
+    return (habits || [])
+      .map((habit) => {
+        const fluxScore = calculateFluxScore(habit.id);
+
+        return {
+          ...habit,
+          fluxScore,
+          isCalibrating: fluxScore?.status === "building",
+          logsNeeded: fluxScore?.logsNeeded ?? 0,
+          totalLogs: fluxScore?.meta?.totalLogs ?? 0,
+        };
+      })
+      .filter((h) => h.isCalibrating);
+  }, [habits, calculateFluxScore]);
+
+  // Weekly performers (UI-only aggregation; money per-log comes from transfers join)
+  const weeklyPerformers = useMemo(() => {
+    const hs = habits || [];
+    const ls = logs || [];
+    if (hs.length === 0) return [];
+
+    const now = new Date();
+    const startOfThisWeek = new Date(now);
+    startOfThisWeek.setDate(now.getDate() - now.getDay());
+    startOfThisWeek.setHours(0, 0, 0, 0);
+
+    return hs
+      .map((habit) => {
+        const habitLogs = ls.filter((log) => log?.habitId === habit.id);
+
+        const thisWeekLogs = habitLogs.filter((log) => {
+          const d = normalizeToDate(getLogTimestampMs(log));
+          return d ? d >= startOfThisWeek : false;
+        });
+
+        const thisWeekEarnings = thisWeekLogs.reduce(
+          (sum, log) => sum + getLogAmount(log),
+          0
+        );
+
+        // sparkline: last 6 days (UI-only), still uses transfer-backed amounts
+        const sparklineData = [];
+        for (let i = 5; i >= 0; i--) {
+          const dayStart = new Date(now);
+          dayStart.setDate(dayStart.getDate() - i);
+          dayStart.setHours(0, 0, 0, 0);
+
+          const nextDay = new Date(dayStart);
+          nextDay.setDate(nextDay.getDate() + 1);
+
+          const dayEarnings = habitLogs
+            .filter((log) => {
+              const d = normalizeToDate(getLogTimestampMs(log));
+              return d ? d >= dayStart && d < nextDay : false;
+            })
+            .reduce((sum, log) => sum + getLogAmount(log), 0);
+
+          sparklineData.push(dayEarnings);
+        }
+
+        return {
+          ...habit,
+          thisWeekEarnings,
+          thisWeekLogCount: thisWeekLogs.length,
+          sparklineData,
+        };
+      })
+      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
+  }, [habits, logs]);
+
+  // Today habits list (logged state is based on logs; earnings is transfer-backed)
+  const todayHabits = useMemo(() => {
+    const hs = habits || [];
+    const ls = logs || [];
+
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    return hs.map((habit) => {
+      const isLogged = isHabitLoggedOnDate(habit.id, today);
+
+      const todayLog = ls.find((log) => {
+        if (!log || log.habitId !== habit.id) return false;
+        const d = normalizeToDate(getLogTimestampMs(log));
+        return d ? d.toDateString() === today.toDateString() : false;
+      });
+
+      // week log count (UI-only)
+      const weekLogs = ls.filter((log) => {
+        if (!log || log.habitId !== habit.id) return false;
+        const d = normalizeToDate(getLogTimestampMs(log));
+        return d ? d >= startOfWeek : false;
+      });
+      const weekLogCount = weekLogs.length;
+
+      // progress text (UI-only; goal units will be updated later)
+      let progressText = `${weekLogCount} this week`;
+      if (habit.goal?.period === "week") {
+        const goalAmount = Number(habit.goal.amount ?? 0);
+        const remaining = Math.max(0, goalAmount - weekLogCount);
+        if (remaining === 0) progressText = "Goal reached!";
+        else progressText = `${remaining} more to goal`;
+      }
+
+      return {
+        ...habit,
+        isLogged,
+        todayEarnings: todayLog ? getLogAmount(todayLog) : 0,
+        weekLogCount,
+        progressText,
+      };
+    });
+  }, [habits, logs, isHabitLoggedOnDate]);
+
+  const loggedCount = todayHabits.filter((h) => h.isLogged).length;
 
   return (
     <div className="home-page">
@@ -297,15 +275,6 @@ export default function Home() {
                     {formatCurrency(animatedWeekEarnings)}
                   </span>
                 </div>
-
-                {projectedWeekTotal > 0 && (
-                  <div className="week-pace">
-                    <span className="pace-label">On pace for</span>
-                    <span className="pace-value">
-                      {formatCurrency(projectedWeekTotal)}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {todayEarnings > 0 && (
@@ -323,7 +292,7 @@ export default function Home() {
               <div className="section-header">
                 <span className="section-label">Today</span>
                 <span className="section-count">
-                  {loggedCount}/{habits.length}
+                  {loggedCount}/{(habits || []).length}
                 </span>
               </div>
 
@@ -500,6 +469,7 @@ export default function Home() {
         onClose={closeSheet}
         height="tall"
         title="Log Activity"
+        headerRight={noopHeaderRight}
       >
         <LogHabitSheet
           actionType="log"
@@ -515,6 +485,7 @@ export default function Home() {
         onClose={closeSheet}
         height="tall"
         title="Log Pass"
+        headerRight={noopHeaderRight}
       >
         <LogHabitSheet
           actionType="pass"

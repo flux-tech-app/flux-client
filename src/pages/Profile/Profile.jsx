@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+// src/pages/Profile/Profile.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useHabits from "@/hooks/useHabits";
 import SidebarMenu from "../../components/SidebarMenu/SidebarMenu";
 import { supabase } from "@/auth/supabaseClient";
+import { formatUSDFromMicros } from "@/utils/micros";
 import "./Profile.css";
 
 export default function Profile() {
@@ -18,31 +20,37 @@ export default function Profile() {
   const [formError, setFormError] = useState(null);
   const [formMessage, setFormMessage] = useState(null);
 
-  // keep drafts in sync when user loads/changes
-  useMemo(() => {
+  // Keep drafts in sync when user loads/changes
+  useEffect(() => {
     setNameDraft(user?.name ?? "");
     setEmailDraft(user?.email ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.email]);
 
   // Get user initials for avatar
   const getInitials = (name) => {
     if (!name) return "?";
-    const parts = name.trim().split(" ");
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    const parts = name.trim().split(" ").filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return (parts[0][0] ?? "?").toUpperCase();
+    return ((parts[0][0] ?? "") + (parts[parts.length - 1][0] ?? "")).toUpperCase() || "?";
   };
 
-  const totalEarned = getTransferredBalance();
-  const totalLogs = logs.length;
-  const activeHabits = habits.length;
+  // totals are MICROS (int64) coming from backend / HabitProvider selectors
+  const totalEarnedMicros = useMemo(() => Number(getTransferredBalance?.() ?? 0), [getTransferredBalance]);
 
-  const getMemberSince = () => {
-    if (user?.createdAt) {
-      return new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-    }
-    return "Recently joined";
-  };
+  const totalLogs = logs?.length ?? 0;
+  const activeHabits = habits?.length ?? 0;
+
+  const memberSince = useMemo(() => {
+    // backend has been using createdAtMs more often; support both
+    const ms = user?.createdAtMs ?? user?.createdAt ?? null;
+    if (ms == null) return "Recently joined";
+
+    const d = new Date(Number(ms));
+    if (Number.isNaN(d.getTime())) return "Recently joined";
+
+    return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }, [user?.createdAtMs, user?.createdAt]);
 
   async function onSave() {
     setFormError(null);
@@ -51,7 +59,6 @@ export default function Profile() {
     const nextName = (nameDraft ?? "").trim();
     const nextEmail = (emailDraft ?? "").trim().toLowerCase();
 
-    // no-op fast path
     const nameChanged = nextName !== (user?.name ?? "");
     const emailChanged = nextEmail !== (user?.email ?? "");
 
@@ -62,7 +69,7 @@ export default function Profile() {
 
     setSaving(true);
     try {
-      // 1) Update display name via your API (public.users.name)
+      // 1) Update display name via API (public.users.name)
       if (nameChanged) {
         await updateUser({ name: nextName });
       }
@@ -72,12 +79,9 @@ export default function Profile() {
         const { error } = await supabase.auth.updateUser({ email: nextEmail });
         if (error) throw error;
 
-        // Supabase often requires email confirmation depending on your project settings.
-        // If confirmation is required, the session/user email may not update immediately.
         setFormMessage("Email update requested. If prompted, check your inbox to confirm.");
 
-        // 3) Try to refresh bootstrap in the background
-        // If email confirmation is required, this won’t change until confirmed.
+        // 3) Refresh bootstrap
         await refresh({ silent: true });
       }
 
@@ -111,7 +115,7 @@ export default function Profile() {
             <>
               <div className="profile-name-large">{user?.name || "User"}</div>
               <div className="profile-email">{user?.email || "Set up your profile"}</div>
-              <div className="profile-member-since">Member since {getMemberSince()}</div>
+              <div className="profile-member-since">Member since {memberSince}</div>
 
               <button className="edit-profile-btn" onClick={() => setIsEditing(true)}>
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
@@ -174,7 +178,7 @@ export default function Profile() {
 
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">${totalEarned.toFixed(2)}</div>
+            <div className="stat-value">{formatUSDFromMicros(totalEarnedMicros)}</div>
             <div className="stat-label">Total Earned</div>
           </div>
           <div className="stat-card">
@@ -204,7 +208,7 @@ export default function Profile() {
               <svg className="chevron" width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
-                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 0 01-1.414 0z"
                   clipRule="evenodd"
                 />
               </svg>

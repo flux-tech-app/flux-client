@@ -1,35 +1,50 @@
 // src/pages/Onboarding/Onboarding.jsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useHabits from "@/hooks/useHabits";
+
 import Welcome from "./Welcome";
 import HowItWorks from "./HowItWorks";
 import SelectHabits from "./SelectHabits";
 import SetRates from "./SetRates";
 import Ready from "./Ready";
+
 import "./Onboarding.css";
 
 /**
  * Onboarding Flow - 5 Steps
  *
- * 1. Welcome - Meet Flux introduction
- * 2. How It Works - Visual money flow explanation
- * 3. Select Habits - Browse and select from library
- * 4. Set Rates - Customize rates for selected habits
- * 5. Ready - Summary and launch
+ * 1. Welcome
+ * 2. How It Works
+ * 3. Select Habits (from server catalog)
+ * 4. Set Rates + Goals (rateMicros + goal)
+ * 5. Ready (summary + submit)
  */
 export default function Onboarding({ onComplete }) {
-  const { addHabits } = useHabits();
+  const { addHabits, catalog } = useHabits();
 
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Track selected habits, their rates, and goals
+  // catalog habit IDs (libraryId in backend terms)
   const [selectedHabits, setSelectedHabits] = useState([]);
-  const [habitRates, setHabitRates] = useState({});
-  const [habitGoals, setHabitGoals] = useState({});
+
+  // IMPORTANT: store rateMicros (int), not dollars
+  const [habitRates, setHabitRates] = useState({}); // { [libraryId]: rateMicros }
+
+  // goal is still human units (float) + period (string)
+  const [habitGoals, setHabitGoals] = useState({}); // { [libraryId]: { amount, period } }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalSteps = 5;
+
+  const catalogHabits = catalog?.habits ?? [];
+  const catalogById = useMemo(() => {
+    const m = new Map();
+    for (const h of catalogHabits) {
+      if (h?.id) m.set(h.id, h);
+    }
+    return m;
+  }, [catalogHabits]);
 
   const handleNext = () => {
     if (isSubmitting) return;
@@ -49,16 +64,18 @@ export default function Onboarding({ onComplete }) {
   // Step 3: Select habits
   const handleHabitToggle = (libraryId) => {
     if (isSubmitting) return;
+
     setSelectedHabits((prev) => {
       if (prev.includes(libraryId)) return prev.filter((id) => id !== libraryId);
       return [...prev, libraryId];
     });
   };
 
-  // Step 4: Set rates
-  const handleRateChange = (libraryId, rate) => {
+  // Step 4: Set rates (MICROS)
+  // Expect callers to pass a whole integer micros value.
+  const handleRateChange = (libraryId, rateMicros) => {
     if (isSubmitting) return;
-    setHabitRates((prev) => ({ ...prev, [libraryId]: rate }));
+    setHabitRates((prev) => ({ ...prev, [libraryId]: Number(rateMicros) }));
   };
 
   // Step 4: Set goals
@@ -67,9 +84,17 @@ export default function Onboarding({ onComplete }) {
     setHabitGoals((prev) => ({ ...prev, [libraryId]: goal }));
   };
 
-  // Final step: Create habits and complete
+  // Final step: Create habits and complete onboarding
   const handleComplete = async () => {
     if (isSubmitting) return;
+
+    // Validate selection exists in server catalog
+    for (const libraryId of selectedHabits) {
+      if (!catalogById.get(libraryId)) {
+        alert(`Unknown habit "${libraryId}" (not found in server catalog). Please refresh and try again.`);
+        return;
+      }
+    }
 
     // Enforce required goals
     for (const libraryId of selectedHabits) {
@@ -80,17 +105,37 @@ export default function Onboarding({ onComplete }) {
       }
     }
 
-    const habitConfigs = selectedHabits.map((libraryId) => ({
-      libraryId,
-      rate: habitRates[libraryId], // undefined => backend will use default rate you send (or you choose default client-side)
-      goal: habitGoals[libraryId], // required
-    }));
+    // Build payload for backend (rateMicros required)
+    const habitConfigs = selectedHabits.map((libraryId) => {
+      const c = catalogById.get(libraryId);
+
+      const rateMicros =
+        habitRates[libraryId] != null
+          ? Number(habitRates[libraryId])
+          : Number(c?.defaultRateMicros);
+
+      if (!Number.isFinite(rateMicros) || rateMicros <= 0) {
+        throw new Error(`Invalid rateMicros for "${libraryId}".`);
+      }
+
+      const g = habitGoals[libraryId];
+
+      return {
+        libraryId,
+        rateMicros,
+        goal: {
+          amount: Number(g.amount),
+          period: String(g.period),
+        },
+      };
+    });
 
     setIsSubmitting(true);
     try {
       await addHabits(habitConfigs);
       onComplete?.();
     } catch (err) {
+      // keep user on page, allow retry
       console.error(err);
       alert(err?.message || "Failed to create habits. Please try again.");
       setIsSubmitting(false);
@@ -113,6 +158,7 @@ export default function Onboarding({ onComplete }) {
 
       {currentStep === 2 && (
         <SelectHabits
+          catalog={catalog}
           selectedHabits={selectedHabits}
           onToggle={handleHabitToggle}
           onContinue={handleNext}
@@ -122,6 +168,7 @@ export default function Onboarding({ onComplete }) {
 
       {currentStep === 3 && (
         <SetRates
+          catalog={catalog}
           selectedHabits={selectedHabits}
           habitRates={habitRates}
           habitGoals={habitGoals}
@@ -134,12 +181,12 @@ export default function Onboarding({ onComplete }) {
 
       {currentStep === 4 && (
         <Ready
+          catalog={catalog}
           selectedHabits={selectedHabits}
           habitRates={habitRates}
           habitGoals={habitGoals}
           onComplete={handleComplete}
           onBack={handleBack}
-          // Ready may ignore these props; harmless to pass.
           isSubmitting={isSubmitting}
         />
       )}
