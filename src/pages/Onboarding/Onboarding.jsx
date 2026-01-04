@@ -1,5 +1,5 @@
 // src/pages/Onboarding/Onboarding.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useHabits from "@/hooks/useHabits";
 
 import Welcome from "./Welcome";
@@ -42,6 +42,7 @@ export default function Onboarding({ onComplete }) {
   const totalSteps = 5;
 
   const catalogHabits = catalog?.habits ?? [];
+
   const catalogById = useMemo(() => {
     const m = new Map();
     for (const h of catalogHabits) {
@@ -50,6 +51,91 @@ export default function Onboarding({ onComplete }) {
     return m;
   }, [catalogHabits]);
 
+  const normalizeId = (v) => {
+    const id = String(v ?? "").trim();
+    return id ? id : "";
+  };
+
+  // --- helpers that tolerate both camelCase + snake_case ---
+  const getDefaultRateMicros = (habit) => {
+    const raw =
+      habit?.defaultRateMicros ??
+      habit?.default_rate_micros ??
+      habit?.default_rateMicros; // (just in case)
+
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+
+    // fallback: first option
+    const opts = getRateOptionsMicros(habit);
+    const first = Number(opts?.[0]);
+    return Number.isFinite(first) && first > 0 ? first : 0;
+  };
+
+  const getRateOptionsMicros = (habit) => {
+    const v =
+      habit?.rateOptionsMicros ??
+      habit?.rate_options_micros ??
+      habit?.rate_optionsMicros;
+
+    // API might return array already; or CSV-ish might be a JSON string
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string") {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const getSuggestedGoals = (habit) => {
+    const v =
+      habit?.suggestedGoals ??
+      habit?.suggested_goals ??
+      habit?.suggestedGoalsJson;
+
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string") {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const getDefaultGoalPeriod = (habit) => {
+    const p =
+      habit?.defaultGoalPeriod ??
+      habit?.default_goal_period ??
+      habit?.default_goalPeriod;
+
+    const s = String(p ?? "").trim();
+    return s || "day";
+  };
+
+  const getDefaultGoal = (habit) => {
+    // Prefer first suggested goal if present
+    const suggested = getSuggestedGoals(habit);
+    const first = suggested?.[0];
+
+    const amt = Number(first?.amount);
+    const per = String(first?.period ?? "").trim();
+
+    if (Number.isFinite(amt) && amt > 0 && per) {
+      return { amount: amt, period: per };
+    }
+
+    // fallback: 1 per default period
+    return { amount: 1, period: getDefaultGoalPeriod(habit) };
+  };
+
+  // --- navigation ---
   const handleNext = () => {
     if (isSubmitting) return;
     if (currentStep < totalSteps - 1) setCurrentStep((prev) => prev + 1);
@@ -69,11 +155,31 @@ export default function Onboarding({ onComplete }) {
   const handleHabitToggle = (catalogId) => {
     if (isSubmitting) return;
 
-    const id = String(catalogId ?? "");
+    const id = normalizeId(catalogId);
     if (!id) return;
 
     setSelectedHabits((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      const isSelected = prev.includes(id);
+
+      // If deselecting, also clean up related state to avoid stale keys
+      if (isSelected) {
+        setHabitRates((rPrev) => {
+          if (!(id in (rPrev ?? {}))) return rPrev;
+          const next = { ...(rPrev ?? {}) };
+          delete next[id];
+          return next;
+        });
+
+        setHabitGoals((gPrev) => {
+          if (!(id in (gPrev ?? {}))) return gPrev;
+          const next = { ...(gPrev ?? {}) };
+          delete next[id];
+          return next;
+        });
+
+        return prev.filter((x) => x !== id);
+      }
+
       return [...prev, id];
     });
   };
@@ -82,19 +188,81 @@ export default function Onboarding({ onComplete }) {
   const handleRateChange = (catalogId, rateMicros) => {
     if (isSubmitting) return;
 
-    const id = String(catalogId ?? "");
-    const n = Number(rateMicros);
+    const id = normalizeId(catalogId);
+    if (!id) return;
 
-    setHabitRates((prev) => ({ ...prev, [id]: n }));
+    const n = Number(rateMicros);
+    setHabitRates((prev) => ({ ...(prev ?? {}), [id]: n }));
   };
 
   // Step 4: Set goals
   const handleGoalChange = (catalogId, goal) => {
     if (isSubmitting) return;
 
-    const id = String(catalogId ?? "");
-    setHabitGoals((prev) => ({ ...prev, [id]: goal }));
+    const id = normalizeId(catalogId);
+    if (!id) return;
+
+    setHabitGoals((prev) => ({ ...(prev ?? {}), [id]: goal }));
   };
+
+  /**
+   * ✅ Key fix:
+   * If catalog provides defaults, commit them into state for selected habits.
+   * This prevents UI “looks set” vs submit “missing value” divergence.
+   */
+  useEffect(() => {
+    if (!selectedHabits?.length) return;
+    if (!catalogById?.size) return;
+
+    // Seed missing rates
+    setHabitRates((prev) => {
+      const next = { ...(prev ?? {}) };
+      let changed = false;
+
+      for (const rawId of selectedHabits) {
+        const id = normalizeId(rawId);
+        if (!id) continue;
+
+        const cur = Number(next[id]);
+        if (Number.isFinite(cur) && cur > 0) continue;
+
+        const habit = catalogById.get(id);
+        if (!habit) continue;
+
+        const def = getDefaultRateMicros(habit);
+        if (Number.isFinite(def) && def > 0) {
+          next[id] = def;
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+
+    // Seed missing goals
+    setHabitGoals((prev) => {
+      const next = { ...(prev ?? {}) };
+      let changed = false;
+
+      for (const rawId of selectedHabits) {
+        const id = normalizeId(rawId);
+        if (!id) continue;
+
+        const g = next[id];
+        const amt = Number(g?.amount);
+        const per = String(g?.period ?? "").trim();
+        if (Number.isFinite(amt) && amt > 0 && per) continue;
+
+        const habit = catalogById.get(id);
+        if (!habit) continue;
+
+        next[id] = getDefaultGoal(habit);
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [selectedHabits, catalogById]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Final step: Create habits and complete onboarding
   const handleComplete = async () => {
@@ -110,42 +278,50 @@ export default function Onboarding({ onComplete }) {
       }
     }
 
-    // Enforce goals + rates exist (strict, no fallbacks)
+    // Resolve + validate rates/goals using SAME logic as defaults seeding
+    const resolvedConfigs = [];
     for (const catalogId of selectedHabits) {
-      const rateMicros = habitRates[catalogId];
-      if (!Number.isFinite(rateMicros) || Number(rateMicros) <= 0) {
+      const id = String(catalogId);
+      const habit = catalogById.get(id);
+
+      const rateFromState = Number(habitRates?.[id]);
+      const rateMicros =
+        Number.isFinite(rateFromState) && rateFromState > 0
+          ? rateFromState
+          : getDefaultRateMicros(habit);
+
+      if (!Number.isFinite(rateMicros) || rateMicros <= 0) {
         alert("Please set a valid rate for each selected habit before continuing.");
         return;
       }
 
-      const g = habitGoals[catalogId];
-      const amt = Number(g?.amount);
-      const period = String(g?.period ?? "").trim();
+      const gFromState = habitGoals?.[id];
+      const amtFromState = Number(gFromState?.amount);
+      const perFromState = String(gFromState?.period ?? "").trim();
+
+      const goal =
+        Number.isFinite(amtFromState) && amtFromState > 0 && perFromState
+          ? { amount: amtFromState, period: perFromState }
+          : getDefaultGoal(habit);
+
+      const amt = Number(goal?.amount);
+      const period = String(goal?.period ?? "").trim();
 
       if (!Number.isFinite(amt) || amt <= 0 || !period) {
         alert("Please set a valid goal for each selected habit before continuing.");
         return;
       }
+
+      resolvedConfigs.push({
+        catalogId: id, // ✅ UUID
+        rateMicros: Number(rateMicros), // ✅ int micros
+        goal: { amount: amt, period },
+      });
     }
-
-    // Build STRICT payload for backend
-    const habitConfigs = selectedHabits.map((catalogId) => {
-      const rateMicros = Number(habitRates[catalogId]);
-      const g = habitGoals[catalogId];
-
-      return {
-        catalogId, // ✅ UUID
-        rateMicros, // ✅ int micros
-        goal: {
-          amount: Number(g.amount), // ✅ numeric
-          period: String(g.period), // ✅ string
-        },
-      };
-    });
 
     setIsSubmitting(true);
     try {
-      await addHabits(habitConfigs);
+      await addHabits(resolvedConfigs);
       onComplete?.();
     } catch (err) {
       console.error(err);

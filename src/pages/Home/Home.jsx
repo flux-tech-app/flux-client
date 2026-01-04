@@ -9,7 +9,7 @@ import { formatCurrency } from "@/utils/formatters";
 import BottomSheet from "@/components/BottomSheet";
 import LogHabitSheet from "@/components/LogHabitSheet";
 import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
-import AddHabitFlow from "@/components/AddHabitFlow";
+import AddHabitSheet from "@/components/AddHabit/AddHabitSheet";
 
 import EmptyState from "../Portfolio/EmptyState";
 
@@ -32,7 +32,8 @@ const useAnimatedCounter = (targetValue, duration = 1200) => {
 
       // Easing function (ease-out cubic)
       const easeOut = 1 - Math.pow(1 - progress, 3);
-      const current = startValue.current + (targetValue - startValue.current) * easeOut;
+      const current =
+        startValue.current + (targetValue - startValue.current) * easeOut;
 
       setDisplayValue(current);
 
@@ -52,7 +53,7 @@ const noopHeaderRight = () => null;
 export default function Home() {
   const navigate = useNavigate();
 
-  // STRICT provider: server is source of truth (no fallbacks, no FE math for money)
+  // ✅ server-truth provider (catalog is source of display fields)
   const {
     habits,
     logs,
@@ -60,6 +61,7 @@ export default function Home() {
     getTodayEarnings,
     isHabitLoggedOnDate,
     calculateFluxScore,
+    getCatalogHabit, // ✅ important: join habit instance -> catalog habit
   } = useHabits();
 
   const [activeSheet, setActiveSheet] = useState(null); // "log" | "pass" | null
@@ -105,17 +107,36 @@ export default function Home() {
     closeSheet();
   };
 
+  /**
+   * ✅ Key change:
+   * Decorate habit instances with catalog fields (name, actionType, icon, etc.)
+   * so Home never relies on legacy fields stored on the habit row.
+   */
+  const habitsUI = useMemo(() => {
+    return (habits || []).map((h) => {
+      const cat = getCatalogHabit?.(h.catalogId);
+      return {
+        ...h,
+        name: cat?.name ?? "Habit",
+        actionType: (cat?.actionType ?? "log").toLowerCase(),
+        trackingType: (cat?.trackingType ?? cat?.unitType ?? "").toLowerCase(),
+        icon: cat?.icon ?? null,
+      };
+    });
+  }, [habits, getCatalogHabit]);
+
   // Handle tapping a habit in the Today section
   const handleHabitTap = (habit) => {
     if (habit.isLogged) return;
 
     setSelectedHabitId(habit.id);
+    // ✅ actionType comes from catalog now
     setActiveSheet(habit.actionType === "pass" ? "pass" : "log");
   };
 
   // Calibrating habits (based on server-computed flux)
   const calibratingHabits = useMemo(() => {
-    return (habits || [])
+    return habitsUI
       .map((habit) => {
         const fluxScore = calculateFluxScore(habit.id);
 
@@ -128,11 +149,11 @@ export default function Home() {
         };
       })
       .filter((h) => h.isCalibrating);
-  }, [habits, calculateFluxScore]);
+  }, [habitsUI, calculateFluxScore]);
 
   // Weekly performers (UI-only aggregation; money per-log comes from transfers join)
   const weeklyPerformers = useMemo(() => {
-    const hs = habits || [];
+    const hs = habitsUI;
     const ls = logs || [];
     if (hs.length === 0) return [];
 
@@ -183,11 +204,11 @@ export default function Home() {
         };
       })
       .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
-  }, [habits, logs]);
+  }, [habitsUI, logs]);
 
   // Today habits list (logged state is based on logs; earnings is transfer-backed)
   const todayHabits = useMemo(() => {
-    const hs = habits || [];
+    const hs = habitsUI;
     const ls = logs || [];
 
     const today = new Date();
@@ -229,7 +250,7 @@ export default function Home() {
         progressText,
       };
     });
-  }, [habits, logs, isHabitLoggedOnDate]);
+  }, [habitsUI, logs, isHabitLoggedOnDate]);
 
   const loggedCount = todayHabits.filter((h) => h.isLogged).length;
 
@@ -246,9 +267,23 @@ export default function Home() {
             {/* Header */}
             <header className="home-header">
               <div className="header-row">
-                <button className="menu-button" onClick={() => setSidebarOpen(true)}>
-                  <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                <button
+                  className="menu-button"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   </svg>
                 </button>
 
@@ -270,14 +305,18 @@ export default function Home() {
               <div className="week-summary-top">
                 <div className="week-earned">
                   <span className="earned-label">Earned this week</span>
-                  <span className="earned-value">{formatCurrency(animatedWeekEarnings)}</span>
+                  <span className="earned-value">
+                    {formatCurrency(animatedWeekEarnings)}
+                  </span>
                 </div>
               </div>
 
               {todayEarnings > 0 && (
                 <div className="today-earned">
                   <span className="today-label">Today</span>
-                  <span className="today-value">+{formatCurrency(todayEarnings)}</span>
+                  <span className="today-value">
+                    +{formatCurrency(todayEarnings)}
+                  </span>
                 </div>
               )}
             </section>
@@ -286,21 +325,34 @@ export default function Home() {
             <section className="today-section">
               <div className="section-header">
                 <span className="section-label">Today</span>
-                <span className="section-count">{loggedCount}/{(habits || []).length}</span>
+                <span className="section-count">
+                  {loggedCount}/{(habitsUI || []).length}
+                </span>
               </div>
 
               <div className="today-list">
                 {todayHabits.map((habit) => (
                   <div
                     key={habit.id}
-                    className={`today-row ${habit.isLogged ? "logged" : "tappable"}`}
+                    className={`today-row ${
+                      habit.isLogged ? "logged" : "tappable"
+                    }`}
                     onClick={() => handleHabitTap(habit)}
                   >
                     <div className="today-status">
                       {habit.isLogged ? (
                         <div className="status-check">
-                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          <svg
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="3"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       ) : (
@@ -314,7 +366,9 @@ export default function Home() {
 
                     <div className="today-value">
                       {habit.isLogged ? (
-                        <span className="today-earned">+{formatCurrency(habit.todayEarnings)}</span>
+                        <span className="today-earned">
+                          +{formatCurrency(habit.todayEarnings)}
+                        </span>
                       ) : (
                         <span className="today-progress">{habit.progressText}</span>
                       )}
@@ -330,7 +384,10 @@ export default function Home() {
                 <div className="section-label">This Week</div>
                 <div className="performers-scroll">
                   {weeklyPerformers.map((performer, index) => {
-                    const maxSparkline = Math.max(...(performer.sparklineData || []), 1);
+                    const maxSparkline = Math.max(
+                      ...(performer.sparklineData || []),
+                      1
+                    );
 
                     return (
                       <motion.div
@@ -343,24 +400,32 @@ export default function Home() {
                         whileTap={{ scale: 0.97 }}
                       >
                         <div className="performer-name">{performer.name}</div>
-                        <div className="performer-earnings">{formatCurrency(performer.thisWeekEarnings)}</div>
+                        <div className="performer-earnings">
+                          {formatCurrency(performer.thisWeekEarnings)}
+                        </div>
 
                         <div className="sparkline-container">
                           {(performer.sparklineData || []).map((value, i) => {
-                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
-                            const isRecent = i >= performer.sparklineData.length - 2;
+                            const height =
+                              maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
+                            const isRecent =
+                              i >= performer.sparklineData.length - 2;
 
                             return (
                               <div
                                 key={i}
-                                className={`spark-bar ${isRecent ? "highlight" : ""}`}
+                                className={`spark-bar ${
+                                  isRecent ? "highlight" : ""
+                                }`}
                                 style={{ height: `${Math.max(height, 10)}%` }}
                               />
                             );
                           })}
                         </div>
 
-                        <div className="performer-logs">{performer.thisWeekLogCount} logs</div>
+                        <div className="performer-logs">
+                          {performer.thisWeekLogCount} logs
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -381,7 +446,14 @@ export default function Home() {
                     >
                       <div className="calibrating-progress">
                         <svg viewBox="0 0 36 36" className="calibrating-ring">
-                          <circle className="ring-bg" cx="18" cy="18" r="14" fill="none" strokeWidth="3" />
+                          <circle
+                            className="ring-bg"
+                            cx="18"
+                            cy="18"
+                            r="14"
+                            fill="none"
+                            strokeWidth="3"
+                          />
                           <circle
                             className="ring-progress"
                             cx="18"
@@ -398,7 +470,9 @@ export default function Home() {
 
                       <div className="calibrating-info">
                         <span className="calibrating-name">{habit.name}</span>
-                        <span className="calibrating-needed">{habit.logsNeeded} more logs</span>
+                        <span className="calibrating-needed">
+                          {habit.logsNeeded} more logs
+                        </span>
                       </div>
 
                       <svg
@@ -459,7 +533,7 @@ export default function Home() {
         title="Add Habit"
         headerRight={noopHeaderRight}
       >
-        <AddHabitFlow
+        <AddHabitSheet
           onComplete={() => setShowAddSheet(false)} // AddHabitFlow owns addHabit()
           onClose={() => setShowAddSheet(false)}
         />
