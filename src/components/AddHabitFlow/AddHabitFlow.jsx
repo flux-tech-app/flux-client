@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import useHabits from "@/hooks/useHabits";
 import HabitIcon from "@/utils/HabitIcons";
 
-import GoalSetup from "../GoalSetup/GoalSetup";
-import Button from "../Button";
+import GoalSetup from "@/components/GoalSetup/GoalSetup";
+import Button from "@/components/Button";
 
 import { microsToDollars, formatRateFromMicros } from "@/utils/micros";
 import "./AddHabitFlow.css";
@@ -14,7 +14,7 @@ import "./AddHabitFlow.css";
 /**
  * STRICT Add Habit Flow (catalog-backed, micros):
  * - Step 1 lists boot.catalog.habits via HabitProvider.catalogHabits
- * - Step 2 configures rateMicros + goal then calls addHabit({ libraryId, rateMicros, goal })
+ * - Step 2 configures rateMicros + goal then calls addHabit({ catalogId, rateMicros, goal })
  *
  * IMPORTANT:
  *   AddHabitFlow is the ONLY place that should call addHabit().
@@ -32,7 +32,7 @@ export default function AddHabitFlow({ onComplete, onClose }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Only habits not already in portfolio (libraryId = catalogHabit.id)
+  // Only habits not already in portfolio (catalogId = catalogHabit.id)
   const availableHabits = useMemo(() => {
     const list = Array.isArray(catalogHabits) ? catalogHabits : [];
     return list.filter((h) => h?.id && !isHabitAdded(h.id));
@@ -93,7 +93,7 @@ export default function AddHabitFlow({ onComplete, onClose }) {
 
       // AddHabitFlow owns addHabit() (prevents double-call bugs)
       await addHabit({
-        libraryId: selectedHabit.id,
+        catalogId: selectedHabit.id, // ✅ was libraryId
         rateMicros,
         goal, // { amount, period } matches backend GoalIn
       });
@@ -134,11 +134,7 @@ export default function AddHabitFlow({ onComplete, onClose }) {
               transition={{ type: "tween", duration: 0.25 }}
               className="flow-step"
             >
-              <StepSelectHabit
-                habits={availableHabits}
-                onSelect={handleHabitSelect}
-                formatRate={formatRate}
-              />
+              <StepSelectHabit habits={availableHabits} onSelect={handleHabitSelect} formatRate={formatRate} />
             </motion.div>
           )}
 
@@ -210,13 +206,7 @@ function StepSelectHabit({ habits, onSelect, formatRate }) {
 
             <div className="habit-select-right">
               <span className="habit-select-rate">{formatRate(habit)}</span>
-              <svg
-                className="habit-select-chevron"
-                width="16"
-                height="16"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
+              <svg className="habit-select-chevron" width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
                   d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
@@ -248,12 +238,9 @@ function StepConfigure({
   const unit = habit?.unit || "";
 
   const defaultRateMicros =
-    habit?.defaultRateMicros != null
-      ? Number(habit.defaultRateMicros)
-      : rateOptionsMicros[0] ?? 0;
+    habit?.defaultRateMicros != null ? Number(habit.defaultRateMicros) : rateOptionsMicros[0] ?? 0;
 
-  const rateMicros =
-    selectedRateMicros != null ? Number(selectedRateMicros) : Number(defaultRateMicros || 0);
+  const rateMicros = selectedRateMicros != null ? Number(selectedRateMicros) : Number(defaultRateMicros || 0);
 
   // Only convert for display
   const rateDollars = microsToDollars(rateMicros);
@@ -305,17 +292,9 @@ function StepConfigure({
             disabled={isSaving}
           >
             <span className="rate-toggle-label">
-              {rateMicros === Math.trunc(defaultRateMicros)
-                ? "Using default rate"
-                : "Using custom rate"}
+              {rateMicros === Math.trunc(defaultRateMicros) ? "Using default rate" : "Using custom rate"}
             </span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="currentColor"
-              className="rate-toggle-icon"
-            >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="rate-toggle-icon">
               <path
                 fillRule="evenodd"
                 d="M5.293 7.293a1 1 0 011.414 0L8 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"
@@ -360,13 +339,7 @@ function StepConfigure({
       )}
 
       <div className="config-goal-section">
-        {/* GoalSetup expects micros; it will format only for display */}
-        <GoalSetup
-          habitLibraryData={habit}
-          selectedRateMicros={rateMicros}
-          onGoalSet={onGoalSet}
-          initialGoal={undefined}
-        />
+        <GoalSetup habitLibraryData={habit} selectedRateMicros={rateMicros} onGoalSet={onGoalSet} initialGoal={undefined} />
         {isSaving && <div className="flow-saving">Saving…</div>}
       </div>
     </div>

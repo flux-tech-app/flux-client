@@ -23,7 +23,6 @@ import LogActivity from "@/pages/LogActivity";
 import Activity from "@/pages/Activity";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
-import DevTools from "@/pages/DevTools";
 import HabitDetail from "@/pages/HabitDetail";
 import Indices from "@/pages/Indices";
 import IndexDetail from "@/pages/IndexDetail";
@@ -173,7 +172,6 @@ function AppRoutes() {
         <Route path="/transfers" element={<Transfers />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/devtools" element={<DevTools />} />
 
         <Route path="/add" element={<AddHabit />} />
         <Route path="/log/:habitId" element={<LogActivity />} />

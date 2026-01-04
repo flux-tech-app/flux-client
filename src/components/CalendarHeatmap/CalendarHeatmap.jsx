@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import DayCell from './DayCell';
-import { getCalendarHeatmapData } from '../../utils/chartCalculations';
+import { getCalendarHeatmapData } from '@/utils/chartData';
 import './CalendarHeatmap.css';
 
 /**

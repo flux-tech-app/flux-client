@@ -16,30 +16,32 @@ import "./Onboarding.css";
 /**
  * STRICT:
  * - uses server catalog
- * - rates stored as MICROS (int)
- * - goal amounts stored as human units (number)
+ * - rates stored as MICROS (int) keyed by catalogId
+ * - goals keyed by catalogId
  */
 export default function SetRates({
   catalog,
-  selectedHabits,
-  habitRates,
-  habitGoals,
+  selectedHabits, // string[] catalogIds
+  habitRates, // { [catalogId]: rateMicros }
+  habitGoals, // { [catalogId]: { amount, period } }
   onRateChange,
   onGoalChange,
   onContinue,
   onBack,
 }) {
-  const [activeGoalSetup, setActiveGoalSetup] = useState(null);
+  const [activeGoalSetup, setActiveGoalSetup] = useState(null); // catalogId string | null
 
   const catalogById = useMemo(() => {
     const m = new Map();
     for (const h of catalog?.habits ?? []) {
-      if (h?.id) m.set(h.id, h);
+      const id = h?.id != null ? String(h.id) : "";
+      if (id) m.set(id, h);
     }
     return m;
   }, [catalog]);
 
-  const allGoalsSet = (selectedHabits ?? []).every((libraryId) => !!habitGoals?.[libraryId]);
+  const ids = selectedHabits ?? [];
+  const allGoalsSet = ids.every((catalogId) => !!habitGoals?.[String(catalogId)]);
 
   function getRateLabel(index, total) {
     if (total <= 1) return "Default";
@@ -49,8 +51,8 @@ export default function SetRates({
     return "Med";
   }
 
-  function getHabit(libraryId) {
-    return catalogById.get(libraryId) ?? null;
+  function getHabit(catalogId) {
+    return catalogById.get(String(catalogId)) ?? null;
   }
 
   function rateDisplayForHabit(habit, rateMicros) {
@@ -61,18 +63,16 @@ export default function SetRates({
 
   // Estimated weekly earnings (display only)
   const weeklyProjectionMicros = useMemo(() => {
-    const ids = selectedHabits ?? [];
     let totalMicros = 0;
-
-    // goal.period meaning: "per day/week/month"
     const daysMap = { day: 1, week: 7, month: 30 };
 
-    for (const libraryId of ids) {
-      const habit = getHabit(libraryId);
+    for (const rawId of ids) {
+      const catalogId = String(rawId);
+      const habit = getHabit(catalogId);
       if (!habit) continue;
 
-      const rateMicros = Number(habitRates?.[libraryId] ?? habit.defaultRateMicros ?? 0);
-      const goal = habitGoals?.[libraryId];
+      const rateMicros = Number(habitRates?.[catalogId] ?? habit.defaultRateMicros ?? 0);
+      const goal = habitGoals?.[catalogId];
 
       if (goal?.amount && goal?.period) {
         const periodDays = daysMap[String(goal.period)] ?? 7;
@@ -89,15 +89,14 @@ export default function SetRates({
           unitsMicros: weeklyUnitsMicros,
         });
       } else {
-        // fallback estimates (same spirit as your legacy, but in micros)
         let fallbackWeeklyUnits = 0;
 
         if (isBinaryRateType(habit.rateType)) {
-          fallbackWeeklyUnits = 5; // 5 occurrences/week
+          fallbackWeeklyUnits = 5;
         } else if (habit.rateType === "DURATION") {
-          fallbackWeeklyUnits = 30 * 5; // minutes
+          fallbackWeeklyUnits = 30 * 5;
         } else if (habit.rateType === "DISTANCE") {
-          fallbackWeeklyUnits = 3 * 4; // miles
+          fallbackWeeklyUnits = 3 * 4;
         } else if (habit.rateType === "COUNT") {
           if (habit.unit === "step") fallbackWeeklyUnits = 8000 * 5;
           else if (habit.unit === "rep") fallbackWeeklyUnits = 20 * 5;
@@ -120,17 +119,17 @@ export default function SetRates({
 
     return totalMicros;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedHabits, habitRates, habitGoals, catalogById]);
+  }, [ids, habitRates, habitGoals, catalogById]);
 
-  const handleGoalSet = (libraryId, goal) => {
-    onGoalChange(libraryId, goal);
+  const handleGoalSet = (catalogId, goal) => {
+    onGoalChange?.(String(catalogId), goal);
     setActiveGoalSetup(null);
   };
 
   const handleContinue = () => {
     if (!allGoalsSet) {
-      const firstMissing = (selectedHabits ?? []).find((id) => !habitGoals?.[id]);
-      if (firstMissing) setActiveGoalSetup(firstMissing);
+      const firstMissing = ids.find((id) => !habitGoals?.[String(id)]);
+      if (firstMissing) setActiveGoalSetup(String(firstMissing));
       return;
     }
     onContinue?.();
@@ -140,16 +139,16 @@ export default function SetRates({
   // Goal setup modal view
   // =========================
   if (activeGoalSetup) {
-    const habit = getHabit(activeGoalSetup);
+    const catalogId = String(activeGoalSetup);
+    const habit = getHabit(catalogId);
     if (!habit) {
-      // safety fallback
       setActiveGoalSetup(null);
       return null;
     }
 
-    const rateMicros = Number(habitRates?.[activeGoalSetup] ?? habit.defaultRateMicros ?? 0);
+    const rateMicros = Number(habitRates?.[catalogId] ?? habit.defaultRateMicros ?? 0);
 
-    // Adapter object (safe, optional aliases)
+    // Adapter object for GoalSetup (optional legacy-like fields)
     const habitLibraryData = {
       ...habit,
       defaultRate: habit.defaultRateMicros ? habit.defaultRateMicros / 1_000_000 : 0,
@@ -180,7 +179,7 @@ export default function SetRates({
 
           <div className="goal-habit-header">
             <div className="goal-habit-icon">
-              <HabitIcon habitId={habit.id} size={36} />
+              <HabitIcon habitId={catalogId} size={36} />
             </div>
             <div className="goal-habit-info">
               <span className="goal-habit-name">{habit.name}</span>
@@ -193,8 +192,8 @@ export default function SetRates({
           <GoalSetup
             habitLibraryData={habitLibraryData}
             selectedRateMicros={rateMicros}
-            initialGoal={habitGoals?.[activeGoalSetup]}
-            onGoalSet={(goal) => handleGoalSet(activeGoalSetup, goal)}
+            initialGoal={habitGoals?.[catalogId]}
+            onGoalSet={(goal) => handleGoalSet(catalogId, goal)}
           />
         </div>
       </div>
@@ -204,7 +203,7 @@ export default function SetRates({
   // =========================
   // Main rates view
   // =========================
-  const completedGoalsCount = (selectedHabits ?? []).filter((id) => !!habitGoals?.[id]).length;
+  const completedGoalsCount = ids.filter((id) => !!habitGoals?.[String(id)]).length;
 
   return (
     <div className="onboarding-screen">
@@ -215,22 +214,23 @@ export default function SetRates({
         </div>
 
         <div className="rate-cards-list">
-          {(selectedHabits ?? []).map((libraryId) => {
-            const habit = getHabit(libraryId);
+          {ids.map((rawId) => {
+            const catalogId = String(rawId);
+            const habit = getHabit(catalogId);
             if (!habit) return null;
 
             const options = habit.rateOptionsMicros?.length
               ? habit.rateOptionsMicros
               : [habit.defaultRateMicros ?? 0];
 
-            const currentRateMicros = Number(habitRates?.[libraryId] ?? habit.defaultRateMicros ?? 0);
-            const currentGoal = habitGoals?.[libraryId];
+            const currentRateMicros = Number(habitRates?.[catalogId] ?? habit.defaultRateMicros ?? 0);
+            const currentGoal = habitGoals?.[catalogId];
 
             return (
-              <div key={libraryId} className="rate-card">
+              <div key={catalogId} className="rate-card">
                 <div className="rate-card-header">
                   <div className="rate-card-icon">
-                    <HabitIcon habitId={habit.id} size={24} />
+                    <HabitIcon habitId={catalogId} size={24} />
                   </div>
                   <div className="rate-card-info">
                     <span className="rate-card-name">{habit.name}</span>
@@ -251,7 +251,7 @@ export default function SetRates({
                         key={`${rateMicros}-${index}`}
                         type="button"
                         className={`rate-option-btn ${isSelected ? "selected" : ""}`}
-                        onClick={() => onRateChange(libraryId, Number(rateMicros))}
+                        onClick={() => onRateChange?.(catalogId, Number(rateMicros))}
                       >
                         <span className="rate-option-label">{label}</span>
                         <span className="rate-option-value">{valueText}</span>
@@ -265,7 +265,7 @@ export default function SetRates({
                     <button
                       type="button"
                       className="goal-set-indicator"
-                      onClick={() => setActiveGoalSetup(libraryId)}
+                      onClick={() => setActiveGoalSetup(catalogId)}
                     >
                       <svg className="goal-check-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                         <path
@@ -280,7 +280,11 @@ export default function SetRates({
                       <span className="goal-edit">Edit</span>
                     </button>
                   ) : (
-                    <button type="button" className="set-goal-btn" onClick={() => setActiveGoalSetup(libraryId)}>
+                    <button
+                      type="button"
+                      className="set-goal-btn"
+                      onClick={() => setActiveGoalSetup(catalogId)}
+                    >
                       <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                         <path
                           fillRule="evenodd"
@@ -300,7 +304,9 @@ export default function SetRates({
         <div className="earnings-projection">
           <div className="projection-label">Estimated Weekly Earnings</div>
           <div className="projection-amount">{formatUSDFromMicros(weeklyProjectionMicros)}</div>
-          <div className="projection-note">{allGoalsSet ? "Based on your goals" : "Based on typical activity levels"}</div>
+          <div className="projection-note">
+            {allGoalsSet ? "Based on your goals" : "Based on typical activity levels"}
+          </div>
         </div>
       </div>
 
@@ -327,7 +333,7 @@ export default function SetRates({
           >
             {allGoalsSet
               ? "Review & Finish"
-              : `Set Goals (${completedGoalsCount}/${(selectedHabits ?? []).length})`}
+              : `Set Goals (${completedGoalsCount}/${ids.length})`}
           </Button>
         </div>
       </div>

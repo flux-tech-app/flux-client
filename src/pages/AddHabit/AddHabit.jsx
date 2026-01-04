@@ -14,17 +14,18 @@ export default function AddHabit() {
 
   const [formData, setFormData] = useState({
     type: "build", // build => actionType log, break => actionType pass
-    libraryId: "",
+    catalogId: "", // ✅ was libraryId
     rate: "0.05", // dollars string
     goalAmount: "",
     goalPeriod: "week",
   });
 
-  // ---- existing habit ids (source of truth) ----
-  const addedLibraryIds = useMemo(() => {
+  // ---- existing habit catalog ids (source of truth) ----
+  const addedCatalogIds = useMemo(() => {
     const set = new Set();
     for (const h of habits || []) {
-      if (h?.libraryId) set.add(String(h.libraryId));
+      // new structure: habit.catalogId
+      if (h?.catalogId) set.add(String(h.catalogId));
     }
     return set;
   }, [habits]);
@@ -42,13 +43,13 @@ export default function AddHabit() {
 
   // only show catalog habits that are NOT already in portfolio
   const availableCatalog = useMemo(() => {
-    return filteredCatalog.filter((h) => !addedLibraryIds.has(String(h.id)));
-  }, [filteredCatalog, addedLibraryIds]);
+    return filteredCatalog.filter((h) => !addedCatalogIds.has(String(h.id)));
+  }, [filteredCatalog, addedCatalogIds]);
 
   const selectedCatalogHabit = useMemo(() => {
-    if (!formData.libraryId) return null;
-    return getCatalogHabit(formData.libraryId);
-  }, [formData.libraryId, getCatalogHabit]);
+    if (!formData.catalogId) return null;
+    return getCatalogHabit(formData.catalogId);
+  }, [formData.catalogId, getCatalogHabit]);
 
   const rateNumber = useMemo(() => {
     const n = Number(String(formData.rate ?? "").trim());
@@ -78,13 +79,13 @@ export default function AddHabit() {
       const next = { ...prev, [field]: value };
 
       if (field === "type") {
-        next.libraryId = "";
+        next.catalogId = "";
         next.goalAmount = "";
         next.goalPeriod = "week";
         next.rate = value === "build" ? "0.05" : "1.00";
       }
 
-      if (field === "libraryId") {
+      if (field === "catalogId") {
         const c = getCatalogHabit(value);
         if (c?.defaultRateMicros != null) {
           const dollars = Number(c.defaultRateMicros) / 1_000_000;
@@ -110,7 +111,7 @@ export default function AddHabit() {
       alert("Please select a position from the catalog.");
       return;
     }
-    if (addedLibraryIds.has(String(selectedCatalogHabit.id))) {
+    if (addedCatalogIds.has(String(selectedCatalogHabit.id))) {
       alert("That habit is already in your portfolio.");
       return;
     }
@@ -128,7 +129,7 @@ export default function AddHabit() {
     setIsSubmitting(true);
     try {
       await addHabit({
-        libraryId: String(selectedCatalogHabit.id),
+        catalogId: String(selectedCatalogHabit.id), // ✅ was libraryId
         rateMicros,
         goal: {
           amount: goalAmountNumber,
@@ -215,8 +216,8 @@ export default function AddHabit() {
                   <label className="input-label">Choose from catalog</label>
                   <select
                     className="goal-period-select"
-                    value={formData.libraryId}
-                    onChange={(e) => updateField("libraryId", e.target.value)}
+                    value={formData.catalogId}
+                    onChange={(e) => updateField("catalogId", e.target.value)}
                     disabled={isSubmitting}
                   >
                     <option value="">{catalogLoaded ? "Select…" : "Loading…"}</option>
