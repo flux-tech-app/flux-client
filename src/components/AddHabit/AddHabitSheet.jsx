@@ -24,6 +24,10 @@ import {
  *    - Catalog habit -> addHabit({ catalogId, rateMicros, goal })
  *    - Custom habit  -> createCustomHabit(payload)
  *
+ * NEW:
+ * - Allow enabling/disabling payout rate (rateEnabled).
+ *   - When disabled => rateMicros = 0 (and rateEnabled=false for custom payload)
+ *
  * Props:
  * - onClose(): close bottom sheet (Cancel / X)
  * - onComplete(): called after successful create (parent closes & refreshes)
@@ -50,6 +54,9 @@ export default function AddHabitSheet({ onClose, onComplete }) {
   const [goalAmount, setGoalAmount] = useState("1");
   const [goalPeriod, setGoalPeriod] = useState("week");
   const [rateUSD, setRateUSD] = useState("1.00");
+
+  // NEW: payout toggle
+  const [rateEnabled, setRateEnabled] = useState(true);
 
   const steps = useMemo(() => {
     const isVolume = tracking === "volume";
@@ -82,6 +89,11 @@ export default function AddHabitSheet({ onClose, onComplete }) {
     return Number(m || 0);
   }, [rateUSD]);
 
+  // NEW: effective rate depends on toggle
+  const effectiveRateMicros = useMemo(() => {
+    return rateEnabled ? parsedRateMicros : 0;
+  }, [rateEnabled, parsedRateMicros]);
+
   const parsedGoalAmount = useMemo(() => {
     const n = Number.parseFloat(goalAmount);
     return Number.isFinite(n) ? n : NaN;
@@ -97,13 +109,18 @@ export default function AddHabitSheet({ onClose, onComplete }) {
     // goalRate
     if (!Number.isFinite(parsedGoalAmount) || parsedGoalAmount <= 0) return false;
     if (!goalPeriod) return false;
-    if (!Number.isFinite(parsedRateMicros) || parsedRateMicros <= 0) return false;
+
+    // only require a valid positive rate if enabled
+    if (rateEnabled) {
+      if (!Number.isFinite(parsedRateMicros) || parsedRateMicros <= 0) return false;
+    }
 
     // if catalog mode, require template + not already added
     if (mode === "catalog") {
       if (!template?.id) return false;
       if (isHabitAdded?.(String(template.id))) return false;
     }
+
     return true;
   }, [
     steps,
@@ -113,6 +130,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
     unitTrimmed,
     parsedGoalAmount,
     goalPeriod,
+    rateEnabled,
     parsedRateMicros,
     mode,
     template,
@@ -170,8 +188,14 @@ export default function AddHabitSheet({ onClose, onComplete }) {
 
     // defaults for rate
     const defMicros = Number(h.defaultRateMicros || 0);
-    const dollars = defMicros > 0 ? (defMicros / 1_000_000).toFixed(2) : "1.00";
-    setRateUSD(dollars);
+    if (defMicros > 0) {
+      setRateEnabled(true);
+      setRateUSD((defMicros / 1_000_000).toFixed(2));
+    } else {
+      // if template has no default, keep enabled but with 1.00
+      setRateEnabled(true);
+      setRateUSD("1.00");
+    }
 
     // keep user on name step; they hit Continue like the video
   };
@@ -205,8 +229,9 @@ export default function AddHabitSheet({ onClose, onComplete }) {
     setStep((s) => Math.min(maxStep, s + 1));
   };
 
-  // projections (weekly + annual), like GoalSetup, but inline to match video header/CTA
+  // projections (weekly + annual)
   const projections = useMemo(() => {
+    if (!rateEnabled) return null;
     if (!Number.isFinite(parsedGoalAmount) || parsedGoalAmount <= 0) return null;
     if (!Number.isFinite(parsedRateMicros) || parsedRateMicros <= 0) return null;
 
@@ -232,7 +257,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
       weeklyMicros: weeklyEarnMicros,
       annualMicros: weeklyEarnMicros * 52,
     };
-  }, [parsedGoalAmount, parsedRateMicros, goalPeriod, binary, rateType]);
+  }, [rateEnabled, parsedGoalAmount, parsedRateMicros, goalPeriod, binary, rateType]);
 
   const formatAnnual = (annualMicros) => {
     const dollars = Number(annualMicros || 0) / 1_000_000;
@@ -266,7 +291,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
       if (mode === "catalog" && template?.id) {
         await addHabit?.({
           catalogId: String(template.id),
-          rateMicros: parsedRateMicros,
+          rateMicros: Number(effectiveRateMicros), // 0 if disabled
           goal: {
             amount: Number(finalGoalAmount),
             period: String(goalPeriod),
@@ -280,8 +305,8 @@ export default function AddHabitSheet({ onClose, onComplete }) {
       const payload = {
         name: nameTrimmed,
         rateType, // "BINARY" | "COUNT"
-        rateMicros: parsedRateMicros,
-        rateEnabled: true,
+        rateMicros: Number(effectiveRateMicros), // 0 if disabled
+        rateEnabled: Boolean(rateEnabled),
         defaultGoalPeriod: String(goalPeriod),
         goal: { amount: Number(finalGoalAmount), period: String(goalPeriod) },
         ...(tracking === "volume"
@@ -353,9 +378,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
           )}
         </div>
       ) : (
-        <div className="ahs-help">
-          Start typing and we’ll suggest habits from the catalog (optional).
-        </div>
+        <div className="ahs-help">Start typing and we’ll suggest habits from the catalog (optional).</div>
       )}
 
       {suggestions.length > 0 ? (
@@ -376,16 +399,10 @@ export default function AddHabitSheet({ onClose, onComplete }) {
                 </div>
                 <div className="ahs-suggInfo">
                   <div className="ahs-suggName">{h.name}</div>
-                  <div className="ahs-suggSub">
-                    {h.description || h.unitPlural || h.unit || ""}
-                  </div>
+                  <div className="ahs-suggSub">{h.description || h.unitPlural || h.unit || ""}</div>
                 </div>
                 <div className="ahs-suggRight">
-                  {added ? (
-                    <span className="ahs-addedBadge">Added</span>
-                  ) : (
-                    <span className="ahs-chevron">›</span>
-                  )}
+                  {added ? <span className="ahs-addedBadge">Added</span> : <span className="ahs-chevron">›</span>}
                 </div>
               </button>
             );
@@ -402,9 +419,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
       <div className="ahs-trackingGrid">
         <button
           type="button"
-          className={`ahs-trackCard ${tracking === "volume" ? "active" : ""} ${
-            templateLocked ? "locked" : ""
-          }`}
+          className={`ahs-trackCard ${tracking === "volume" ? "active" : ""} ${templateLocked ? "locked" : ""}`}
           onClick={() => (!templateLocked ? setTracking("volume") : null)}
           disabled={isSubmitting}
         >
@@ -414,9 +429,7 @@ export default function AddHabitSheet({ onClose, onComplete }) {
 
         <button
           type="button"
-          className={`ahs-trackCard ${tracking === "binary" ? "active" : ""} ${
-            templateLocked ? "locked" : ""
-          }`}
+          className={`ahs-trackCard ${tracking === "binary" ? "active" : ""} ${templateLocked ? "locked" : ""}`}
           onClick={() => (!templateLocked ? setTracking("binary") : null)}
           disabled={isSubmitting}
         >
@@ -427,8 +440,8 @@ export default function AddHabitSheet({ onClose, onComplete }) {
 
       {templateLocked ? (
         <div className="ahs-help">
-          This is locked because you picked a catalog suggestion. Tap{" "}
-          <span className="ahs-helpEm">Customize</span> to change it.
+          This is locked because you picked a catalog suggestion. Tap <span className="ahs-helpEm">Customize</span> to
+          change it.
         </div>
       ) : (
         <div className="ahs-help">
@@ -453,8 +466,8 @@ export default function AddHabitSheet({ onClose, onComplete }) {
 
       {templateLocked ? (
         <div className="ahs-help">
-          This is locked because you picked a catalog suggestion. Tap{" "}
-          <span className="ahs-helpEm">Customize</span> to change it.
+          This is locked because you picked a catalog suggestion. Tap <span className="ahs-helpEm">Customize</span> to
+          change it.
         </div>
       ) : (
         <div className="ahs-help">
@@ -500,44 +513,75 @@ export default function AddHabitSheet({ onClose, onComplete }) {
         </div>
       </div>
 
-      <div className="ahs-field" style={{ marginTop: 14 }}>
+      {/* NEW: rate enable/disable */}
+      <div className="ahs-rateToggleRow">
+        <div className="ahs-rateToggleText">
+          <div className="ahs-rateToggleTitle">Pay myself</div>
+          <div className="ahs-rateToggleSub">Turn off to track without earnings.</div>
+        </div>
+
+        <button
+          type="button"
+          className={`ahs-toggle ${rateEnabled ? "on" : "off"}`}
+          onClick={() => setRateEnabled((v) => !v)}
+          disabled={isSubmitting}
+          aria-pressed={rateEnabled}
+        >
+          <span className="ahs-toggleKnob" />
+        </button>
+      </div>
+
+      <div className="ahs-field" style={{ marginTop: 10 }}>
         <label className="ahs-label">Rate</label>
 
-        {/* if template has rate options, show quick chips */}
-        {rateOptionsMicros.length > 0 ? (
-          <div className="ahs-rateChips">
-            {rateOptionsMicros.map((m) => {
-              const label = `$${(m / 1_000_000).toFixed(2)}`;
-              const selected = Number(parsedRateMicros) === Number(m);
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  className={`ahs-chip ${selected ? "selected" : ""}`}
-                  onClick={() => setRateUSD((m / 1_000_000).toFixed(2))}
-                  disabled={isSubmitting}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        {rateEnabled ? (
+          <>
+            {/* if template has rate options, show quick chips */}
+            {rateOptionsMicros.length > 0 ? (
+              <div className="ahs-rateChips">
+                {rateOptionsMicros.map((m) => {
+                  const label = `$${(m / 1_000_000).toFixed(2)}`;
+                  const selected = Number(parsedRateMicros) === Number(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      className={`ahs-chip ${selected ? "selected" : ""}`}
+                      onClick={() => {
+                        setRateUSD((m / 1_000_000).toFixed(2));
+                        setRateEnabled(true);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
 
-        <div className="ahs-rateInline">
-          <span className="ahs-ratePrefix">$</span>
-          <input
-            className="ahs-rateInput"
-            value={rateUSD}
-            onChange={(e) => setRateUSD(e.target.value)}
-            inputMode="decimal"
-            placeholder="1.00"
-            disabled={isSubmitting}
-          />
-          <span className="ahs-rateSuffix">
-            {tracking === "binary" ? "per log" : `per ${unitPlural || "unit"}`}
-          </span>
-        </div>
+            <div className="ahs-rateInline">
+              <span className="ahs-ratePrefix">$</span>
+              <input
+                className="ahs-rateInput"
+                value={rateUSD}
+                onChange={(e) => {
+                  setRateUSD(e.target.value);
+                  // if they start typing a rate, it’s implicitly enabled
+                  if (!rateEnabled) setRateEnabled(true);
+                }}
+                inputMode="decimal"
+                placeholder="1.00"
+                disabled={isSubmitting}
+              />
+              <span className="ahs-rateSuffix">
+                {tracking === "binary" ? "per log" : `per ${unitPlural || "unit"}`}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="ahs-rateDisabledHint">No payout (earnings will be $0)</div>
+        )}
       </div>
 
       {templateAdded ? (
@@ -640,10 +684,6 @@ const styles = `
   align-items:center;
   justify-content:space-between;
   padding-top: 2px;
-}
-.ahs-headerTitle{
-  font-weight: 700;
-  font-size: 16px;
 }
 .ahs-headerBtn{
   border: none;
@@ -883,6 +923,60 @@ const styles = `
   font-size: 14px;
 }
 
+.ahs-rateToggleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top: 12px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+}
+.ahs-rateToggleText{
+  display:flex;
+  flex-direction:column;
+  gap: 2px;
+}
+.ahs-rateToggleTitle{
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(0,0,0,0.75);
+}
+.ahs-rateToggleSub{
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+}
+
+.ahs-toggle{
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.18);
+  position: relative;
+  padding: 0;
+}
+.ahs-toggle.on{
+  background: rgba(16, 96, 255, 0.55);
+  border-color: rgba(16, 96, 255, 0.40);
+}
+.ahs-toggleKnob{
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  position:absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 2px;
+  transition: left 140ms ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+.ahs-toggle.on .ahs-toggleKnob{
+  left: 20px;
+}
+
 .ahs-rateChips{
   display:flex;
   gap: 8px;
@@ -926,6 +1020,15 @@ const styles = `
   flex: 1;
   font-size: 12px;
   color: rgba(0,0,0,0.55);
+}
+.ahs-rateDisabledHint{
+  margin-top: 6px;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px dashed rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.02);
+  font-size: 13px;
+  color: rgba(0,0,0,0.60);
 }
 
 .ahs-warning{
