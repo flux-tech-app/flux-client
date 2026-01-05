@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { getXAxisLabels } from '../../utils/chartCalculations';
+import { getXAxisLabels } from '@/utils/chartLabels';
 import './BarChart.css';
 
 /**

@@ -5,12 +5,13 @@ import { motion } from "framer-motion";
 
 import useHabits from "@/hooks/useHabits";
 import { formatCurrency } from "@/utils/formatters";
+import { toIntMicros, microsToDollars, formatUSDFromMicros } from "@/utils/micros";
 
 import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
 import CalibratingFingerprint from "@/components/CalibratingFingerprint";
 import FluxBadge from "@/components/FluxBadge";
 import BottomSheet from "@/components/BottomSheet";
-import AddHabitFlow from "@/components/AddHabitFlow";
+import AddHabitSheet from "@/components/AddHabit/AddHabitSheet";
 import IndicesTicker from "@/components/IndicesTicker";
 
 import "./Portfolio.css";
@@ -40,24 +41,19 @@ const useAnimatedCounter = (targetValue, duration = 1500) => {
     };
 
     requestAnimationFrame(animate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetValue, duration]);
 
   return displayValue;
 };
 
-const microsToDollars = (micros) => Number(micros || 0) / 1_000_000;
-
 export default function Portfolio() {
   const navigate = useNavigate();
 
-  // STRICT: Portfolio should render server-derived state only.
-  // HabitProvider already:
-  // - enriches habits from catalog
-  // - exposes totals (micros)
-  // - exposes flux.byHabit
-  // - exposes habitTotals (micros per habit)
+  // STRICT: server is source of truth
   const {
     habits,
+    catalog,      // ✅ use catalog to resolve display names (like Home does)
     totals,       // { pendingMicros, completedMicros, earnedMicros }
     habitTotals,  // [{ habitId, pendingMicros, completedMicros, earnedMicros, ... }]
     flux,
@@ -68,17 +64,77 @@ export default function Portfolio() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAddSheet, setShowAddSheet] = useState(false);
 
-  // Totals (micros -> dollars)
-  const transferredBalance = useMemo(() => {
-    return microsToDollars(totals?.completedMicros);
-  }, [totals?.completedMicros]);
+  // -------------------------
+  // Catalog lookup (Home pattern)
+  // -------------------------
+  const catalogById = useMemo(() => {
+    const m = new Map();
+    const list = catalog?.habits ?? [];
+    for (const h of list) {
+      const id = h?.id ?? h?.catalogId ?? h?.libraryId;
+      if (id) m.set(String(id), h);
+    }
+    return m;
+  }, [catalog?.habits]);
 
-  const pendingBalance = useMemo(() => {
-    return microsToDollars(totals?.pendingMicros);
-  }, [totals?.pendingMicros]);
+  const getCatalogHabit = (habitInstance) => {
+    if (!habitInstance) return null;
+    const catalogId =
+      habitInstance.catalogId ??
+      habitInstance.catalogID ??
+      habitInstance.libraryId ??
+      habitInstance.libraryID ??
+      habitInstance.catalog_id ??
+      habitInstance.library_id ??
+      habitInstance.habitCatalogId ??
+      habitInstance.habit_catalog_id ??
+      null;
 
-  const animatedBalance = useAnimatedCounter(transferredBalance, 1200);
+    if (!catalogId) return null;
+    return catalogById.get(String(catalogId)) || null;
+  };
 
+  const getHabitDisplayName = (habitInstance) => {
+    const c = getCatalogHabit(habitInstance);
+    const n =
+      habitInstance?.displayName ??
+      habitInstance?.name ??
+      habitInstance?.Name ??
+      c?.name ??
+      c?.Name ??
+      "";
+
+    const s = String(n || "").trim();
+    return s || "Habit";
+  };
+
+  // -------------------------
+  // Totals (micros-native)
+  // -------------------------
+  const completedMicros = useMemo(
+    () => toIntMicros(totals?.completedMicros, 0),
+    [totals?.completedMicros]
+  );
+  const pendingMicros = useMemo(
+    () => toIntMicros(totals?.pendingMicros, 0),
+    [totals?.pendingMicros]
+  );
+
+  // Animated display uses dollars number (UI-only), but values originate from micros.
+  const transferredBalanceDollars = useMemo(
+    () => microsToDollars(completedMicros),
+    [completedMicros]
+  );
+  const pendingBalanceDollars = useMemo(
+    () => microsToDollars(pendingMicros),
+    [pendingMicros]
+  );
+
+  const animatedBalance = useAnimatedCounter(transferredBalanceDollars, 1200);
+
+  // -------------------------
+  // Flux + per-habit totals maps
+  // -------------------------
   const fluxByHabitId = useMemo(() => {
     const m = new Map();
     const list = flux?.byHabit || [];
@@ -98,11 +154,9 @@ export default function Portfolio() {
     return m;
   }, [habitTotals]);
 
-console.log("PORTFOLIO totals:", totals);
-console.log("PORTFOLIO pendingMicros:", totals?.pendingMicros);
-console.log("PORTFOLIO pendingBalance:", pendingBalance);
-
-  // Holdings = server values only (earnedMicros from habitTotals)
+  // -------------------------
+  // Holdings (server values only + catalog display)
+  // -------------------------
   const holdings = useMemo(() => {
     const list = habits || [];
 
@@ -114,16 +168,25 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
         const status = fx?.status ?? fx?.Status ?? "building";
         const score = fx?.score ?? fx?.Score ?? null;
 
-        const earnedMicros = Number(ht?.earnedMicros ?? 0);
+        // Prefer earnedMicros; fall back to completedMicros if API differs
+        const earnedMicros = toIntMicros(
+          ht?.earnedMicros ?? ht?.EarnedMicros ?? ht?.completedMicros ?? ht?.CompletedMicros ?? 0,
+          0
+        );
 
-        // optional (only if you later add them to flux meta)
         const logsNeeded = Number(fx?.logsNeeded ?? fx?.LogsNeeded ?? 0);
         const totalLogs = Number(fx?.meta?.totalLogs ?? fx?.Meta?.TotalLogs ?? 0);
 
+        // ✅ ensure display name resolves like Home
+        const name = getHabitDisplayName(h);
+
         return {
           ...h,
+          name,
           earnedMicros,
-          totalEarned: microsToDollars(earnedMicros),
+
+          // Keep both forms handy: micros for formatting, dollars for any UI math
+          totalEarnedDollars: microsToDollars(earnedMicros),
 
           fluxScoreStatus: status,
           fluxScore: typeof score === "number" ? score : null,
@@ -133,7 +196,7 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
         };
       })
       .sort((a, b) => Number(b.earnedMicros || 0) - Number(a.earnedMicros || 0));
-  }, [habits, fluxByHabitId, habitTotalsByHabitId]);
+  }, [habits, fluxByHabitId, habitTotalsByHabitId, catalogById]);
 
   const hasHabits = (habits || []).length > 0;
 
@@ -185,9 +248,11 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
 
             <section className="portfolio-value-section">
               <div className="value-label">Total Portfolio Value</div>
+
+              {/* animated (dollars) */}
               <div className="portfolio-value">{formatCurrency(animatedBalance)}</div>
 
-              {hasHabits && pendingBalance > 0 && (
+              {hasHabits && pendingMicros > 0 && (
                 <div className="pending-transfer">
                   <svg
                     className="pending-icon"
@@ -204,7 +269,11 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="pending-amount">{formatCurrency(pendingBalance)} pending</span>
+
+                  {/* micros-native formatting */}
+                  <span className="pending-amount">
+                    {formatUSDFromMicros(pendingMicros)} pending
+                  </span>
                 </div>
               )}
             </section>
@@ -255,7 +324,8 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
                       </div>
 
                       <div className="holding-value-section">
-                        <div className="holding-value">{formatCurrency(holding.totalEarned)}</div>
+                        {/* ✅ use micros formatting so $0.00 etc stays consistent */}
+                        <div className="holding-value">{formatUSDFromMicros(holding.earnedMicros)}</div>
                         <div className="holding-label">earned</div>
                       </div>
 
@@ -304,9 +374,9 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
                     </div>
 
                     <div className="goal-amount">
-                      <div className="goal-current">{formatCurrency(transferredBalance)}</div>
+                      <div className="goal-current">{formatCurrency(transferredBalanceDollars)}</div>
                       <div className="goal-remaining">
-                        {formatCurrency(Math.max(0, 5000 - transferredBalance))} to go
+                        {formatCurrency(Math.max(0, 5000 - transferredBalanceDollars))} to go
                       </div>
                     </div>
                   </div>
@@ -314,7 +384,7 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
                   <div className="goal-progress">
                     <div
                       className="goal-progress-bar"
-                      style={{ width: `${Math.min(100, (transferredBalance / 5000) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (transferredBalanceDollars / 5000) * 100)}%` }}
                     />
                   </div>
                 </div>
@@ -324,16 +394,15 @@ console.log("PORTFOLIO pendingBalance:", pendingBalance);
         )}
       </div>
 
-      {/* BottomSheet typing requires title + headerRight */}
       <BottomSheet
         isOpen={showAddSheet}
         onClose={() => setShowAddSheet(false)}
         height="tall"
-        title="Add Habit"
+        title="Create a Habit"
         headerRight={null}
       >
-        <AddHabitFlow
-          onComplete={() => setShowAddSheet(false)}  // IMPORTANT: AddHabitFlow owns addHabit()
+        <AddHabitSheet
+          onComplete={() => setShowAddSheet(false)}
           onClose={() => setShowAddSheet(false)}
         />
       </BottomSheet>

@@ -9,8 +9,8 @@ import "./LogHabitSheet.css";
 
 /**
  * STRICT (no legacy fallbacks):
- * - habits are enriched by provider (name, unit, unitPlural, actionType, rateType, etc.)
- * - rate comes from backend as rateMicros (int)
+ * - habits are NOT enriched by provider anymore (server truth)
+ * - display fields come from habit_catalog via boot.catalog.habits
  * - logging sends ONLY: habitId + unitsMicros (+ notes)
  * - server computes earnings/transfers; FE does not compute earnings
  */
@@ -29,9 +29,9 @@ export default function LogHabitSheet({
   onClose,
   onLogComplete,
 }) {
-  const { habits, isHabitLoggedOnDate, addLog } = useHabits();
+  const { habits, isHabitLoggedOnDate, addLog, getCatalogHabit } = useHabits();
 
-  const [selectedHabit, setSelectedHabit] = useState(null);
+  const [selectedHabitId, setSelectedHabitId] = useState(null);
   const [logValue, setLogValue] = useState(""); // human units (string for input)
   const [searchQuery, setSearchQuery] = useState("");
   const [isLogging, setIsLogging] = useState(false);
@@ -50,10 +50,47 @@ export default function LogHabitSheet({
     return Math.round(n * 1_000_000);
   }, []);
 
-  const filteredHabits = useMemo(() => {
+  // ---- Join habit instance -> catalog habit to get display fields ----
+  const enrichHabit = useCallback(
+    (h) => {
+      if (!h) return null;
+      const cat = h?.catalogId ? getCatalogHabit?.(h.catalogId) : null;
+
+      const merged = {
+        // instance fields (source of truth for logging)
+        id: h.id,
+        catalogId: h.catalogId,
+        rateMicros: Number(h.rateMicros ?? 0),
+        rateEnabled: Boolean(h.rateEnabled),
+        rateType: String(h.rateType ?? ""),
+        goal: h.goal,
+
+        // catalog fields (display)
+        name: String(cat?.name ?? "Habit"),
+        actionType: String(cat?.actionType ?? "log").toLowerCase(), // "log" | "pass"
+        unit: String(cat?.unit ?? ""),
+        unitPlural: String(cat?.unitPlural ?? cat?.unit ?? ""),
+        goalUnit: String(cat?.goalUnit ?? ""),
+
+        // icon id (supports legacy code fallback, but uuid works too)
+        iconId: cat?.code || cat?.id || h.catalogId,
+      };
+
+      return merged;
+    },
+    [getCatalogHabit]
+  );
+
+  // All habits, enriched (only those with catalog available will display properly)
+  const habitsUI = useMemo(() => {
     const list = habits || [];
-    return list.filter((h) => (h?.actionType ?? "log") === actionType);
-  }, [habits, actionType]);
+    return list.map(enrichHabit).filter(Boolean);
+  }, [habits, enrichHabit]);
+
+  // Filter by actionType (from CATALOG, not instance)
+  const filteredHabits = useMemo(() => {
+    return habitsUI.filter((h) => (h?.actionType ?? "log") === actionType);
+  }, [habitsUI, actionType]);
 
   const searchedHabits = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -63,34 +100,40 @@ export default function LogHabitSheet({
     );
   }, [filteredHabits, searchQuery]);
 
+  // Initial selection
   useEffect(() => {
     if (!initialHabitId) return;
-    if (!habits?.length) return;
+    if (!habitsUI?.length) return;
 
-    const h = habits.find((x) => x.id === initialHabitId);
-    if (h) {
-      setSelectedHabit(h);
+    const h = habitsUI.find((x) => String(x.id) === String(initialHabitId));
+    if (!h) return;
 
-      if (!isBinaryHabit(h)) {
-        const u = h?.unit;
-        if (u === "minute") setLogValue("30");
-        else if (u === "mile") setLogValue("3");
-        else if (u === "step") setLogValue("5000");
-        else if (u === "rep") setLogValue("20");
-        else if (u === "chapter") setLogValue("1");
-        else setLogValue("1");
-      } else {
-        setLogValue("");
-      }
+    setSelectedHabitId(h.id);
+
+    if (!isBinaryHabit(h)) {
+      const u = String(h?.unit || "").toLowerCase();
+      if (u === "minute") setLogValue("30");
+      else if (u === "mile") setLogValue("3");
+      else if (u === "step") setLogValue("5000");
+      else if (u === "rep") setLogValue("20");
+      else if (u === "chapter") setLogValue("1");
+      else setLogValue("1");
+    } else {
+      setLogValue("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialHabitId, habits]);
+  }, [initialHabitId, habitsUI]);
+
+  const selectedHabit = useMemo(() => {
+    if (!selectedHabitId) return null;
+    return habitsUI.find((h) => String(h.id) === String(selectedHabitId)) ?? null;
+  }, [habitsUI, selectedHabitId]);
 
   const handleHabitSelect = (habit) => {
-    setSelectedHabit(habit);
+    setSelectedHabitId(habit.id);
 
     if (!isBinaryHabit(habit)) {
-      const u = habit?.unit;
+      const u = String(habit?.unit || "").toLowerCase();
       if (u === "minute") setLogValue("30");
       else if (u === "mile") setLogValue("3");
       else if (u === "step") setLogValue("5000");
@@ -138,13 +181,15 @@ export default function LogHabitSheet({
   if (selectedHabit) {
     const binary = isBinaryHabit(selectedHabit);
 
-    // STRICT: rates are micros from backend
+    // STRICT: rates are micros from backend (habit instance)
     const rateMicros = Number(selectedHabit.rateMicros ?? 0);
 
     // Display only (no earnings math)
-    const rateLabel = binary
-      ? formatUSDFromMicros(rateMicros)
-      : formatRateFromMicros(rateMicros, selectedHabit.unit);
+    const rateLabel = !selectedHabit.rateEnabled
+      ? "No payout (tracking only)"
+      : binary
+        ? formatUSDFromMicros(rateMicros)
+        : formatRateFromMicros(rateMicros, selectedHabit.unit);
 
     const canSubmit = binary ? true : unitsToMicros(logValue) > 0;
 
@@ -153,7 +198,7 @@ export default function LogHabitSheet({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setSelectedHabit(null)}
+          onClick={() => setSelectedHabitId(null)}
           leftIcon={
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path
@@ -171,7 +216,7 @@ export default function LogHabitSheet({
 
         <div className="log-header">
           <div className="log-header-icon">
-            <HabitIcon habitId={selectedHabit.libraryId} size={32} />
+            <HabitIcon habitId={selectedHabit.iconId} size={32} />
           </div>
 
           <div className="log-header-info">
@@ -190,13 +235,10 @@ export default function LogHabitSheet({
             <div className="quantity-input-wrapper">
               <button
                 className="quantity-btn"
+                type="button"
                 onClick={() => {
-                  const step =
-                    selectedHabit.unit === "step"
-                      ? 1000
-                      : selectedHabit.unit === "minute"
-                      ? 5
-                      : 1;
+                  const unit = String(selectedHabit.unit || "").toLowerCase();
+                  const step = unit === "step" ? 1000 : unit === "minute" ? 5 : 1;
 
                   const next = Math.max(
                     0,
@@ -218,13 +260,10 @@ export default function LogHabitSheet({
 
               <button
                 className="quantity-btn"
+                type="button"
                 onClick={() => {
-                  const step =
-                    selectedHabit.unit === "step"
-                      ? 1000
-                      : selectedHabit.unit === "minute"
-                      ? 5
-                      : 1;
+                  const unit = String(selectedHabit.unit || "").toLowerCase();
+                  const step = unit === "step" ? 1000 : unit === "minute" ? 5 : 1;
 
                   const next = (Number.parseFloat(logValue) || 0) + step;
                   setLogValue(String(next));
@@ -318,7 +357,11 @@ export default function LogHabitSheet({
           />
 
           {searchQuery && (
-            <button className="search-clear" onClick={() => setSearchQuery("")}>
+            <button
+              className="search-clear"
+              type="button"
+              onClick={() => setSearchQuery("")}
+            >
               <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
@@ -338,10 +381,11 @@ export default function LogHabitSheet({
 
           const rateMicros = Number(habit.rateMicros ?? 0);
 
-          // List view: keep it compact (no unit for binary; unit for non-binary is fine)
-          const rateDisplay = binary
-            ? formatUSDFromMicros(rateMicros)
-            : formatRateFromMicros(rateMicros, habit.unit);
+          const rateDisplay = !habit.rateEnabled
+            ? "No payout"
+            : binary
+              ? formatUSDFromMicros(rateMicros)
+              : formatRateFromMicros(rateMicros, habit.unit);
 
           return (
             <motion.button
@@ -355,7 +399,7 @@ export default function LogHabitSheet({
               whileTap={!isLogged ? { scale: 0.98 } : {}}
             >
               <div className="habit-row-icon">
-                <HabitIcon habitId={habit.libraryId} size={24} />
+                <HabitIcon habitId={habit.iconId} size={24} />
               </div>
 
               <span className="habit-row-name">{habit.name}</span>
@@ -384,7 +428,7 @@ export default function LogHabitSheet({
                     >
                       <path
                         fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 0 01-1.414 0z"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                         clipRule="evenodd"
                       />
                     </svg>

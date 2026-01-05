@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { getXAxisLabels } from '../../utils/chartCalculations';
+import { useMemo, useState, useRef } from 'react';
+import { getXAxisLabels } from '@/utils/chartLabels';
 import './LineChart.css';
 
 /**

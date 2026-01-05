@@ -10,8 +10,8 @@ import "./Onboarding.css";
  *
  * Props:
  * - catalog: { habits: CatalogHabit[] }
- * - selectedHabits: string[] (these are catalog IDs / libraryIds)
- * - onToggle(libraryId)
+ * - selectedHabits: string[] (catalogId UUID strings)
+ * - onToggle(catalogId: string)
  * - onContinue()
  * - onBack()
  */
@@ -22,12 +22,58 @@ export default function SelectHabits({
   onContinue,
   onBack,
 }) {
-  const canContinue = (selectedHabits?.length ?? 0) > 0;
+  const selected = selectedHabits ?? [];
+  const canContinue = selected.length > 0;
 
   const habits = catalog?.habits ?? [];
 
-  const logHabits = habits.filter((h) => (h?.actionType ?? "").toLowerCase() === "log");
-  const passHabits = habits.filter((h) => (h?.actionType ?? "").toLowerCase() === "pass");
+  const logHabits = habits.filter((h) => String(h?.actionType ?? "").toLowerCase() === "log");
+  const passHabits = habits.filter((h) => String(h?.actionType ?? "").toLowerCase() === "pass");
+
+  const renderHabitCard = (habit, isPass = false) => {
+    const catalogId = String(habit?.id ?? "");
+    if (!catalogId) return null;
+
+    const isSelected = selected.includes(catalogId);
+
+    const rateText =
+      String(habit?.rateType || "").toUpperCase() === "BINARY"
+        ? formatUSDFromMicros(habit.defaultRateMicros)
+        : formatRateFromMicros(habit.defaultRateMicros, habit.unit);
+
+    return (
+      <button
+        key={catalogId}
+        className={`habit-select-card ${isSelected ? "selected" : ""}`}
+        onClick={() => onToggle?.(catalogId)}
+        type="button"
+      >
+        <div className="habit-select-left">
+          <div className={`habit-select-icon ${isPass ? "pass-icon" : ""}`}>
+            <HabitIcon habitId={catalogId} size={22} />
+          </div>
+          <div className="habit-select-info">
+            <span className="habit-select-name">{habit.name}</span>
+          </div>
+        </div>
+
+        <div className="habit-select-right">
+          <span className="habit-select-rate">{rateText}</span>
+          <div className={`select-checkbox ${isSelected ? "checked" : ""}`}>
+            {isSelected && (
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div className="onboarding-screen">
@@ -38,8 +84,8 @@ export default function SelectHabits({
             Select the behaviors you want to track. You can add more later.
           </p>
 
-          {selectedHabits?.length > 0 && (
-            <div className="selection-badge">{selectedHabits.length} selected</div>
+          {selected.length > 0 && (
+            <div className="selection-badge">{selected.length} selected</div>
           )}
         </div>
 
@@ -60,50 +106,7 @@ export default function SelectHabits({
           </div>
 
           <div className="habit-selection-list">
-            {logHabits.map((habit) => {
-              const libraryId = habit.id; // catalog id is our libraryId
-              const isSelected = selectedHabits.includes(libraryId);
-
-              // Display only (micros -> string). Keep consistent with your micros utils naming.
-              // For BINARY habits, show "$X" not "$X/unit"
-              const rateText =
-                String(habit?.rateType || "").toUpperCase() === "BINARY"
-                  ? formatUSDFromMicros(habit.defaultRateMicros)
-                  : formatRateFromMicros(habit.defaultRateMicros, habit.unit);
-
-              return (
-                <button
-                  key={libraryId}
-                  className={`habit-select-card ${isSelected ? "selected" : ""}`}
-                  onClick={() => onToggle(libraryId)}
-                  type="button"
-                >
-                  <div className="habit-select-left">
-                    <div className="habit-select-icon">
-                      <HabitIcon habitId={libraryId} size={22} />
-                    </div>
-                    <div className="habit-select-info">
-                      <span className="habit-select-name">{habit.name}</span>
-                    </div>
-                  </div>
-
-                  <div className="habit-select-right">
-                    <span className="habit-select-rate">{rateText}</span>
-                    <div className={`select-checkbox ${isSelected ? "checked" : ""}`}>
-                      {isSelected && (
-                        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {logHabits.map((habit) => renderHabitCard(habit, false))}
           </div>
         </div>
 
@@ -124,48 +127,7 @@ export default function SelectHabits({
           </div>
 
           <div className="habit-selection-list">
-            {passHabits.map((habit) => {
-              const libraryId = habit.id;
-              const isSelected = selectedHabits.includes(libraryId);
-
-              const rateText =
-                String(habit?.rateType || "").toUpperCase() === "BINARY"
-                  ? formatUSDFromMicros(habit.defaultRateMicros)
-                  : formatRateFromMicros(habit.defaultRateMicros, habit.unit);
-
-              return (
-                <button
-                  key={libraryId}
-                  className={`habit-select-card ${isSelected ? "selected" : ""}`}
-                  onClick={() => onToggle(libraryId)}
-                  type="button"
-                >
-                  <div className="habit-select-left">
-                    <div className="habit-select-icon pass-icon">
-                      <HabitIcon habitId={libraryId} size={22} />
-                    </div>
-                    <div className="habit-select-info">
-                      <span className="habit-select-name">{habit.name}</span>
-                    </div>
-                  </div>
-
-                  <div className="habit-select-right">
-                    <span className="habit-select-rate">{rateText}</span>
-                    <div className={`select-checkbox ${isSelected ? "checked" : ""}`}>
-                      {isSelected && (
-                        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {passHabits.map((habit) => renderHabitCard(habit, true))}
           </div>
         </div>
       </div>
@@ -192,7 +154,7 @@ export default function SelectHabits({
             leftIcon={null}
             rightIcon={null}
           >
-            {canContinue ? `Continue with ${selectedHabits.length}` : "Select at least 1"}
+            {canContinue ? `Continue with ${selected.length}` : "Select at least 1"}
           </Button>
         </div>
       </div>

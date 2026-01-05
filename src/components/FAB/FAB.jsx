@@ -106,10 +106,12 @@ export default function FAB({
               className="fab-bubble"
               onClick={() => handleAction(bubble.action)}
               whileTap={{ scale: 0.9 }}
-              style={{ 
-                '--bubble-color': bubble.color,
-                background: `linear-gradient(135deg, ${bubble.color} 0%, ${bubble.color}99 100%)`
-              }}
+              style={
+                /** @type {import("react").CSSProperties} */ ({
+                  "--bubble-color": bubble.color,
+                  background: `linear-gradient(135deg, ${bubble.color} 0%, ${bubble.color}99 100%)`,
+                })
+              }
             >
               {bubble.icon}
             </motion.button>

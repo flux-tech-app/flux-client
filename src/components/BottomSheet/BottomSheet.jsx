@@ -94,15 +94,21 @@ export default function BottomSheet({
               <div className="sheet-header">
                 {showHandle && <div className="sheet-handle" />}
                 {(title || headerRight) && (
-                  <div className="sheet-title-row">
-                    {title && (
-                      <h2 id="sheet-title" className="sheet-title">
+                  <div className="sheet-title-row sheet-title-row--centered">
+                    {/* left spacer keeps title centered when right actions exist */}
+                    <div className="sheet-header-left" aria-hidden="true" />
+
+                    {title ? (
+                      <h2 id="sheet-title" className="sheet-title sheet-title--centered">
                         {title}
                       </h2>
+                    ) : (
+                      <div />
                     )}
-                    {headerRight && (
-                      <div className="sheet-header-right">{headerRight}</div>
-                    )}
+
+                    <div className="sheet-header-right">
+                      {headerRight || null}
+                    </div>
                   </div>
                 )}
               </div>

@@ -5,7 +5,7 @@ import {
   getProgressChartData, 
   getEarningsChartData, 
   calculatePeriodSummary 
-} from '../../utils/chartCalculations';
+} from '@/utils/chartData';
 import { format } from 'date-fns';
 import './HabitChart.css';
 

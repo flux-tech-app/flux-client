@@ -1,123 +1,85 @@
-import { useState, useMemo } from 'react';
+// src/pages/Activity/Activity.jsx
+import { useState, useMemo } from "react";
 import useHabits from "@/hooks/useHabits";
-import { formatCurrency } from '../../utils/formatters';
-import SidebarMenu from '../../components/SidebarMenu/SidebarMenu';
-import './Activity.css';
+import SidebarMenu from "@/components/SidebarMenu/SidebarMenu";
+import "./Activity.css";
 
+import { formatUSDFromMicros, unitsToMicros, computeEarningsMicrosUI, isBinaryRateType } from "@/utils/micros";
+
+/**
+ * Activity (server-truth)
+ *
+ * Sources of truth:
+ * - logs[]: { id, habitId, timestampMs, unitsMicros, notes?, earningsMicros? }
+ * - transfers[]: { id, habitId?, timestampMs, amountMicros, status, ... }
+ * - habits[] (instances): { id, catalogId, rateMicros, rateEnabled, rateType, goal, ... }
+ * - catalogHabits[]: { id, name, unitPlural, goalUnit, ... }
+ *
+ * Notes:
+ * - habit *display name* comes from catalog, not habit instance.
+ * - earnings come from log.earningsMicros if present, else computed from habit config.
+ * - rateEnabled=false => earnings are $0.
+ */
 export default function Activity() {
-  const { logs, habits, getHabitStats, updateLog, deleteLog } = useHabits();
-  const chatLogs = []; // Placeholder for future chat feature
-  const [selectedFilter, setSelectedFilter] = useState('today');
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [editingLog, setEditingLog] = useState(null);
-  const [deletingLog, setDeletingLog] = useState(null);
+  // Adjust these exports to match your HabitProvider
+  const {
+    logs = [],
+    transfers = [],
+    habits = [],
+    catalogHabits = [], // if your provider exposes catalog.habits instead, change this line
+    deleteLog,          // should exist; if not, wire it to your /api/logs delete endpoint
+  } = useHabits();
+
+  const [selectedFilter, setSelectedFilter] = useState("today");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Helper functions
+  const [deletingItem, setDeletingItem] = useState(null);
+
+  // -----------------------
+  // helpers
+  // -----------------------
   const getDateHeader = (date) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
     const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    if (dateKey.getTime() === today.getTime()) {
-      return 'Today';
-    } else if (dateKey.getTime() === yesterday.getTime()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    }
+    if (dateKey.getTime() === today.getTime()) return "Today";
+    if (dateKey.getTime() === yesterday.getTime()) return "Yesterday";
+
+    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   };
 
-  const getTimeFromDate = (date) => {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+  const getTimeFromMs = (ms) => {
+    return new Date(ms).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   };
 
-  // Chat modal handlers
-  const openChatModal = (chatLog) => {
-    setSelectedChat(chatLog);
-  };
-
-  const closeChatModal = () => {
-    setSelectedChat(null);
-  };
-
-  // Edit log handlers
-  const openEditModal = (activity) => {
-    const log = logs.find(l => l.id === activity.id);
-    if (log) {
-      setEditingLog({
-        ...log,
-        habitName: activity.habitName,
-        habitRateType: activity.habitRateType,
-        habitRateAmount: habits.find(h => h.id === log.habitId)?.rateAmount || 0,
-      });
-    }
-  };
-
-  const closeEditModal = () => {
-    setEditingLog(null);
-  };
-
-  const handleSaveEdit = (updatedData) => {
-    if (!editingLog) return;
-
-    const earnings = editingLog.habitRateAmount * updatedData.value;
-
-    updateLog(editingLog.id, {
-      value: updatedData.value,
-      duration: updatedData.duration,
-      notes: updatedData.notes,
-      totalEarnings: earnings,
-    });
-
-    closeEditModal();
-  };
-
-  // Delete log handlers
-  const openDeleteConfirm = (activity) => {
-    setDeletingLog(activity);
-  };
-
-  const closeDeleteConfirm = () => {
-    setDeletingLog(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deletingLog) return;
-    deleteLog(deletingLog.id);
-    closeDeleteConfirm();
-  };
-
-  // Get date ranges for filtering
   const getDateRange = (filter) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     switch (filter) {
-      case 'today':
+      case "today":
         return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
 
-      case 'yesterday': {
-        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-        return { start: yesterday, end: today };
+      case "yesterday": {
+        const y = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+        return { start: y, end: today };
       }
 
-      case 'week': {
+      case "week": {
+        // Sunday start (matches your old code)
         const weekStart = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
         return { start: weekStart, end: new Date(now.getTime() + 24 * 60 * 60 * 1000) };
       }
 
-      case 'lastWeek': {
+      case "lastWeek": {
         const weekStart = new Date(today.getTime() - (today.getDay() + 7) * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
         return { start: weekStart, end: weekEnd };
       }
 
-      case 'month': {
+      case "month": {
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         return { start: monthStart, end: new Date(now.getTime() + 24 * 60 * 60 * 1000) };
       }
@@ -127,62 +89,172 @@ export default function Activity() {
     }
   };
 
-  // Process habit logs
-  const enrichedActivities = useMemo(() => {
-    const { start, end } = getDateRange(selectedFilter);
+  // Build maps for quick lookup
+  const habitById = useMemo(() => {
+    const m = new Map();
+    for (const h of habits || []) m.set(String(h.id), h);
+    return m;
+  }, [habits]);
 
-    const habitActivities = logs
-      .filter(log => {
-        const logDate = new Date(log.timestamp);
-        return logDate >= start && logDate < end;
+  const catalogById = useMemo(() => {
+    const m = new Map();
+    for (const c of catalogHabits || []) m.set(String(c.id), c);
+    return m;
+  }, [catalogHabits]);
+
+  const getHabitDisplay = (habitId) => {
+    const h = habitById.get(String(habitId));
+    if (!h) return { name: "Unknown Habit", rateType: "BINARY", rateMicros: 0, rateEnabled: false, unitLabel: "times" };
+
+    const cat = catalogById.get(String(h.catalogId));
+    const name = cat?.name || "Habit";
+    const rateType = String(h.rateType || cat?.rateType || "BINARY").toUpperCase();
+    const rateMicros = Number(h.rateMicros || 0);
+    const rateEnabled = Boolean(h.rateEnabled);
+
+    // What we show as “unit” in activity
+    const unitLabel =
+      rateType === "COUNT"
+        ? (cat?.unitPlural || cat?.goalUnit || "units")
+        : (cat?.goalUnit || "times");
+
+    return { name, rateType, rateMicros, rateEnabled, unitLabel };
+  };
+
+  const computeLogEarningsMicros = (log) => {
+    // If backend already embedded earningsMicros, trust it
+    if (Number.isFinite(Number(log?.earningsMicros))) return Number(log.earningsMicros);
+
+    const h = habitById.get(String(log?.habitId));
+    if (!h) return 0;
+
+    const rateEnabled = Boolean(h.rateEnabled);
+    if (!rateEnabled) return 0;
+
+    const rateType = String(h.rateType || "BINARY").toUpperCase();
+    const rateMicros = Number(h.rateMicros || 0);
+    if (!Number.isFinite(rateMicros) || rateMicros <= 0) return 0;
+
+    const unitsMicros = Number(log?.unitsMicros || 0);
+
+    // Binary = flat per log
+    if (isBinaryRateType(rateType)) return rateMicros;
+
+    // COUNT = rateMicros * units
+    return computeEarningsMicrosUI({
+      rateType,
+      rateMicros,
+      unitsMicros: Number.isFinite(unitsMicros) ? unitsMicros : unitsToMicros(0),
+    });
+  };
+
+  // -----------------------
+  // Unified feed (logs + transfers)
+  // -----------------------
+  const feedItems = useMemo(() => {
+    const { start, end } = getDateRange(selectedFilter);
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+
+    const logItems = (logs || [])
+      .filter((l) => {
+        const ts = Number(l?.timestampMs ?? 0);
+        return ts >= startMs && ts < endMs;
       })
-      .map(log => {
-        const habit = habits.find(h => h.id === log.habitId);
-        const stats = habit ? getHabitStats(habit.id) : null;
-        const associatedChat = chatLogs.find(chat => chat.relatedLogId === log.id);
+      .map((l) => {
+        const display = getHabitDisplay(l.habitId);
+        const earningsMicros = computeLogEarningsMicros(l);
 
         return {
-          ...log,
-          activityType: 'habit',
-          habitName: habit?.name || 'Unknown Habit',
-          habitType: habit?.type || 'build',
-          habitRateType: habit?.rateType || 'completion',
-          currentStreak: stats?.currentStreak || 0,
-          associatedChat: associatedChat || null,
+          kind: "log",
+          id: String(l.id),
+          timestampMs: Number(l.timestampMs),
+          habitId: l.habitId,
+          title: display.name,
+          subtitle: getTimeFromMs(Number(l.timestampMs)),
+          notes: l.notes || "",
+          amountMicros: earningsMicros,
+          metaRight: "earned",
         };
       });
 
-    return habitActivities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [logs, chatLogs, habits, selectedFilter, getHabitStats]);
+    const transferItems = (transfers || [])
+      .filter((t) => {
+        const ts = Number(t?.timestampMs ?? 0);
+        return ts >= startMs && ts < endMs;
+      })
+      .map((t) => {
+        const hasHabit = Boolean(t?.habitId);
+        const display = hasHabit ? getHabitDisplay(t.habitId) : null;
 
-  // Group activities by date
+        const status = String(t?.status || "").toLowerCase();
+        const statusLabel = status === "completed" ? "Transfer completed" : status === "pending" ? "Transfer pending" : "Transfer";
+
+        return {
+          kind: "transfer",
+          id: String(t.id),
+          timestampMs: Number(t.timestampMs),
+          habitId: t.habitId || null,
+          title: hasHabit ? display?.name || "Habit" : "Portfolio",
+          subtitle: `${statusLabel} • ${getTimeFromMs(Number(t.timestampMs))}`,
+          notes: "",
+          amountMicros: Number(t.amountMicros || 0),
+          metaRight: status === "pending" ? "pending" : "transferred",
+        };
+      });
+
+    return [...logItems, ...transferItems].sort((a, b) => b.timestampMs - a.timestampMs);
+  }, [logs, transfers, selectedFilter, habitById, catalogById]); // maps are stable via useMemo
+
   const groupedActivities = useMemo(() => {
-    const groups = {};
+    const groups = new Map();
 
-    enrichedActivities.forEach(activity => {
-      const date = new Date(activity.timestamp);
+    for (const item of feedItems) {
+      const date = new Date(item.timestampMs);
       const dateKey = date.toDateString();
 
-      if (!groups[dateKey]) {
-        groups[dateKey] = {
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, {
           date: dateKey,
           displayDate: getDateHeader(date),
           activities: [],
-        };
+        });
       }
+      groups.get(dateKey).activities.push(item);
+    }
 
-      groups[dateKey].activities.push(activity);
-    });
+    return Array.from(groups.values());
+  }, [feedItems]);
 
-    return Object.values(groups);
-  }, [enrichedActivities]);
+  // -----------------------
+  // delete
+  // -----------------------
+  const openDeleteConfirm = (item) => setDeletingItem(item);
+  const closeDeleteConfirm = () => setDeletingItem(null);
 
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+
+    // Only logs are deletable (transfers shouldn’t be)
+    if (deletingItem.kind !== "log") {
+      closeDeleteConfirm();
+      return;
+    }
+
+    try {
+      await deleteLog?.(deletingItem.id);
+    } finally {
+      closeDeleteConfirm();
+    }
+  };
+
+  // -----------------------
+  // UI
+  // -----------------------
   return (
     <div className="activity-page">
-      {/* Sidebar Menu */}
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Header */}
       <header className="activity-header">
         <button className="menu-button" aria-label="Open menu" onClick={() => setSidebarOpen(true)}>
           <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,173 +262,103 @@ export default function Activity() {
           </svg>
         </button>
         <h1 className="activity-title">Activity</h1>
-        <div className="header-spacer"></div>
+        <div className="header-spacer" />
       </header>
 
       <div className="activity-container">
-        {/* HABIT ACTIVITY VIEW */}
         <div className="habits-view">
-            {/* Time Filter Chips */}
-            <div className="date-tabs">
-              <button
-                className={`date-tab ${selectedFilter === 'today' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('today')}
-              >
-                Today
-              </button>
-              <button
-                className={`date-tab ${selectedFilter === 'yesterday' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('yesterday')}
-              >
-                Yesterday
-              </button>
-              <button
-                className={`date-tab ${selectedFilter === 'week' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('week')}
-              >
-                This Week
-              </button>
-              <button
-                className={`date-tab ${selectedFilter === 'lastWeek' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('lastWeek')}
-              >
-                Last Week
-              </button>
-              <button
-                className={`date-tab ${selectedFilter === 'month' ? 'active' : ''}`}
-                onClick={() => setSelectedFilter('month')}
-              >
-                This Month
-              </button>
-            </div>
+          <div className="date-tabs">
+            <button className={`date-tab ${selectedFilter === "today" ? "active" : ""}`} onClick={() => setSelectedFilter("today")}>
+              Today
+            </button>
+            <button className={`date-tab ${selectedFilter === "yesterday" ? "active" : ""}`} onClick={() => setSelectedFilter("yesterday")}>
+              Yesterday
+            </button>
+            <button className={`date-tab ${selectedFilter === "week" ? "active" : ""}`} onClick={() => setSelectedFilter("week")}>
+              This Week
+            </button>
+            <button className={`date-tab ${selectedFilter === "lastWeek" ? "active" : ""}`} onClick={() => setSelectedFilter("lastWeek")}>
+              Last Week
+            </button>
+            <button className={`date-tab ${selectedFilter === "month" ? "active" : ""}`} onClick={() => setSelectedFilter("month")}>
+              This Month
+            </button>
+          </div>
 
-            {/* Activity Feed */}
-            <div className="activity-feed">
-              {groupedActivities.length === 0 ? (
-                <div className="empty-state">
-                  <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <h3>No activity yet</h3>
-                  <p>Your logged habits will appear here</p>
-                </div>
-              ) : (
-                groupedActivities.map(group => (
-                  <div key={group.date} className="date-section">
-                    <div className="date-header">{group.displayDate}</div>
-                    <div className="activity-list">
-                      {group.activities.map((activity, index) => (
-                        <div 
-                          key={`${activity.id}-${index}`} 
-                          className={`activity-card ${activity.associatedChat ? 'has-chat' : ''}`}
-                        >
-                          <div className="activity-header-row">
-                            <div className="activity-info">
-                              <div className="activity-title">
-                                {activity.associatedChat && (
-                                  <span className="flux-mini-badge">
-                                    <span className="flux-mini-icon">F</span>
-                                    FLUX
-                                  </span>
-                                )}
-                                {activity.habitName}
-                              </div>
-                              <div className="activity-meta">
-                                <span className="activity-time">
-                                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                  </svg>
-                                  {getTimeFromDate(activity.timestamp)}
-                                </span>
-                              </div>
-                              {activity.notes && (
-                                <div className="activity-notes">{activity.notes}</div>
-                              )}
+          <div className="activity-feed">
+            {groupedActivities.length === 0 ? (
+              <div className="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3>No activity yet</h3>
+                <p>Your habit logs and transfers will appear here</p>
+              </div>
+            ) : (
+              groupedActivities.map((group) => (
+                <div key={group.date} className="date-section">
+                  <div className="date-header">{group.displayDate}</div>
+                  <div className="activity-list">
+                    {group.activities.map((activity, index) => (
+                      <div key={`${activity.kind}-${activity.id}-${index}`} className="activity-card">
+                        <div className="activity-header-row">
+                          <div className="activity-info">
+                            <div className="activity-title">{activity.title}</div>
+
+                            <div className="activity-meta">
+                              <span className="activity-time">
+                                <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {activity.subtitle}
+                              </span>
                             </div>
-                            <div className="activity-amount-section">
-                              <div className="activity-amount">{formatCurrency(activity.totalEarnings)}</div>
-                              <div className="activity-actions">
-                                {activity.associatedChat && (
-                                  <button
-                                    className="activity-action-btn chat-btn"
-                                    onClick={() => openChatModal(activity.associatedChat)}
-                                    title="View chat"
-                                  >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                                    </svg>
-                                  </button>
-                                )}
+
+                            {activity.notes ? <div className="activity-notes">{activity.notes}</div> : null}
+                          </div>
+
+                          <div className="activity-amount-section">
+                            <div className="activity-amount">{formatUSDFromMicros(activity.amountMicros)}</div>
+                            <div className="holding-label">{activity.metaRight}</div>
+
+                            <div className="activity-actions">
+                              {activity.kind === "log" ? (
                                 <button
                                   className="activity-action-btn delete-btn"
                                   onClick={() => openDeleteConfirm(activity)}
                                   title="Delete"
                                 >
                                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                 </button>
-                              </div>
+                              ) : null}
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-      </div>
-
-      {/* MODALS */}
-      {selectedChat && (
-        <div className="modal-overlay" onClick={closeChatModal}>
-          <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="chat-modal-header">
-              <div className="chat-modal-title">
-                <span className="flux-badge">
-                  <span className="flux-icon">F</span>
-                  FLUX
-                </span>
-                {selectedChat.title || 'Chat Conversation'}
-              </div>
-              <button className="close-modal-btn" onClick={closeChatModal}>
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-            <div className="chat-modal-content">
-              <div className="chat-timestamp">
-                {new Date(selectedChat.timestamp).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}
-              </div>
-              <div className="chat-conversation">
-                {selectedChat.conversation || selectedChat.preview}
-              </div>
-            </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {deletingLog && (
+      {deletingItem && (
         <div className="modal-overlay" onClick={closeDeleteConfirm}>
           <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="confirm-modal-header">
               <div className="confirm-modal-icon delete-icon">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
               <h3>Delete Activity</h3>
-              <p>Are you sure you want to delete this {deletingLog.habitName} activity? This action cannot be undone.</p>
+              <p>
+                Are you sure you want to delete this <b>{deletingItem.title}</b> activity? This action cannot be undone.
+              </p>
             </div>
             <div className="confirm-modal-actions">
               <button className="confirm-btn cancel-btn" onClick={closeDeleteConfirm}>

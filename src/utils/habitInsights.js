@@ -1,20 +1,21 @@
 /**
- * habitInsights.js
+ * src\utils\habitInsights.js
  * Pure calculation functions for habit insights
- * No AI required - deterministic logic + templates
  */
 
-import { MIN_LOGS_FOR_FLUX, LOGS_FOR_ESTABLISHED } from './constants';
 import { getCalibrationStatus } from './calibrationStatus';
+import { getCurrentDate } from "./dateHelpers";
 
 /**
  * Calculate days since habit creation
  */
 export const getDaysActive = (habit) => {
-  const now = new Date();
-  const created = new Date(habit.createdAt);
-  return Math.max(1, Math.floor((now - created) / (1000 * 60 * 60 * 24)));
+  const now = Date.parse(getCurrentDate());        // number
+  const created = Date.parse(habit.createdAt);     // number (if habit.createdAt is "yyyy-MM-dd")
+
+  return Math.max(1, Math.floor((now - created) / 1000 * 60 * 60 * 24));
 };
+
 
 /**
  * Calculate completion rate for a given period

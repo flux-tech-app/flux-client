@@ -17,13 +17,9 @@ import Auth from "@/pages/Auth";
 import Onboarding from "@/pages/Onboarding";
 import Home from "@/pages/Home";
 import Portfolio from "@/pages/Portfolio";
-import Dashboard from "@/pages/Dashboard";
-import AddHabit from "@/pages/AddHabit";
-import LogActivity from "@/pages/LogActivity";
 import Activity from "@/pages/Activity";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
-import DevTools from "@/pages/DevTools";
 import HabitDetail from "@/pages/HabitDetail";
 import Indices from "@/pages/Indices";
 import IndexDetail from "@/pages/IndexDetail";
@@ -164,7 +160,6 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
         <Route path="/portfolio" element={<Portfolio />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/indices" element={<Indices />} />
         <Route path="/growth" element={<Growth />} />
         <Route path="/account" element={<Navigate to="/profile" replace />} />
@@ -173,10 +168,7 @@ function AppRoutes() {
         <Route path="/transfers" element={<Transfers />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/devtools" element={<DevTools />} />
 
-        <Route path="/add" element={<AddHabit />} />
-        <Route path="/log/:habitId" element={<LogActivity />} />
         <Route path="/habit/:id" element={<HabitDetail />} />
         <Route path="/indices/:indexId" element={<IndexDetail />} />
 

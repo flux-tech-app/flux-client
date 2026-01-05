@@ -1,5 +1,5 @@
 // src/pages/Onboarding/Onboarding.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useHabits from "@/hooks/useHabits";
 
 import Welcome from "./Welcome";
@@ -18,34 +18,124 @@ import "./Onboarding.css";
  * 3. Select Habits (from server catalog)
  * 4. Set Rates + Goals (rateMicros + goal)
  * 5. Ready (summary + submit)
+ *
+ * IMPORTANT:
+ * - catalog habits are identified by catalogId UUID (catalog.habits[i].id)
+ * - NO legacy "libraryId" anywhere
  */
 export default function Onboarding({ onComplete }) {
   const { addHabits, catalog } = useHabits();
 
   const [currentStep, setCurrentStep] = useState(0);
 
-  // catalog habit IDs (libraryId in backend terms)
-  const [selectedHabits, setSelectedHabits] = useState([]);
+  // Selected catalog habit IDs (UUIDs)
+  const [selectedHabits, setSelectedHabits] = useState([]); // string[]
 
-  // IMPORTANT: store rateMicros (int), not dollars
-  const [habitRates, setHabitRates] = useState({}); // { [libraryId]: rateMicros }
+  // Store rateMicros (int) keyed by catalogId
+  const [habitRates, setHabitRates] = useState({}); // { [catalogId]: number }
 
-  // goal is still human units (float) + period (string)
-  const [habitGoals, setHabitGoals] = useState({}); // { [libraryId]: { amount, period } }
+  // Store goal keyed by catalogId
+  const [habitGoals, setHabitGoals] = useState({}); // { [catalogId]: { amount, period } }
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalSteps = 5;
 
   const catalogHabits = catalog?.habits ?? [];
+
   const catalogById = useMemo(() => {
     const m = new Map();
     for (const h of catalogHabits) {
-      if (h?.id) m.set(h.id, h);
+      if (h?.id) m.set(String(h.id), h);
     }
     return m;
   }, [catalogHabits]);
 
+  const normalizeId = (v) => {
+    const id = String(v ?? "").trim();
+    return id ? id : "";
+  };
+
+  // --- helpers that tolerate both camelCase + snake_case ---
+  const getDefaultRateMicros = (habit) => {
+    const raw =
+      habit?.defaultRateMicros ??
+      habit?.default_rate_micros ??
+      habit?.default_rateMicros; // (just in case)
+
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+
+    // fallback: first option
+    const opts = getRateOptionsMicros(habit);
+    const first = Number(opts?.[0]);
+    return Number.isFinite(first) && first > 0 ? first : 0;
+  };
+
+  const getRateOptionsMicros = (habit) => {
+    const v =
+      habit?.rateOptionsMicros ??
+      habit?.rate_options_micros ??
+      habit?.rate_optionsMicros;
+
+    // API might return array already; or CSV-ish might be a JSON string
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string") {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const getSuggestedGoals = (habit) => {
+    const v =
+      habit?.suggestedGoals ??
+      habit?.suggested_goals ??
+      habit?.suggestedGoalsJson;
+
+    if (Array.isArray(v)) return v;
+    if (typeof v === "string") {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const getDefaultGoalPeriod = (habit) => {
+    const p =
+      habit?.defaultGoalPeriod ??
+      habit?.default_goal_period ??
+      habit?.default_goalPeriod;
+
+    const s = String(p ?? "").trim();
+    return s || "day";
+  };
+
+  const getDefaultGoal = (habit) => {
+    // Prefer first suggested goal if present
+    const suggested = getSuggestedGoals(habit);
+    const first = suggested?.[0];
+
+    const amt = Number(first?.amount);
+    const per = String(first?.period ?? "").trim();
+
+    if (Number.isFinite(amt) && amt > 0 && per) {
+      return { amount: amt, period: per };
+    }
+
+    // fallback: 1 per default period
+    return { amount: 1, period: getDefaultGoalPeriod(habit) };
+  };
+
+  // --- navigation ---
   const handleNext = () => {
     if (isSubmitting) return;
     if (currentStep < totalSteps - 1) setCurrentStep((prev) => prev + 1);
@@ -62,80 +152,178 @@ export default function Onboarding({ onComplete }) {
   };
 
   // Step 3: Select habits
-  const handleHabitToggle = (libraryId) => {
+  const handleHabitToggle = (catalogId) => {
     if (isSubmitting) return;
 
+    const id = normalizeId(catalogId);
+    if (!id) return;
+
     setSelectedHabits((prev) => {
-      if (prev.includes(libraryId)) return prev.filter((id) => id !== libraryId);
-      return [...prev, libraryId];
+      const isSelected = prev.includes(id);
+
+      // If deselecting, also clean up related state to avoid stale keys
+      if (isSelected) {
+        setHabitRates((rPrev) => {
+          if (!(id in (rPrev ?? {}))) return rPrev;
+          const next = { ...(rPrev ?? {}) };
+          delete next[id];
+          return next;
+        });
+
+        setHabitGoals((gPrev) => {
+          if (!(id in (gPrev ?? {}))) return gPrev;
+          const next = { ...(gPrev ?? {}) };
+          delete next[id];
+          return next;
+        });
+
+        return prev.filter((x) => x !== id);
+      }
+
+      return [...prev, id];
     });
   };
 
   // Step 4: Set rates (MICROS)
-  // Expect callers to pass a whole integer micros value.
-  const handleRateChange = (libraryId, rateMicros) => {
+  const handleRateChange = (catalogId, rateMicros) => {
     if (isSubmitting) return;
-    setHabitRates((prev) => ({ ...prev, [libraryId]: Number(rateMicros) }));
+
+    const id = normalizeId(catalogId);
+    if (!id) return;
+
+    const n = Number(rateMicros);
+    setHabitRates((prev) => ({ ...(prev ?? {}), [id]: n }));
   };
 
   // Step 4: Set goals
-  const handleGoalChange = (libraryId, goal) => {
+  const handleGoalChange = (catalogId, goal) => {
     if (isSubmitting) return;
-    setHabitGoals((prev) => ({ ...prev, [libraryId]: goal }));
+
+    const id = normalizeId(catalogId);
+    if (!id) return;
+
+    setHabitGoals((prev) => ({ ...(prev ?? {}), [id]: goal }));
   };
+
+  /**
+   * ✅ Key fix:
+   * If catalog provides defaults, commit them into state for selected habits.
+   * This prevents UI “looks set” vs submit “missing value” divergence.
+   */
+  useEffect(() => {
+    if (!selectedHabits?.length) return;
+    if (!catalogById?.size) return;
+
+    // Seed missing rates
+    setHabitRates((prev) => {
+      const next = { ...(prev ?? {}) };
+      let changed = false;
+
+      for (const rawId of selectedHabits) {
+        const id = normalizeId(rawId);
+        if (!id) continue;
+
+        const cur = Number(next[id]);
+        if (Number.isFinite(cur) && cur > 0) continue;
+
+        const habit = catalogById.get(id);
+        if (!habit) continue;
+
+        const def = getDefaultRateMicros(habit);
+        if (Number.isFinite(def) && def > 0) {
+          next[id] = def;
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+
+    // Seed missing goals
+    setHabitGoals((prev) => {
+      const next = { ...(prev ?? {}) };
+      let changed = false;
+
+      for (const rawId of selectedHabits) {
+        const id = normalizeId(rawId);
+        if (!id) continue;
+
+        const g = next[id];
+        const amt = Number(g?.amount);
+        const per = String(g?.period ?? "").trim();
+        if (Number.isFinite(amt) && amt > 0 && per) continue;
+
+        const habit = catalogById.get(id);
+        if (!habit) continue;
+
+        next[id] = getDefaultGoal(habit);
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [selectedHabits, catalogById]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Final step: Create habits and complete onboarding
   const handleComplete = async () => {
     if (isSubmitting) return;
 
-    // Validate selection exists in server catalog
-    for (const libraryId of selectedHabits) {
-      if (!catalogById.get(libraryId)) {
-        alert(`Unknown habit "${libraryId}" (not found in server catalog). Please refresh and try again.`);
+    // Validate selected ids exist in server catalog
+    for (const catalogId of selectedHabits) {
+      if (!catalogById.get(String(catalogId))) {
+        alert(
+          `Unknown catalog habit "${catalogId}" (not found in server catalog). Please refresh and try again.`
+        );
         return;
       }
     }
 
-    // Enforce required goals
-    for (const libraryId of selectedHabits) {
-      const g = habitGoals[libraryId];
-      if (!g?.amount || !g?.period) {
-        alert("Please set a goal for each selected habit before continuing.");
-        return;
-      }
-    }
+    // Resolve + validate rates/goals using SAME logic as defaults seeding
+    const resolvedConfigs = [];
+    for (const catalogId of selectedHabits) {
+      const id = String(catalogId);
+      const habit = catalogById.get(id);
 
-    // Build payload for backend (rateMicros required)
-    const habitConfigs = selectedHabits.map((libraryId) => {
-      const c = catalogById.get(libraryId);
-
+      const rateFromState = Number(habitRates?.[id]);
       const rateMicros =
-        habitRates[libraryId] != null
-          ? Number(habitRates[libraryId])
-          : Number(c?.defaultRateMicros);
+        Number.isFinite(rateFromState) && rateFromState > 0
+          ? rateFromState
+          : getDefaultRateMicros(habit);
 
       if (!Number.isFinite(rateMicros) || rateMicros <= 0) {
-        throw new Error(`Invalid rateMicros for "${libraryId}".`);
+        alert("Please set a valid rate for each selected habit before continuing.");
+        return;
       }
 
-      const g = habitGoals[libraryId];
+      const gFromState = habitGoals?.[id];
+      const amtFromState = Number(gFromState?.amount);
+      const perFromState = String(gFromState?.period ?? "").trim();
 
-      return {
-        libraryId,
-        rateMicros,
-        goal: {
-          amount: Number(g.amount),
-          period: String(g.period),
-        },
-      };
-    });
+      const goal =
+        Number.isFinite(amtFromState) && amtFromState > 0 && perFromState
+          ? { amount: amtFromState, period: perFromState }
+          : getDefaultGoal(habit);
+
+      const amt = Number(goal?.amount);
+      const period = String(goal?.period ?? "").trim();
+
+      if (!Number.isFinite(amt) || amt <= 0 || !period) {
+        alert("Please set a valid goal for each selected habit before continuing.");
+        return;
+      }
+
+      resolvedConfigs.push({
+        catalogId: id, // ✅ UUID
+        rateMicros: Number(rateMicros), // ✅ int micros
+        goal: { amount: amt, period },
+      });
+    }
 
     setIsSubmitting(true);
     try {
-      await addHabits(habitConfigs);
+      await addHabits(resolvedConfigs);
       onComplete?.();
     } catch (err) {
-      // keep user on page, allow retry
       console.error(err);
       alert(err?.message || "Failed to create habits. Please try again.");
       setIsSubmitting(false);
@@ -147,7 +335,10 @@ export default function Onboarding({ onComplete }) {
       {/* Progress Bar */}
       <div className="progress-bar">
         {[...Array(totalSteps)].map((_, index) => (
-          <div key={index} className={`progress-dot ${index <= currentStep ? "active" : ""}`} />
+          <div
+            key={index}
+            className={`progress-dot ${index <= currentStep ? "active" : ""}`}
+          />
         ))}
       </div>
 
@@ -159,8 +350,8 @@ export default function Onboarding({ onComplete }) {
       {currentStep === 2 && (
         <SelectHabits
           catalog={catalog}
-          selectedHabits={selectedHabits}
-          onToggle={handleHabitToggle}
+          selectedHabits={selectedHabits} // catalogIds
+          onToggle={handleHabitToggle} // expects catalogId
           onContinue={handleNext}
           onBack={handleBack}
         />
@@ -169,11 +360,11 @@ export default function Onboarding({ onComplete }) {
       {currentStep === 3 && (
         <SetRates
           catalog={catalog}
-          selectedHabits={selectedHabits}
-          habitRates={habitRates}
-          habitGoals={habitGoals}
-          onRateChange={handleRateChange}
-          onGoalChange={handleGoalChange}
+          selectedHabits={selectedHabits} // catalogIds
+          habitRates={habitRates} // keyed by catalogId
+          habitGoals={habitGoals} // keyed by catalogId
+          onRateChange={handleRateChange} // (catalogId, rateMicros)
+          onGoalChange={handleGoalChange} // (catalogId, goal)
           onContinue={handleNext}
           onBack={handleBack}
         />
@@ -182,7 +373,7 @@ export default function Onboarding({ onComplete }) {
       {currentStep === 4 && (
         <Ready
           catalog={catalog}
-          selectedHabits={selectedHabits}
+          selectedHabits={selectedHabits} // catalogIds
           habitRates={habitRates}
           habitGoals={habitGoals}
           onComplete={handleComplete}
