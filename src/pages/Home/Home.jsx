@@ -53,36 +53,29 @@ const noopHeaderRight = () => null;
 export default function Home() {
   const navigate = useNavigate();
 
-  // ✅ server-truth provider (catalog is source of display fields)
   const {
     habits,
     logs,
+    transfers, // ✅ pull transfers (source of truth for money)
     getWeekEarnings,
     getTodayEarnings,
     isHabitLoggedOnDate,
     calculateFluxScore,
-    getCatalogHabit, // ✅ important: join habit instance -> catalog habit
+    getCatalogHabit,
+    formatUSDFromMicros,
   } = useHabits();
 
   const [activeSheet, setActiveSheet] = useState(null); // "log" | "pass" | null
   const [selectedHabitId, setSelectedHabitId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // ✅ AddHabitFlow sheet (for empty state + any future “+ Add” triggers)
   const [showAddSheet, setShowAddSheet] = useState(false);
 
   const hasHabits = (habits || []).length > 0;
 
   // server-derived values (provider just returns boot.stats)
   const weekEarnings = Number(getWeekEarnings());
-  const todayEarnings = Number(getTodayEarnings());
+  const todayEarnings = Number(getTodayEarnings()); // (not used yet, but handy)
   const animatedWeekEarnings = useAnimatedCounter(weekEarnings);
-
-  // STRICT log shape from provider:
-  // - log.timestampMs is the timestamp
-  // - log.amount is transfer amount (joined by provider)
-  const getLogTimestampMs = (log) => log?.timestampMs ?? null;
-  const getLogAmount = (log) => Number(log?.amount ?? 0);
 
   const normalizeToDate = (ms) => {
     if (ms == null) return null;
@@ -90,7 +83,6 @@ export default function Home() {
     return Number.isNaN(d.getTime()) ? null : d;
   };
 
-  // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -108,9 +100,7 @@ export default function Home() {
   };
 
   /**
-   * ✅ Key change:
    * Decorate habit instances with catalog fields (name, actionType, icon, etc.)
-   * so Home never relies on legacy fields stored on the habit row.
    */
   const habitsUI = useMemo(() => {
     return (habits || []).map((h) => {
@@ -125,21 +115,139 @@ export default function Home() {
     });
   }, [habits, getCatalogHabit]);
 
-  // Handle tapping a habit in the Today section
   const handleHabitTap = (habit) => {
     if (habit.isLogged) return;
-
     setSelectedHabitId(habit.id);
-    // ✅ actionType comes from catalog now
     setActiveSheet(habit.actionType === "pass" ? "pass" : "log");
   };
+
+  /**
+   * Build a lookup: logId -> habitId (string), so we can derive habitId from transfers when transfer.habitId is null.
+   */
+  const habitIdByLogId = useMemo(() => {
+    const m = new Map();
+    for (const l of logs || []) {
+      if (!l?.id || !l?.habitId) continue;
+      m.set(String(l.id), String(l.habitId));
+    }
+    return m;
+  }, [logs]);
+
+  /**
+   * Helper: given a transfer, resolve habitId:
+   * - prefer transfer.habitId
+   * - else fall back via transfer.logId -> logs.habitId
+   */
+  const resolveHabitIdForTransfer = (t) => {
+    const direct = t?.habitId ? String(t.habitId) : null;
+    if (direct) return direct;
+
+    const logId = t?.logId ? String(t.logId) : null;
+    if (!logId) return null;
+
+    return habitIdByLogId.get(logId) ?? null;
+  };
+
+  /**
+   * Compute "today earned micros" per habit from transfers (pending OR completed).
+   * Local-day boundaries, because the UI is "Today" in local time.
+   */
+  const todayEarningsMicrosByHabitId = useMemo(() => {
+    const map = new Map();
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+
+    for (const t of transfers || []) {
+      const ms = Number(t?.timestampMs);
+      if (!Number.isFinite(ms)) continue;
+      if (ms < startMs || ms >= endMs) continue;
+
+      const hid = resolveHabitIdForTransfer(t);
+      if (!hid) continue;
+
+      const amt = Number(t?.amountMicros ?? 0);
+      if (!Number.isFinite(amt) || amt === 0) continue;
+
+      map.set(hid, (map.get(hid) ?? 0) + amt);
+    }
+
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transfers, habitIdByLogId]);
+
+  /**
+   * Compute "this week earned micros" per habit from transfers (pending OR completed).
+   * Using the same local-week logic your UI already uses (Sunday -> Saturday).
+   */
+  const weekEarningsMicrosByHabitId = useMemo(() => {
+    const map = new Map();
+
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startMs = startOfWeek.getTime();
+
+    for (const t of transfers || []) {
+      const ms = Number(t?.timestampMs);
+      if (!Number.isFinite(ms)) continue;
+      if (ms < startMs) continue;
+
+      const hid = resolveHabitIdForTransfer(t);
+      if (!hid) continue;
+
+      const amt = Number(t?.amountMicros ?? 0);
+      if (!Number.isFinite(amt) || amt === 0) continue;
+
+      map.set(hid, (map.get(hid) ?? 0) + amt);
+    }
+
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transfers, habitIdByLogId]);
+
+  /**
+   * DEBUG: show what Home is actually using for the Today earnings.
+   * (Only logs in dev builds.)
+   */
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const startOfTodayLocal = new Date();
+    startOfTodayLocal.setHours(0, 0, 0, 0);
+
+    console.debug("[Home] money debug", {
+      startOfTodayLocal: String(startOfTodayLocal),
+      transfersCount: (transfers || []).length,
+      logsCount: (logs || []).length,
+      habitsCount: (habitsUI || []).length,
+      todayEarningsMicrosByHabitId: Array.from(todayEarningsMicrosByHabitId.entries()),
+      weekEarningsMicrosByHabitId: Array.from(weekEarningsMicrosByHabitId.entries()),
+      stats_today_dollars: todayEarnings,
+      stats_week_dollars: weekEarnings,
+    });
+  }, [
+    transfers,
+    logs,
+    habitsUI,
+    todayEarningsMicrosByHabitId,
+    weekEarningsMicrosByHabitId,
+    todayEarnings,
+    weekEarnings,
+  ]);
 
   // Calibrating habits (based on server-computed flux)
   const calibratingHabits = useMemo(() => {
     return habitsUI
       .map((habit) => {
         const fluxScore = calculateFluxScore(habit.id);
-
         return {
           ...habit,
           fluxScore,
@@ -151,7 +259,7 @@ export default function Home() {
       .filter((h) => h.isCalibrating);
   }, [habitsUI, calculateFluxScore]);
 
-  // Weekly performers (UI-only aggregation; money per-log comes from transfers join)
+  // Weekly performers (use transfers for earnings; logs for log counts + sparkline bars count)
   const weeklyPerformers = useMemo(() => {
     const hs = habitsUI;
     const ls = logs || [];
@@ -167,16 +275,14 @@ export default function Home() {
         const habitLogs = ls.filter((log) => log?.habitId === habit.id);
 
         const thisWeekLogs = habitLogs.filter((log) => {
-          const d = normalizeToDate(getLogTimestampMs(log));
+          const d = normalizeToDate(log?.timestampMs);
           return d ? d >= startOfThisWeek : false;
         });
 
-        const thisWeekEarnings = thisWeekLogs.reduce(
-          (sum, log) => sum + getLogAmount(log),
-          0
-        );
+        const thisWeekEarningsMicros =
+          weekEarningsMicrosByHabitId.get(String(habit.id)) ?? 0;
 
-        // sparkline: last 6 days (UI-only), still uses transfer-backed amounts
+        // sparkline: last 6 days (based on transfers)
         const sparklineData = [];
         for (let i = 5; i >= 0; i--) {
           const dayStart = new Date(now);
@@ -186,27 +292,37 @@ export default function Home() {
           const nextDay = new Date(dayStart);
           nextDay.setDate(nextDay.getDate() + 1);
 
-          const dayEarnings = habitLogs
-            .filter((log) => {
-              const d = normalizeToDate(getLogTimestampMs(log));
-              return d ? d >= dayStart && d < nextDay : false;
-            })
-            .reduce((sum, log) => sum + getLogAmount(log), 0);
+          const dayStartMs = dayStart.getTime();
+          const nextDayMs = nextDay.getTime();
 
-          sparklineData.push(dayEarnings);
+          let dayMicros = 0;
+          for (const t of transfers || []) {
+            const ms = Number(t?.timestampMs);
+            if (!Number.isFinite(ms)) continue;
+            if (ms < dayStartMs || ms >= nextDayMs) continue;
+
+            const hid = resolveHabitIdForTransfer(t);
+            if (hid !== String(habit.id)) continue;
+
+            dayMicros += Number(t?.amountMicros ?? 0);
+          }
+
+          // convert micros -> dollars for bar heights (still UI-only)
+          sparklineData.push(dayMicros / 1_000_000);
         }
 
         return {
           ...habit,
-          thisWeekEarnings,
+          thisWeekEarningsMicros,
           thisWeekLogCount: thisWeekLogs.length,
           sparklineData,
         };
       })
-      .sort((a, b) => b.thisWeekEarnings - a.thisWeekEarnings);
-  }, [habitsUI, logs]);
+      .sort((a, b) => (b.thisWeekEarningsMicros ?? 0) - (a.thisWeekEarningsMicros ?? 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habitsUI, logs, transfers, weekEarningsMicrosByHabitId, habitIdByLogId]);
 
-  // Today habits list (logged state is based on logs; earnings is transfer-backed)
+  // Today habits list: isLogged from logs; todayEarningsMicros from transfers map
   const todayHabits = useMemo(() => {
     const hs = habitsUI;
     const ls = logs || [];
@@ -219,21 +335,15 @@ export default function Home() {
     return hs.map((habit) => {
       const isLogged = isHabitLoggedOnDate(habit.id, today);
 
-      const todayLog = ls.find((log) => {
-        if (!log || log.habitId !== habit.id) return false;
-        const d = normalizeToDate(getLogTimestampMs(log));
-        return d ? d.toDateString() === today.toDateString() : false;
-      });
-
       // week log count (UI-only)
       const weekLogs = ls.filter((log) => {
         if (!log || log.habitId !== habit.id) return false;
-        const d = normalizeToDate(getLogTimestampMs(log));
+        const d = normalizeToDate(log?.timestampMs);
         return d ? d >= startOfWeek : false;
       });
       const weekLogCount = weekLogs.length;
 
-      // progress text (UI-only; goal units will be updated later)
+      // progress text (UI-only)
       let progressText = `${weekLogCount} this week`;
       if (habit.goal?.period === "week") {
         const goalAmount = Number(habit.goal.amount ?? 0);
@@ -242,21 +352,23 @@ export default function Home() {
         else progressText = `${remaining} more to goal`;
       }
 
+      const todayEarningsMicros =
+        todayEarningsMicrosByHabitId.get(String(habit.id)) ?? 0;
+
       return {
         ...habit,
         isLogged,
-        todayEarnings: todayLog ? getLogAmount(todayLog) : 0,
+        todayEarningsMicros,
         weekLogCount,
         progressText,
       };
     });
-  }, [habitsUI, logs, isHabitLoggedOnDate]);
+  }, [habitsUI, logs, isHabitLoggedOnDate, todayEarningsMicrosByHabitId]);
 
   const loggedCount = todayHabits.filter((h) => h.isLogged).length;
 
   return (
     <div className="home-page">
-      {/* Sidebar Menu */}
       <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="home-container">
@@ -264,26 +376,11 @@ export default function Home() {
           <EmptyState onAdd={() => setShowAddSheet(true)} />
         ) : (
           <>
-            {/* Header */}
             <header className="home-header">
               <div className="header-row">
-                <button
-                  className="menu-button"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
+                <button className="menu-button" onClick={() => setSidebarOpen(true)}>
+                  <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
 
@@ -300,28 +397,15 @@ export default function Home() {
               </div>
             </header>
 
-            {/* This Week Summary Card */}
             <section className="week-summary-card">
               <div className="week-summary-top">
                 <div className="week-earned">
                   <span className="earned-label">Earned this week</span>
-                  <span className="earned-value">
-                    {formatCurrency(animatedWeekEarnings)}
-                  </span>
+                  <span className="earned-value">{formatCurrency(animatedWeekEarnings)}</span>
                 </div>
               </div>
-
-              {todayEarnings > 0 && (
-                <div className="today-earned">
-                  <span className="today-label">Today</span>
-                  <span className="today-value">
-                    +{formatCurrency(todayEarnings)}
-                  </span>
-                </div>
-              )}
             </section>
 
-            {/* Today's Behaviors */}
             <section className="today-section">
               <div className="section-header">
                 <span className="section-label">Today</span>
@@ -334,25 +418,14 @@ export default function Home() {
                 {todayHabits.map((habit) => (
                   <div
                     key={habit.id}
-                    className={`today-row ${
-                      habit.isLogged ? "logged" : "tappable"
-                    }`}
+                    className={`today-row ${habit.isLogged ? "logged" : "tappable"}`}
                     onClick={() => handleHabitTap(habit)}
                   >
                     <div className="today-status">
                       {habit.isLogged ? (
                         <div className="status-check">
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="3"
-                              d="M5 13l4 4L19 7"
-                            />
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
                       ) : (
@@ -367,7 +440,7 @@ export default function Home() {
                     <div className="today-value">
                       {habit.isLogged ? (
                         <span className="today-earned">
-                          +{formatCurrency(habit.todayEarnings)}
+                          +{formatUSDFromMicros(habit.todayEarningsMicros)}
                         </span>
                       ) : (
                         <span className="today-progress">{habit.progressText}</span>
@@ -378,16 +451,12 @@ export default function Home() {
               </div>
             </section>
 
-            {/* This Week Performers */}
             {weeklyPerformers.length > 0 && (
               <section className="performers-section">
                 <div className="section-label">This Week</div>
                 <div className="performers-scroll">
                   {weeklyPerformers.map((performer, index) => {
-                    const maxSparkline = Math.max(
-                      ...(performer.sparklineData || []),
-                      1
-                    );
+                    const maxSparkline = Math.max(...(performer.sparklineData || []), 1);
 
                     return (
                       <motion.div
@@ -401,31 +470,25 @@ export default function Home() {
                       >
                         <div className="performer-name">{performer.name}</div>
                         <div className="performer-earnings">
-                          {formatCurrency(performer.thisWeekEarnings)}
+                          {formatUSDFromMicros(performer.thisWeekEarningsMicros ?? 0)}
                         </div>
 
                         <div className="sparkline-container">
                           {(performer.sparklineData || []).map((value, i) => {
-                            const height =
-                              maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
-                            const isRecent =
-                              i >= performer.sparklineData.length - 2;
+                            const height = maxSparkline > 0 ? (value / maxSparkline) * 100 : 10;
+                            const isRecent = i >= performer.sparklineData.length - 2;
 
                             return (
                               <div
                                 key={i}
-                                className={`spark-bar ${
-                                  isRecent ? "highlight" : ""
-                                }`}
+                                className={`spark-bar ${isRecent ? "highlight" : ""}`}
                                 style={{ height: `${Math.max(height, 10)}%` }}
                               />
                             );
                           })}
                         </div>
 
-                        <div className="performer-logs">
-                          {performer.thisWeekLogCount} logs
-                        </div>
+                        <div className="performer-logs">{performer.thisWeekLogCount} logs</div>
                       </motion.div>
                     );
                   })}
@@ -433,7 +496,6 @@ export default function Home() {
               </section>
             )}
 
-            {/* Calibrating Section */}
             {calibratingHabits.length > 0 && (
               <section className="calibrating-section">
                 <div className="section-label">Calibrating</div>
@@ -446,14 +508,7 @@ export default function Home() {
                     >
                       <div className="calibrating-progress">
                         <svg viewBox="0 0 36 36" className="calibrating-ring">
-                          <circle
-                            className="ring-bg"
-                            cx="18"
-                            cy="18"
-                            r="14"
-                            fill="none"
-                            strokeWidth="3"
-                          />
+                          <circle className="ring-bg" cx="18" cy="18" r="14" fill="none" strokeWidth="3" />
                           <circle
                             className="ring-progress"
                             cx="18"
@@ -470,9 +525,7 @@ export default function Home() {
 
                       <div className="calibrating-info">
                         <span className="calibrating-name">{habit.name}</span>
-                        <span className="calibrating-needed">
-                          {habit.logsNeeded} more logs
-                        </span>
+                        <span className="calibrating-needed">{habit.logsNeeded} more logs</span>
                       </div>
 
                       <svg
@@ -493,7 +546,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Log Activity Bottom Sheet */}
       <BottomSheet
         isOpen={activeSheet === "log"}
         onClose={closeSheet}
@@ -509,7 +561,6 @@ export default function Home() {
         />
       </BottomSheet>
 
-      {/* Pass Activity Bottom Sheet */}
       <BottomSheet
         isOpen={activeSheet === "pass"}
         onClose={closeSheet}
@@ -525,7 +576,6 @@ export default function Home() {
         />
       </BottomSheet>
 
-      {/* ✅ Add Habit Bottom Sheet (triggered from EmptyState green +) */}
       <BottomSheet
         isOpen={showAddSheet}
         onClose={() => setShowAddSheet(false)}
@@ -534,7 +584,7 @@ export default function Home() {
         headerRight={noopHeaderRight}
       >
         <AddHabitSheet
-          onComplete={() => setShowAddSheet(false)} // AddHabitFlow owns addHabit()
+          onComplete={() => setShowAddSheet(false)}
           onClose={() => setShowAddSheet(false)}
         />
       </BottomSheet>

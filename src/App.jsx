@@ -17,7 +17,6 @@ import Auth from "@/pages/Auth";
 import Onboarding from "@/pages/Onboarding";
 import Home from "@/pages/Home";
 import Portfolio from "@/pages/Portfolio";
-import LogActivity from "@/pages/LogActivity";
 import Activity from "@/pages/Activity";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
@@ -170,7 +169,6 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
 
-        <Route path="/log/:habitId" element={<LogActivity />} />
         <Route path="/habit/:id" element={<HabitDetail />} />
         <Route path="/indices/:indexId" element={<IndexDetail />} />
 
