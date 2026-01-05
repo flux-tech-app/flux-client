@@ -117,7 +117,6 @@ const calculateHabitStreak = (habitId, logs) => {
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // ✅ use new provider surface
   const {
     habits,
     logs,
@@ -265,7 +264,11 @@ export default function Dashboard() {
     const lastWeekEarnings = microsToDollars(lastWeekEarningsMicros);
 
     const weekChange =
-      lastWeekEarnings > 0 ? Number(((weekEarnings - lastWeekEarnings) / lastWeekEarnings) * 100).toFixed(0) : weekEarnings > 0 ? 100 : 0;
+      lastWeekEarnings > 0
+        ? Math.round(((weekEarnings - lastWeekEarnings) / lastWeekEarnings) * 100)
+        : weekEarnings > 0
+          ? 100
+          : 0;
 
     return {
       totalEarnings,

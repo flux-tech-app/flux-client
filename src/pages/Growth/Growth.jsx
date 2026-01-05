@@ -94,7 +94,7 @@ export default function Growth() {
           timestamp: log.timestamp
         };
       })
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      .sort((a, b) => a.timestamp - b.timestamp);
   }, [logs, habits]);
 
   // Get legend categories
