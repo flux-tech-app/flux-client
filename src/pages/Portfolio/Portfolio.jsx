@@ -77,37 +77,6 @@ export default function Portfolio() {
     return m;
   }, [catalog?.habits]);
 
-  const getCatalogHabit = (habitInstance) => {
-    if (!habitInstance) return null;
-    const catalogId =
-      habitInstance.catalogId ??
-      habitInstance.catalogID ??
-      habitInstance.libraryId ??
-      habitInstance.libraryID ??
-      habitInstance.catalog_id ??
-      habitInstance.library_id ??
-      habitInstance.habitCatalogId ??
-      habitInstance.habit_catalog_id ??
-      null;
-
-    if (!catalogId) return null;
-    return catalogById.get(String(catalogId)) || null;
-  };
-
-  const getHabitDisplayName = (habitInstance) => {
-    const c = getCatalogHabit(habitInstance);
-    const n =
-      habitInstance?.displayName ??
-      habitInstance?.name ??
-      habitInstance?.Name ??
-      c?.name ??
-      c?.Name ??
-      "";
-
-    const s = String(n || "").trim();
-    return s || "Habit";
-  };
-
   // -------------------------
   // Totals (micros-native)
   // -------------------------
@@ -124,10 +93,6 @@ export default function Portfolio() {
   const transferredBalanceDollars = useMemo(
     () => microsToDollars(completedMicros),
     [completedMicros]
-  );
-  const pendingBalanceDollars = useMemo(
-    () => microsToDollars(pendingMicros),
-    [pendingMicros]
   );
 
   const animatedBalance = useAnimatedCounter(transferredBalanceDollars, 1200);
@@ -178,7 +143,7 @@ export default function Portfolio() {
         const totalLogs = Number(fx?.meta?.totalLogs ?? fx?.Meta?.TotalLogs ?? 0);
 
         // ✅ ensure display name resolves like Home
-        const name = getHabitDisplayName(h);
+        const name = catalogById.get(String(h.catalogId))?.name ?? "Habit";
 
         return {
           ...h,
